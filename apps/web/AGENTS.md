@@ -14,12 +14,6 @@
 - Text uses the type roles (`text-h1`, `text-title`, `text-lead`, `text-body`,
   `text-label`, `text-caption`), not `text-sm` and friends.
 
-## Adding a primitive
-
-Add it with the shadcn CLI (`pnpm dlx shadcn@latest add <component>`), never
-by hand. Then restyle it to the tokens and type roles, and add it to the
-`/design-system` page in every variant and state.
-
 ## When the design needs something a primitive can't do
 
 Add a new variant to the primitive. Don't restyle it at the call site, and
