@@ -1,0 +1,16 @@
+{
+  "name": "quarry",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:claude:cloud": "bash scripts/claude-cloud-setup.sh && turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "test:integration": "turbo run test:integration"
+  },
+  "devDependencies": {
+    "turbo": "^2.11.13"
+  },
+  "packageManager": "pnpm@10.20.0"
+}

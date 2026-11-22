@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "oxc", "node"],
+  "jsPlugins": [{ "name": "local", "specifier": "@quarry/lint-rules/plugin" }],
+  "ignorePatterns": ["dist/**", "coverage/**"],
+  "rules": {
+    "local/no-adr-references": "error",
+    "local/no-noisy-comments": "warn",
+    "local/no-optional-nullable-mismatch": "error",
+    "local/no-cross-module-model-access": "error",
+    "local/no-untyped-mongoose-create": "error"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.spec.ts", "**/__integration__/**", "test/**"],
+      "rules": { "local/no-cross-module-model-access": "off" }
+    }
+  ]
+}
