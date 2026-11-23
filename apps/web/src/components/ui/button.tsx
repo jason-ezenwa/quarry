@@ -2,9 +2,10 @@ import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 import { Slot } from "radix-ui"
+import { Spinner } from "@/components/ui/spinner"
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-md border border-transparent text-small font-medium whitespace-nowrap transition-colors select-none active:not-aria-[haspopup]:translate-y-[0.5px] disabled:pointer-events-none disabled:opacity-45 aria-invalid:border-destructive [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-[15px]",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-md border border-transparent text-small font-medium whitespace-nowrap transition-colors select-none active:not-aria-[haspopup]:translate-y-[0.5px] disabled:pointer-events-none disabled:not-data-loading:opacity-45 data-loading:[&_[data-icon=inline-start]:not([data-slot=spinner])]:hidden aria-invalid:border-destructive [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-[15px]",
   {
     variants: {
       variant: {
@@ -37,15 +38,21 @@ const buttonVariants = cva(
   }
 )
 
+// loading disables the button, marks it busy and puts a spinner in the leading
+// slot, in place of a leading icon. The label stays.
 function Button({
   className,
   variant = "secondary",
   size = "default",
   asChild = false,
+  loading = false,
+  disabled,
+  children,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
+    loading?: boolean
   }) {
   const Comp = asChild ? Slot.Root : "button"
 
@@ -54,9 +61,17 @@ function Button({
       data-slot="button"
       data-variant={variant}
       data-size={size}
+      data-loading={loading || undefined}
+      aria-busy={loading || undefined}
+      disabled={disabled || loading}
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
-    />
+    >
+      {loading && !asChild ? (
+        <Spinner data-icon="inline-start" aria-hidden="true" className="text-current" />
+      ) : null}
+      {children}
+    </Comp>
   )
 }
 

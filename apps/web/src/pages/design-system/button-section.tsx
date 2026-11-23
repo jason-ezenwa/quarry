@@ -2,7 +2,6 @@ import { ArrowRightIcon } from '@phosphor-icons/react/dist/csr/ArrowRight'
 import { DownloadSimpleIcon } from '@phosphor-icons/react/dist/csr/DownloadSimple'
 import { PlusIcon } from '@phosphor-icons/react/dist/csr/Plus'
 import { Button } from '@/components/ui/button'
-import { Spinner } from '@/components/ui/spinner'
 import { Section, Specimen } from './section.tsx'
 
 const variants = ['primary', 'secondary', 'ghost', 'destructive', 'link'] as const
@@ -58,9 +57,12 @@ export function ButtonSection() {
         </Specimen>
         <Specimen label="Loading">
           <div className="flex flex-wrap items-center gap-3">
-            <Button variant="primary" disabled>
-              <Spinner className="text-current" />
+            <Button variant="primary" loading>
               Saving
+            </Button>
+            <Button loading>
+              <DownloadSimpleIcon data-icon="inline-start" />
+              PDF
             </Button>
           </div>
         </Specimen>
