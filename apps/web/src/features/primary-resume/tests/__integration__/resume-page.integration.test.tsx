@@ -158,6 +158,24 @@ describe('Resume page (integration)', () => {
     expect(saves).toHaveLength(0)
   })
 
+  it('keeps the editor and says so when saving fails', async () => {
+    await openResume(UNREVIEWED)
+    server.use(http.put(apiUrl('/api/resumes/primary'), () => HttpResponse.json({ message: 'Boom' }, { status: 500 })))
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Confirm resume' }))
+
+    expect(await screen.findByText('We could not save your resume. Try again.')).toBeInTheDocument()
+    expect(screen.getByText('Check what we read from your resume')).toBeInTheDocument()
+    expect(screen.getByLabelText('Name')).toHaveValue('Ada Obi')
+  })
+
+  it('says the resume is being read while it parses', async () => {
+    await openResume(primaryResumeResponse({ parseStatus: 'parsing', parsedAt: null, reviewedAt: null, resume: null }))
+
+    expect(await screen.findByText('Reading your resume')).toBeInTheDocument()
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+  })
+
   it('shows a failed parse with retry and re-upload', async () => {
     await openResume(primaryResumeResponse({ parseStatus: 'failed', parsedAt: null, reviewedAt: null, resume: null }))
 

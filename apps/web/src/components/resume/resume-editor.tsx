@@ -49,6 +49,8 @@ function normalize(value: unknown): unknown {
 }
 
 function issueMessage(issue: z.core.$ZodIssue): string {
+  // A blank field was dropped before validation, so it arrives as missing.
+  if (issue.code === "invalid_type") return "Required"
   const field = issue.path.at(-1)
   if (field === "url") return "Use a full link, starting with https://"
   if (typeof field === "string" && DATE_FIELDS.has(field)) return "Use YYYY or YYYY-MM"
@@ -100,11 +102,23 @@ function ResumeEditorProvider({ resume, onSave, children }: ResumeEditorProvider
       setField: (path, next) => setDraft((current) => setIn(current, path, next)),
       addItem: (path, item) =>
         setDraft((current) => setIn(current, path, [...(getIn(current, path) as unknown[]), item])),
+      // Errors are keyed by position, so any that a removal or move would shift are cleared until the next save.
       removeItem: (path, index) => {
         setRevision((current) => current + 1)
+        setErrors({})
         setDraft((current) =>
           setIn(current, path, (getIn(current, path) as unknown[]).filter((_, position) => position !== index)),
         )
+      },
+      moveItem: (path, from, to) => {
+        setRevision((current) => current + 1)
+        setErrors({})
+        setDraft((current) => {
+          const items = [...(getIn(current, path) as unknown[])]
+          const [item] = items.splice(from, 1)
+          items.splice(to, 0, item)
+          return setIn(current, path, items)
+        })
       },
       save,
     },

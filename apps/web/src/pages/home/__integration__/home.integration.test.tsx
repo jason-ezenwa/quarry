@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
@@ -68,11 +68,19 @@ describe('Home (integration)', () => {
     })
 
     it('is gone once the resume is reviewed', async () => {
+      let answered = false
       signInAs()
+      server.use(
+        http.get(apiUrl('/api/resumes/primary'), () => {
+          answered = true
+          return HttpResponse.json(primaryResumeResponse())
+        }),
+      )
 
       renderRoute('/')
 
       await screen.findByText('Welcome, Ada Obi')
+      await waitFor(() => expect(answered).toBe(true))
       expect(screen.queryByRole('status')).not.toBeInTheDocument()
       expect(screen.queryByText('Review your resume')).not.toBeInTheDocument()
     })

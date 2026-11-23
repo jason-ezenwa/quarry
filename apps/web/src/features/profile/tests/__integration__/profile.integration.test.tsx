@@ -17,7 +17,7 @@ async function openProfile(resume: PrimaryResumeResponse) {
 }
 
 function resumeCard() {
-  return screen.getByRole('generic', { name: 'Resume' })
+  return screen.getByRole('region', { name: 'Resume' })
 }
 
 describe('Profile (integration)', () => {
@@ -36,7 +36,7 @@ describe('Profile (integration)', () => {
     expect(await screen.findByText('Ada Obi')).toBeInTheDocument()
     expect(screen.getByText('ada@example.com')).toBeInTheDocument()
 
-    const answers = within(screen.getByRole('generic', { name: "What you're looking for" }))
+    const answers = within(screen.getByRole('region', { name: "What you're looking for" }))
     expect(await answers.findByText('Senior Product Engineer')).toBeInTheDocument()
     expect(answers.getByText('4 years')).toBeInTheDocument()
     expect(answers.getByText('Nigeria')).toBeInTheDocument()

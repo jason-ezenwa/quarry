@@ -35,8 +35,6 @@ function ResumeContent({ data }: { data: PrimaryResumeResponse }) {
 
     return (
       <PrimaryResumeEditor
-        // A new parse starts a fresh draft.
-        key={data.parsedAt ?? data.id}
         resume={resume}
         onSave={onSave}
         actions={
@@ -97,7 +95,8 @@ export function ResumePage() {
           <AlertDescription>We couldn't load your resume. Refresh to try again.</AlertDescription>
         </Alert>
       ) : (
-        <ResumeContent data={data} />
+        // Remounts on a new parse, so an edit left open never carries over to a different file.
+        <ResumeContent key={data.parsedAt ?? data.id} data={data} />
       )}
     </main>
   )

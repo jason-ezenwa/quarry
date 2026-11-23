@@ -12,6 +12,7 @@ export type ResumeEditorActions = {
   setField: (path: ResumeFieldPath, value: unknown) => void
   addItem: (path: ResumeFieldPath, item: unknown) => void
   removeItem: (path: ResumeFieldPath, index: number) => void
+  moveItem: (path: ResumeFieldPath, from: number, to: number) => void
   save: () => Promise<void>
 }
 
@@ -20,7 +21,7 @@ export type ResumeEditorMeta = {
   errors: Record<string, string>
   saving: boolean
   saveError: string | null
-  // Changes whenever an item is removed, so list items keyed by position can remount instead of inheriting a neighbour's state.
+  // Changes whenever an item is removed or moved, so list items keyed by position can remount instead of inheriting a neighbour's state.
   revision: number
 }
 

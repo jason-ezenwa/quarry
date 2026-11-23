@@ -18,7 +18,7 @@ export function AccountDetails() {
   const { data: user, isPending, isError } = useCurrentUser()
 
   return (
-    <Card size="sm" aria-label="Account">
+    <Card size="sm" role="region" aria-label="Account">
       <CardHeader>
         <CardTitle>Account</CardTitle>
       </CardHeader>

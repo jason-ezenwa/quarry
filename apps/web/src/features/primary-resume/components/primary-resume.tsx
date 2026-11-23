@@ -48,11 +48,11 @@ export function PrimaryResume({ resume }: { resume: Resume }) {
         <ResumeName>{resume.name}</ResumeName>
         {contactParts.length > 0 || contact.links.length > 0 ? (
           <ResumeContact>
-            {contactParts.map((part) => (
-              <span key={part}>{part}</span>
+            {contactParts.map((part, index) => (
+              <span key={index}>{part}</span>
             ))}
-            {contact.links.map((link) => (
-              <a key={link.url} href={link.url} target="_blank" rel="noreferrer" className="underline underline-offset-3">
+            {contact.links.map((link, index) => (
+              <a key={index} href={link.url} target="_blank" rel="noreferrer" className="underline underline-offset-3">
                 {link.label}
               </a>
             ))}
@@ -106,8 +106,8 @@ export function PrimaryResume({ resume }: { resume: Resume }) {
         <ResumeSection>
           <ResumeSectionTitle>Skills</ResumeSectionTitle>
           <ResumeSkillList>
-            {resume.skills.map((skill) => (
-              <ResumeSkill key={skill.name}>{skill.name}</ResumeSkill>
+            {resume.skills.map((skill, index) => (
+              <ResumeSkill key={index}>{skill.name}</ResumeSkill>
             ))}
           </ResumeSkillList>
         </ResumeSection>

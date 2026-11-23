@@ -77,7 +77,7 @@ export function ResumeStatus() {
   const { data: resume, isPending, isError } = usePrimaryResume()
 
   return (
-    <Card size="sm" aria-label="Resume">
+    <Card size="sm" role="region" aria-label="Resume">
       <CardHeader>
         <CardTitle>Resume</CardTitle>
       </CardHeader>

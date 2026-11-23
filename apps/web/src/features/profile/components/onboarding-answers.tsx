@@ -20,7 +20,7 @@ export function OnboardingAnswers() {
   const { data: profile, isPending, isError } = useQuery(profileQueryOptions)
 
   return (
-    <Card size="sm" aria-label="What you're looking for">
+    <Card size="sm" role="region" aria-label="What you're looking for">
       <CardHeader>
         <CardTitle>What you're looking for</CardTitle>
       </CardHeader>
