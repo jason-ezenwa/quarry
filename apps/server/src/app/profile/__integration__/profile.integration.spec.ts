@@ -15,8 +15,10 @@ import { ProfileGateModule } from '../profile-gate.module';
 import { RequireProfileGuard } from '../require-profile.guard';
 
 const PDF = 'application/pdf';
+
 const DOCX =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
 const MB = 1024 * 1024;
 
 @Controller('test-profile-gate')
@@ -58,8 +60,10 @@ describe('Profile (integration)', () => {
     const req = request(app.getHttpServer())
       .post('/api/profiles/uploads')
       .set('Origin', TEST_ORIGIN);
+
     if (cookie) req.set('Cookie', cookie);
     req.field('purpose', purpose);
+
     if (file) {
       req.attach('file', file.data, {
         filename: file.filename,
@@ -80,6 +84,7 @@ describe('Profile (integration)', () => {
     const req = request(app.getHttpServer())
       .post('/api/profiles')
       .set('Origin', TEST_ORIGIN);
+
     if (cookie) req.set('Cookie', cookie);
 
     return req.send(body);
@@ -89,6 +94,7 @@ describe('Profile (integration)', () => {
     const req = request(app.getHttpServer())
       .get('/api/profiles/me')
       .set('Origin', TEST_ORIGIN);
+
     if (cookie) req.set('Cookie', cookie);
 
     return req;
@@ -108,6 +114,7 @@ describe('Profile (integration)', () => {
 
       const uploaded = await upload(cookie, pdf());
       expect(uploaded.status).toBe(201);
+
       expect(uploaded.body).toEqual({
         key: expect.stringMatching(/^[A-Za-z0-9_-]{21}\.pdf$/),
         mimeType: PDF,
@@ -117,7 +124,9 @@ describe('Profile (integration)', () => {
         ...answers,
         resume: uploaded.body,
       });
+
       expect(created.status).toBe(201);
+
       expect(created.body).toEqual({
         id: expect.any(String),
         ...answers,
@@ -130,6 +139,7 @@ describe('Profile (integration)', () => {
       const resume = await getTestDatabase()
         .collection('resumes')
         .findOne({ user: new Types.ObjectId(userId) });
+
       expect(resume).toMatchObject({
         kind: 'primary',
         parseStatus: 'parsing',
@@ -152,6 +162,7 @@ describe('Profile (integration)', () => {
 
     it('accepts a DOCX resume', async () => {
       const { cookie } = await signUp(app);
+
       const uploaded = await upload(cookie, {
         data: Buffer.from('docx'),
         filename: 'cv.docx',
@@ -170,17 +181,20 @@ describe('Profile (integration)', () => {
     it('refuses a second profile with 409', async () => {
       const { cookie } = await signUp(app);
       const first = await upload(cookie, pdf());
+
       await createProfile(cookie, { ...answers, resume: first.body }).expect(
         201,
       );
 
       const second = await upload(cookie, pdf());
+
       const response = await createProfile(cookie, {
         ...answers,
         resume: second.body,
       });
 
       expect(response.status).toBe(409);
+
       expect(
         await getTestDatabase().collection('resumes').countDocuments(),
       ).toBe(1);
@@ -188,6 +202,7 @@ describe('Profile (integration)', () => {
 
     it('keeps a non-ASCII file name intact', async () => {
       const { cookie, userId } = await signUp(app);
+
       const uploaded = await upload(cookie, {
         ...pdf(),
         filename: 'Ọkọlọ CV.pdf',
@@ -200,11 +215,13 @@ describe('Profile (integration)', () => {
       const resume = await getTestDatabase()
         .collection('resumes')
         .findOne({ user: new Types.ObjectId(userId) });
+
       expect(resume?.file.originalName).toBe('Ọkọlọ CV.pdf');
     });
 
     it('creates one profile from concurrent submits and keeps no stray file', async () => {
       const { cookie, userId } = await signUp(app);
+
       const [first, second] = await Promise.all([
         upload(cookie, pdf()),
         upload(cookie, pdf()),
@@ -218,12 +235,15 @@ describe('Profile (integration)', () => {
       expect(responses.map((r) => r.status).sort()).toEqual([201, 409]);
       const database = getTestDatabase();
       expect(await database.collection('profiles').countDocuments()).toBe(1);
+
       const resume = await database
         .collection('resumes')
         .findOne({ user: new Types.ObjectId(userId) });
+
       const committed = [...getTestBucket(app).objects.keys()].filter((path) =>
         path.startsWith(`users/${userId}/`),
       );
+
       expect(committed).toEqual([resume?.file.path]);
     });
 
@@ -238,6 +258,7 @@ describe('Profile (integration)', () => {
       });
 
       expect(response.status).toBe(404);
+
       expect(
         await getTestDatabase().collection('profiles').countDocuments(),
       ).toBe(0);
@@ -266,6 +287,7 @@ describe('Profile (integration)', () => {
       });
 
       expect(response.status).toBe(400);
+
       expect(
         await getTestDatabase().collection('profiles').countDocuments(),
       ).toBe(0);
@@ -336,6 +358,7 @@ describe('Profile (integration)', () => {
     it('lets a user with a profile through', async () => {
       const { cookie } = await signUp(app);
       const uploaded = await upload(cookie, pdf());
+
       await createProfile(cookie, { ...answers, resume: uploaded.body }).expect(
         201,
       );

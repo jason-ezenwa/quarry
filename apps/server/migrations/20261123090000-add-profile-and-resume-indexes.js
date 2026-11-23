@@ -36,6 +36,7 @@ module.exports = {
   async down(db) {
     await db.collection('profiles').dropIndex('user_1');
     await db.collection('resumes').dropIndex('user_1_primary');
+
     await db
       .collection('resumes')
       .dropIndex('parseStatus_1_parseStartedAt_1_parsing');

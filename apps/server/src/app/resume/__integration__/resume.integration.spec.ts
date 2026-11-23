@@ -24,6 +24,7 @@ import {
 } from '../resume.constants';
 
 const PDF = 'application/pdf';
+
 const DOCX =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
@@ -32,11 +33,13 @@ const pdfFile = {
   filename: 'Ada Obi CV.pdf',
   contentType: PDF,
 };
+
 const docxFile = {
   data: readFileSync(join(__dirname, 'fixtures/resume.docx')),
   filename: 'Ada Obi CV.docx',
   contentType: DOCX,
 };
+
 type TestFile = typeof pdfFile;
 
 const parsedResume: Resume = {
@@ -114,6 +117,7 @@ describe('Resume (integration)', () => {
       ...answers,
       resume: uploaded.body,
     });
+
     expect(created.status).toBe(201);
 
     return uploaded.body as { key: string; mimeType: string };
@@ -158,6 +162,7 @@ describe('Resume (integration)', () => {
     await onboard(cookie);
 
     const parsed = await waitForStatus(cookie, 'parsed');
+
     expect(parsed).toEqual({
       id: expect.any(String),
       parseStatus: 'parsed',
@@ -176,6 +181,7 @@ describe('Resume (integration)', () => {
         .findOne({ _id: new Types.ObjectId(profile.body.id) }),
       findResume(userId),
     ]);
+
     expect(profileDoc?.user.toHexString()).toBe(userId);
     expect(resumeDoc?._id.toHexString()).toBe(parsed.id);
   });
@@ -189,11 +195,13 @@ describe('Resume (integration)', () => {
       const [sent] = fakeAnthropicApi.requests;
       expect(sent.model).toBe(RESUME_PARSE_MODEL);
       expect(sent.max_tokens).toBe(PARSE_MAX_OUTPUT_TOKENS);
+
       // Structured output, natively or through the provider's forced tool.
       expect(
         sent.output_config?.format?.type === 'json_schema' ||
           sent.tools?.some((tool) => tool.name === 'json'),
       ).toBe(true);
+
       expect(sent.messages[0].content).toContainEqual({
         type: 'document',
         source: {
@@ -212,6 +220,7 @@ describe('Resume (integration)', () => {
 
       const content = fakeAnthropicApi.requests[0].messages[0].content;
       expect(content.map((part) => part.type)).toEqual(['text', 'text']);
+
       expect(content).toContainEqual({
         type: 'text',
         text: expect.stringContaining(
@@ -222,12 +231,14 @@ describe('Resume (integration)', () => {
 
     it('stores the parsed fields and the token usage', async () => {
       const { cookie, userId } = await signUp(app);
+
       fakeAnthropicApi.reply({
         kind: 'resume',
         resume: parsedResume,
         inputTokens: 2100,
         outputTokens: 650,
       });
+
       await onboard(cookie);
       await waitForStatus(cookie, 'parsed');
 
@@ -246,10 +257,12 @@ describe('Resume (integration)', () => {
 
     it('retries a failed attempt and stores the next good reply', async () => {
       const { cookie } = await signUp(app);
+
       fakeAnthropicApi.reply(
         { kind: 'error', status: 529 },
         { kind: 'resume', resume: parsedResume },
       );
+
       await onboard(cookie);
 
       const parsed = await waitForStatus(cookie, 'parsed');
@@ -259,16 +272,19 @@ describe('Resume (integration)', () => {
 
     it('marks the resume failed after malformed and refused replies use up the retries', async () => {
       const { cookie, userId } = await signUp(app);
+
       fakeAnthropicApi.reply(
         { kind: 'text', text: '{"name": "Ada' },
         { kind: 'refusal' },
         { kind: 'object', value: { name: 'Ada' } },
       );
+
       await onboard(cookie);
 
       const failed = await waitForStatus(cookie, 'failed');
       expect(failed.resume).toBeNull();
       expect(fakeAnthropicApi.requests).toHaveLength(3);
+
       expect(await findResume(userId)).toMatchObject({
         parseStatus: 'failed',
         parseError: 'invalid-output',
@@ -278,11 +294,13 @@ describe('Resume (integration)', () => {
 
     it('records a refusal on the last attempt as the reason', async () => {
       const { cookie, userId } = await signUp(app);
+
       fakeAnthropicApi.reply(
         { kind: 'refusal' },
         { kind: 'refusal' },
         { kind: 'refusal' },
       );
+
       await onboard(cookie);
       await waitForStatus(cookie, 'failed');
 
@@ -291,10 +309,12 @@ describe('Resume (integration)', () => {
 
     it('fails without calling Claude when a DOCX cannot be read', async () => {
       const { cookie, userId } = await signUp(app);
+
       await onboard(cookie, {
         ...docxFile,
         data: Buffer.from('not a zip file'),
       });
+
       await waitForStatus(cookie, 'failed');
 
       expect(fakeAnthropicApi.requests).toHaveLength(0);
@@ -309,6 +329,7 @@ describe('Resume (integration)', () => {
         { kind: 'error', status: 500 },
         { kind: 'error', status: 500 },
       );
+
       await onboard(cookie);
       await waitForStatus(cookie, 'failed');
     };
@@ -341,6 +362,7 @@ describe('Resume (integration)', () => {
         '/resumes/primary/parse',
         other.cookie,
       );
+
       expect(whileParsed.status).toBe(409);
     });
   });
@@ -352,6 +374,7 @@ describe('Resume (integration)', () => {
       bucket = getTestBucket(app),
     ) => {
       const path = `users/${new Types.ObjectId().toHexString()}/primary-resume/a.pdf`;
+
       await bucket.put(path, pdfFile.data, {
         contentType: PDF,
         metadata: {},
@@ -395,6 +418,7 @@ describe('Resume (integration)', () => {
       fakeAnthropicApi.reply({ kind: 'resume', resume: parsedResume });
 
       const restarted = await createTestApp({ bucket });
+
       try {
         await vi.waitFor(
           async () =>
@@ -406,15 +430,18 @@ describe('Resume (integration)', () => {
       }
 
       expect(fakeAnthropicApi.requests).toHaveLength(1);
+
       expect(await statusOf(fresh)).toMatchObject({
         parseStatus: 'parsing',
         parseStartedAt: freshStart,
       });
+
       expect(await statusOf(failed)).toMatchObject({ parseStatus: 'failed' });
     });
 
     it('parses a stale resume once when two recoveries run at the same time', async () => {
       const stale = await seedResume('parsing', staleStart());
+
       fakeAnthropicApi.reply(
         { kind: 'resume', resume: parsedResume },
         { kind: 'resume', resume: parsedResume },
@@ -427,6 +454,7 @@ describe('Resume (integration)', () => {
         async () => expect((await statusOf(stale))?.parseStatus).toBe('parsed'),
         { timeout: 5_000, interval: 20 },
       );
+
       expect(fakeAnthropicApi.requests).toHaveLength(1);
     });
   });
@@ -439,6 +467,7 @@ describe('Resume (integration)', () => {
       const saved = await api('put', '/resumes/primary', cookie).send(
         parsedResume,
       );
+
       expect(saved.status).toBe(409);
     });
 
@@ -447,6 +476,7 @@ describe('Resume (integration)', () => {
       await onboardParsed(cookie);
 
       const { summary: _summary, ...withoutSummary } = parsedResume;
+
       const edited: Resume = {
         ...withoutSummary,
         experience: [
@@ -459,15 +489,18 @@ describe('Resume (integration)', () => {
 
       const saved = await api('put', '/resumes/primary', cookie).send(edited);
       expect(saved.status).toBe(200);
+
       expect(saved.body).toMatchObject({
         parseStatus: 'parsed',
         reviewedAt: expect.any(String),
         resume: edited,
       });
+
       expect(saved.body.resume).not.toHaveProperty('summary');
 
       const stored = await findResume(userId);
       expect(stored).not.toHaveProperty('summary');
+
       expect(stored?.experience[0].bullets).toEqual([
         'Built and ran the settlement service.',
       ]);
@@ -475,6 +508,7 @@ describe('Resume (integration)', () => {
       const savedAgain = await api('put', '/resumes/primary', cookie).send(
         parsedResume,
       );
+
       expect(savedAgain.body.reviewedAt).toEqual(expect.any(String));
       expect((await getPrimary(cookie)).body.resume).toEqual(parsedResume);
     });
@@ -489,6 +523,7 @@ describe('Resume (integration)', () => {
           { ...parsedResume.experience[0], startDate: 'March 2021' },
         ],
       });
+
       expect(saved.status).toBe(400);
     });
   });
@@ -507,7 +542,9 @@ describe('Resume (integration)', () => {
       const replaced = await api('put', '/resumes/primary/file', cookie).send(
         uploaded.body,
       );
+
       expect(replaced.status).toBe(200);
+
       expect(replaced.body).toMatchObject({
         parseStatus: 'parsing',
         reviewedAt: null,
@@ -517,9 +554,11 @@ describe('Resume (integration)', () => {
       });
 
       const objects = getTestBucket(app).objects;
+
       expect(objects.has(`users/${userId}/primary-resume/${first.key}`)).toBe(
         false,
       );
+
       expect(
         objects.has(`users/${userId}/primary-resume/${uploaded.body.key}`),
       ).toBe(true);
@@ -529,6 +568,7 @@ describe('Resume (integration)', () => {
       const parsed = await waitForStatus(cookie, 'parsed');
       expect(parsed.resume).toEqual(reparsed);
       expect(parsed.reviewedAt).toBeNull();
+
       expect(
         fakeAnthropicApi.requests.at(-1)?.messages[0].content,
       ).toContainEqual({
@@ -548,9 +588,11 @@ describe('Resume (integration)', () => {
       const copy = bucket.copy.bind(bucket);
       let waiting = 0;
       let releaseBoth!: () => void;
+
       const bothWaiting = new Promise<void>((resolve) => {
         releaseBoth = resolve;
       });
+
       const held = vi
         .spyOn(bucket, 'copy')
         .mockImplementation(async (source, destination) => {
@@ -569,6 +611,7 @@ describe('Resume (integration)', () => {
       expect(responses.map((response) => response.status).sort()).toEqual([
         200, 409,
       ]);
+
       expect(
         getTestBucket(app).objects.has(
           `users/${userId}/primary-resume/${uploaded.body.key}`,
@@ -585,6 +628,7 @@ describe('Resume (integration)', () => {
         { ...pdfFile, filename: 'cv.png', contentType: 'image/png' },
         '/resumes/uploads',
       );
+
       expect(uploaded.status).toBe(400);
     });
 
@@ -598,15 +642,18 @@ describe('Resume (integration)', () => {
         '/resumes/primary/file',
         cookie,
       ).send(uploaded.body);
+
       expect(whileParsing.status).toBe(409);
 
       const other = await signUp(app, { email: 'bo@example.com' });
       await onboardParsed(other.cookie);
+
       const unknown = await api(
         'put',
         '/resumes/primary/file',
         other.cookie,
       ).send(uploaded.body);
+
       expect(unknown.status).toBe(404);
     });
   });

@@ -75,6 +75,7 @@ export class R2Bucket implements StorageBucket {
       const object = await this.client.send(
         new GetObjectCommand({ Bucket: this.bucketName, Key: path }),
       );
+
       if (!object.Body) throw new StorageObjectNotFoundError(path);
 
       return Buffer.from(await object.Body.transformToByteArray());
@@ -87,6 +88,7 @@ export class R2Bucket implements StorageBucket {
   // Read first, because a copy's response does not carry the object's size.
   async copy(source: string, destination: string): Promise<StoredObjectInfo> {
     let head;
+
     try {
       head = await this.client.send(
         new HeadObjectCommand({ Bucket: this.bucketName, Key: source }),

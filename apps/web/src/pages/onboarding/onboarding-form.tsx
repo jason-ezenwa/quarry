@@ -34,6 +34,7 @@ type OnboardingFormProps = {
 export function OnboardingForm({ onSaved, onAlreadyOnboarded }: OnboardingFormProps) {
   const [formError, setFormError] = useState<string | null>(null)
   const [location] = useState(() => defaultLocation(navigator.language))
+
   const form = useForm<OnboardingFormValues, unknown, OnboardingSubmission>({
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
@@ -50,6 +51,7 @@ export function OnboardingForm({ onSaved, onAlreadyOnboarded }: OnboardingFormPr
     setFormError(null)
 
     let uploaded: UploadedFileRef
+
     try {
       uploaded = await uploadPrimaryResume(resume)
     } catch (error) {
@@ -60,6 +62,7 @@ export function OnboardingForm({ onSaved, onAlreadyOnboarded }: OnboardingFormPr
       } else {
         setFormError('We could not upload your resume. Try again.')
       }
+
       return
     }
 
@@ -70,6 +73,7 @@ export function OnboardingForm({ onSaved, onAlreadyOnboarded }: OnboardingFormPr
         onAlreadyOnboarded()
         return
       }
+
       setFormError('We could not save your profile. Try again.')
     }
   }

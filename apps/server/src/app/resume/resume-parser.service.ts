@@ -71,11 +71,13 @@ export class ResumeParserService {
     if (resume?.parseStatus !== 'parsing' || !resume.file) return;
 
     const claim = resume.parseStartedAt;
+
     const context: ParseLogContext = {
       resumeId,
       userId: resume.user.toHexString(),
       model: RESUME_PARSE_MODEL,
     };
+
     const startedAt = Date.now();
     this.logger.log('Resume parse started', context);
 
@@ -83,15 +85,18 @@ export class ResumeParserService {
 
     if ('reason' in outcome) {
       await this.markFailed(resumeId, claim, outcome.reason);
+
       this.logger.warn('Resume parse failed', {
         ...context,
         reason: outcome.reason,
         durationMs: Date.now() - startedAt,
       });
+
       return;
     }
 
     const stored = await this.markParsed(resumeId, claim, outcome.result);
+
     this.logger.log(stored ? 'Resume parsed' : 'Resume parse superseded', {
       ...context,
       inputTokens: outcome.result.usage.inputTokens,
@@ -116,6 +121,7 @@ export class ResumeParserService {
         return { result: await this.requestParse(content) };
       } catch (error) {
         const reason = this.reasonFor(error);
+
         this.logger.warn('Resume parse attempt failed', {
           ...context,
           attempt,
@@ -147,11 +153,13 @@ export class ResumeParserService {
     }
 
     let text: string;
+
     try {
       ({ value: text } = await mammoth.extractRawText({ buffer: data }));
     } catch {
       throw new ParseAttemptError('unreadable-file');
     }
+
     if (!text.trim()) throw new ParseAttemptError('unreadable-file');
 
     return [
@@ -188,6 +196,7 @@ export class ResumeParserService {
     if (result.finishReason === 'content-filter') {
       throw new ParseAttemptError('refused');
     }
+
     if (result.finishReason === 'length') {
       throw new ParseAttemptError('invalid-output');
     }
@@ -204,13 +213,16 @@ export class ResumeParserService {
     const cause = RetryError.isInstance(error) ? error.lastError : error;
 
     if (cause instanceof ParseAttemptError) return cause.reason;
+
     if (
       cause instanceof Error &&
       (cause.name === 'TimeoutError' || cause.name === 'AbortError')
     ) {
       return 'timeout';
     }
+
     if (APICallError.isInstance(cause)) return 'api-error';
+
     if (
       NoObjectGeneratedError.isInstance(cause) ||
       NoOutputGeneratedError.isInstance(cause)

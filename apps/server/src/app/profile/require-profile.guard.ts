@@ -17,6 +17,7 @@ export class RequireProfileGuard implements CanActivate {
     const request = context
       .switchToHttp()
       .getRequest<{ session?: { user?: SessionUser } }>();
+
     const userId = request.session?.user?.id;
 
     if (!userId || !(await this.profileGateService.existsForUser(userId))) {

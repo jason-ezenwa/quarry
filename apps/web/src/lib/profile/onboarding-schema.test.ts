@@ -30,6 +30,7 @@ describe('onboardingSchema', () => {
     const { resume, ...answers } = onboardingSchema.parse(valid)
 
     expect(resume).toBe(valid.resume)
+
     expect(answers).toEqual({
       targetRoles: ['Senior Product Engineer', 'Founding Engineer'],
       yearsOfExperience: 4,

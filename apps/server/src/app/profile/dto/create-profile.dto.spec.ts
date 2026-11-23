@@ -14,6 +14,7 @@ const valid = {
 
 async function errorsFor(body: object) {
   const dto = plainToInstance(CreateProfileDto, body);
+
   const errors = await validate(dto, {
     whitelist: true,
     forbidNonWhitelisted: true,

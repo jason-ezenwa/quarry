@@ -23,6 +23,7 @@ export const PARSE_FAILURE_REASONS = [
   'refused',
   'invalid-output',
 ] as const;
+
 export type ParseFailureReason = (typeof PARSE_FAILURE_REASONS)[number];
 
 export const RESUME_PARSE_SYSTEM_PROMPT = `You extract resumes into a fixed JSON structure.

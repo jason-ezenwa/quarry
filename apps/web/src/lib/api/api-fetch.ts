@@ -14,6 +14,7 @@ export class ApiError extends Error {
 // A FormData body keeps the multipart content type fetch sets for it.
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const contentType = init?.body instanceof FormData ? undefined : { 'Content-Type': 'application/json' }
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     credentials: 'include',

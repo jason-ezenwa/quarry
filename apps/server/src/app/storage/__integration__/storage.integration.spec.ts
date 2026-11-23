@@ -12,6 +12,7 @@ import type { UploadFile } from '../storage.types';
 
 const MB = 1024 * 1024;
 const PDF = 'application/pdf';
+
 const DOCX =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
@@ -29,6 +30,7 @@ describe('StorageService (integration)', () => {
 
   beforeEach(async () => {
     bucket = new InMemoryBucket();
+
     const moduleRef = await Test.createTestingModule({
       providers: [
         StorageService,
@@ -53,6 +55,7 @@ describe('StorageService (integration)', () => {
         key: expect.stringMatching(/^[A-Za-z0-9_-]{21}\.pdf$/),
         mimeType: PDF,
       });
+
       expect(
         bucket.objects.get(`pending/user-1/primary-resume/${result.key}`),
       ).toEqual({
@@ -80,6 +83,7 @@ describe('StorageService (integration)', () => {
           file({ mimetype: 'image/png' }),
         ),
       ).rejects.toThrow(BadRequestException);
+
       expect(bucket.objects.size).toBe(0);
     });
 
@@ -91,6 +95,7 @@ describe('StorageService (integration)', () => {
           file({ size: 5 * MB + 1 }),
         ),
       ).rejects.toThrow(PayloadTooLargeException);
+
       expect(bucket.objects.size).toBe(0);
     });
   });
@@ -98,6 +103,7 @@ describe('StorageService (integration)', () => {
   describe('commit', () => {
     it('copies the pending upload into the user folder and describes it', async () => {
       const upload = file();
+
       const ref = await service.uploadPending(
         'user-1',
         'primary-resume',
@@ -112,6 +118,7 @@ describe('StorageService (integration)', () => {
         originalName: 'Ada Obi CV.pdf',
         size: upload.buffer.length,
       });
+
       expect(bucket.objects.get(stored.path)?.data).toEqual(upload.buffer);
     });
 
@@ -125,6 +132,7 @@ describe('StorageService (integration)', () => {
       await expect(
         service.commit('user-1', 'primary-resume', ref),
       ).rejects.toThrow(NotFoundException);
+
       expect(bucket.objects.has(`users/user-1/primary-resume/${ref.key}`)).toBe(
         false,
       );
@@ -150,6 +158,7 @@ describe('StorageService (integration)', () => {
         'primary-resume',
         file(),
       );
+
       const removed = await service.uploadPending(
         'user-1',
         'primary-resume',

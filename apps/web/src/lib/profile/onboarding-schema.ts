@@ -16,11 +16,13 @@ import { z } from 'zod'
 
 const RESUME_LIMITS = UPLOAD_PURPOSES['primary-resume']
 export const RESUME_MAX_MB = RESUME_LIMITS.maxBytes / BYTES_PER_MB
+
 export const RESUME_ERRORS = {
   missing: 'Add your resume',
   wrongType: 'Use a PDF or DOCX',
   tooLarge: `That file is over ${RESUME_MAX_MB} MB`,
 } as const
+
 const WHOLE_NUMBER = /^\d+$/
 const SALARY_SEPARATORS = /[,\s]/g
 
@@ -43,15 +45,19 @@ const resume = z.custom<File | null>().transform((file, ctx) => {
     ctx.addIssue({ code: 'custom', message: RESUME_ERRORS.missing })
     return z.NEVER
   }
+
   const mimeType = resumeMimeType(file)
+
   if (!mimeType) {
     ctx.addIssue({ code: 'custom', message: RESUME_ERRORS.wrongType })
     return z.NEVER
   }
+
   if (file.size > RESUME_LIMITS.maxBytes) {
     ctx.addIssue({ code: 'custom', message: RESUME_ERRORS.tooLarge })
     return z.NEVER
   }
+
   // Uploaded with its real type, which the server checks.
   return file.type === mimeType ? file : new File([file], file.name, { type: mimeType })
 })
@@ -66,20 +72,25 @@ const yearsOfExperience = z
 // Accepts "60,000" and "60 000" as well as "60000".
 const salaryAmount = z.string().transform((value, ctx) => {
   const digits = value.replace(SALARY_SEPARATORS, '')
+
   if (digits !== '' && !WHOLE_NUMBER.test(digits)) {
     ctx.addIssue({ code: 'custom', message: 'Enter a whole number' })
     return z.NEVER
   }
+
   const amount = Number(digits)
+
   // An empty field reads as 0 here, so it gets the same message as a zero.
   if (amount <= 0) {
     ctx.addIssue({ code: 'custom', message: SALARY_MESSAGE })
     return z.NEVER
   }
+
   if (!Number.isSafeInteger(amount)) {
     ctx.addIssue({ code: 'custom', message: 'Enter a smaller amount' })
     return z.NEVER
   }
+
   return amount
 })
 

@@ -6,6 +6,7 @@ import path from 'node:path';
 const distCjsDir = path.join(import.meta.dirname, '..', 'dist', 'cjs');
 
 mkdirSync(distCjsDir, { recursive: true });
+
 writeFileSync(
   path.join(distCjsDir, 'package.json'),
   `${JSON.stringify({ type: 'commonjs' })}\n`,

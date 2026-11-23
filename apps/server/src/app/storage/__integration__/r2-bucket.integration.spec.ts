@@ -10,6 +10,7 @@ const config = {
   secretAccessKey: 'secret-key',
   bucketName: 'quarry-test',
 };
+
 const BUCKET_URL = 'https://quarry-test.account-1.r2.cloudflarestorage.com';
 
 type SeenRequest = { method: string; path: string; headers: Headers };
@@ -53,6 +54,7 @@ describe('R2Bucket (integration)', () => {
     server.use(
       http.head(`${BUCKET_URL}/*`, ({ request }) => {
         record(request);
+
         return new HttpResponse(null, {
           headers: {
             'content-length': '1234',
@@ -63,6 +65,7 @@ describe('R2Bucket (integration)', () => {
       }),
       http.put(`${BUCKET_URL}/*`, ({ request }) => {
         record(request);
+
         return HttpResponse.xml(
           '<CopyObjectResult><ETag>"etag"</ETag><LastModified>2026-01-01T00:00:00.000Z</LastModified></CopyObjectResult>',
         );
@@ -79,10 +82,12 @@ describe('R2Bucket (integration)', () => {
       contentType: 'application/pdf',
       metadata: { 'original-name': 'cv.pdf' },
     });
+
     expect(seen.map(({ method, path }) => [method, path])).toEqual([
       ['HEAD', '/pending/user-1/primary-resume/a.pdf'],
       ['PUT', '/users/user-1/primary-resume/a.pdf'],
     ]);
+
     expect(decodeURIComponent(seen[1].headers.get('x-amz-copy-source')!)).toBe(
       'quarry-test/pending/user-1/primary-resume/a.pdf',
     );
@@ -157,6 +162,7 @@ describe('R2Bucket (integration)', () => {
     expect(`${url.origin}${url.pathname}`).toBe(
       `${BUCKET_URL}/users/user-1/primary-resume/a.pdf`,
     );
+
     expect(url.searchParams.get('X-Amz-Expires')).toBe('300');
     expect(url.searchParams.get('X-Amz-Signature')).toBeTruthy();
   });

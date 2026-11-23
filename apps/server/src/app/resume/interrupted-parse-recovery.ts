@@ -32,6 +32,7 @@ export class InterruptedParseRecovery implements OnApplicationBootstrap {
         resumeId: claimed.id,
         userId: claimed.user.toHexString(),
       });
+
       await this.resumeService.runParse(claimed.id);
     }
   }
