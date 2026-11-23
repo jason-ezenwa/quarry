@@ -79,7 +79,7 @@ describe('Onboarding (integration)', () => {
 
     const router = renderRoute('/onboarding')
 
-    expect(await screen.findByText('Welcome, Ada Obi')).toBeInTheDocument()
+    expect(await screen.findByText('Ada Obi')).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/')
   })
 
@@ -217,7 +217,7 @@ describe('Onboarding (integration)', () => {
     signInAs()
     await act(() => vi.advanceTimersByTimeAsync(2500))
 
-    expect(await screen.findByText('Welcome, Ada Obi')).toBeInTheDocument()
+    expect(await screen.findByText('Ada Obi')).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/')
   })
 
@@ -293,7 +293,7 @@ describe('Onboarding (integration)', () => {
     await fillValidAnswers(user)
     await user.click(screen.getByRole('button', { name: 'Save and continue' }))
 
-    expect(await screen.findByText('Welcome, Ada Obi')).toBeInTheDocument()
+    expect(await screen.findByText('Ada Obi')).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/')
   })
 })

@@ -1,5 +1,5 @@
 import type { FormEventHandler, ReactNode } from 'react'
-import { Wordmark } from '@/components/app-header/wordmark'
+import { Wordmark } from '@/components/brand/wordmark'
 import { Button } from '@/components/ui/button'
 
 type AuthCardProps = {

@@ -1,8 +1,9 @@
-import { Wordmark } from '@/components/app-header/wordmark'
+import { Wordmark } from '@/components/brand/wordmark'
 import { ButtonSection } from './button-section.tsx'
 import { ColorSection } from './color-section.tsx'
 import { FeedbackSection } from './feedback-section.tsx'
 import { FormSection } from './form-section.tsx'
+import { NavigationSection } from './navigation-section.tsx'
 import { SurfaceSection } from './surface-section.tsx'
 import { TypeSection } from './type-section.tsx'
 
@@ -24,6 +25,7 @@ export function Component() {
       <FormSection />
       <FeedbackSection />
       <SurfaceSection />
+      <NavigationSection />
     </main>
   )
 }

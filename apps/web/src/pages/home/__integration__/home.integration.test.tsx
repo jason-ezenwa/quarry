@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
@@ -14,13 +14,12 @@ describe('Home (integration)', () => {
     expect(router.state.location.pathname).toBe('/sign-in')
   })
 
-  it('shows the signed-in user', async () => {
+  it('shows who is signed in at the foot of the sidebar', async () => {
     signInAs()
 
     renderRoute('/')
 
-    expect(await screen.findByText('Welcome, Ada Obi')).toBeInTheDocument()
-    expect(screen.getByText('Signed in as ada@example.com')).toBeInTheDocument()
+    expect(await screen.findByText('Ada Obi')).toBeInTheDocument()
   })
 
   it('signs out and returns to sign-in', async () => {
@@ -33,10 +32,23 @@ describe('Home (integration)', () => {
     )
     const router = renderRoute('/')
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Sign out' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Account' }))
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Sign out' }))
 
     expect(await screen.findByRole('button', { name: 'Sign in' })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/sign-in')
+  })
+
+  it('opens the menu from the page header and closes it on navigation', async () => {
+    signInAs()
+    const router = renderRoute('/')
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Open menu' }))
+    await userEvent.click(within(await screen.findByRole('dialog', { name: 'Menu' })).getByRole('link', { name: 'Profile' }))
+
+    expect(await screen.findByRole('heading', { name: 'Profile', level: 1 })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/profile')
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Menu' })).not.toBeInTheDocument())
   })
 
   describe('review resume callout', () => {
@@ -79,7 +91,7 @@ describe('Home (integration)', () => {
 
       renderRoute('/')
 
-      await screen.findByText('Welcome, Ada Obi')
+      await screen.findByText('Ada Obi')
       await waitFor(() => expect(answered).toBe(true))
       expect(screen.queryByRole('status')).not.toBeInTheDocument()
       expect(screen.queryByText('Your resume is ready')).not.toBeInTheDocument()

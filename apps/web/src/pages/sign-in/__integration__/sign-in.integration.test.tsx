@@ -27,7 +27,7 @@ describe('Sign in (integration)', () => {
 
     await fillAndSubmit('Ada@Example.com', 'correct-horse')
 
-    expect(await screen.findByText('Welcome, Ada Obi')).toBeInTheDocument()
+    expect(await screen.findByText('Ada Obi')).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/')
     expect(body).toMatchObject({ email: 'ada@example.com', password: 'correct-horse' })
   })
@@ -62,7 +62,7 @@ describe('Sign in (integration)', () => {
 
     const router = renderRoute('/sign-in')
 
-    expect(await screen.findByText('Welcome, Ada Obi')).toBeInTheDocument()
+    expect(await screen.findByText('Ada Obi')).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/')
   })
 })

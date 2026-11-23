@@ -1,18 +1,9 @@
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCurrentUser } from '@/hooks/use-current-user'
-
-const WHITESPACE = /\s+/
-
-function initials(name: string) {
-  return name
-    .trim()
-    .split(WHITESPACE)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join('')
-}
+import { getInitials } from '@/lib/get-initials'
 
 export function AccountDetails() {
   const { data: user, isPending, isError } = useCurrentUser()
@@ -31,12 +22,9 @@ export function AccountDetails() {
           </Alert>
         ) : (
           <div className="flex items-center gap-3.5">
-            <span
-              aria-hidden="true"
-              className="flex size-10 shrink-0 items-center justify-center rounded-full bg-fit text-ui-strong text-fit-foreground"
-            >
-              {initials(user.name)}
-            </span>
+            <Avatar size="lg" aria-hidden="true">
+              <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+            </Avatar>
             <div className="flex min-w-0 flex-col gap-0.5">
               <span className="text-ui-strong">{user.name}</span>
               <span className="text-small wrap-anywhere text-muted-foreground">{user.email}</span>

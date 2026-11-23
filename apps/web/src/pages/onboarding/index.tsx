@@ -1,7 +1,7 @@
 import type { OnboardingAnswers, ProfileResponse } from '@quarry/contracts'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { Wordmark } from '@/components/app-header/wordmark'
+import { Wordmark } from '@/components/brand/wordmark'
 import { PATHS } from '@/lib/auth/auth.constants'
 import { cn } from '@/lib/utils'
 import { OnboardingForm } from '@/features/onboarding/components/onboarding-form'
