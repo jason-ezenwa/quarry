@@ -169,6 +169,7 @@ describe('Onboarding (integration)', () => {
 
     const card = await screen.findByRole('region', { name: 'Your search' })
     expect(screen.getByRole('heading', { name: "You're in, Ada." })).toBeInTheDocument()
+    expect(within(card).getByText('No. 0001')).toBeInTheDocument()
     expect(within(card).getByText('Senior Product Engineer, Founding Engineer')).toBeInTheDocument()
     expect(within(card).getByText('Remote, Hybrid')).toBeInTheDocument()
     expect(within(card).getByText('Nigeria')).toBeInTheDocument()
