@@ -86,11 +86,11 @@ function ExperienceSection() {
               defaultOpen={index === 0 || !role.title}
             >
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <ResumeEditorField path={[...path, 'title']} label="Title" />
                 <ResumeEditorField path={[...path, 'company']} label="Company" />
+                <ResumeEditorField path={[...path, 'location']} label="Location" />
+                <ResumeEditorField path={[...path, 'title']} label="Title" className="md:col-span-2" />
                 <ResumeEditorField path={[...path, 'startDate']} label="Start" placeholder="YYYY-MM" />
                 <ResumeEditorField path={[...path, 'endDate']} label="End" placeholder="Present" />
-                <ResumeEditorField path={[...path, 'location']} label="Location" className="md:col-span-2" />
               </div>
               <ResumeEditorBulletList path={[...path, 'bullets']} label="Bullets" itemLabel="Bullet" />
             </ResumeEditorEntry>

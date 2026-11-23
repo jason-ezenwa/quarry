@@ -67,16 +67,19 @@ export function PrimaryResume({ resume }: { resume: Resume }) {
           <ResumeEntryList>
             {resume.experience.map((role, index) => (
               <ResumeEntry key={index}>
-                <EntryTop
-                  heading={
-                    <>
-                      <span>{role.company}</span>
-                      {role.location ? <span>{`  ·  ${role.location}`}</span> : null}
-                    </>
-                  }
-                  meta={formatDateRange(role.startDate, role.endDate)}
-                />
-                <p className="text-ui">{role.title}</p>
+                {/* The company line and the title read as one heading, so they sit closer than the bullets. */}
+                <div className="flex flex-col gap-0.5">
+                  <EntryTop
+                    heading={
+                      <>
+                        <span>{role.company}</span>
+                        {role.location ? <span>{`  ·  ${role.location}`}</span> : null}
+                      </>
+                    }
+                    meta={formatDateRange(role.startDate, role.endDate)}
+                  />
+                  <p className="text-ui">{role.title}</p>
+                </div>
                 <Bullets items={role.bullets} />
               </ResumeEntry>
             ))}
