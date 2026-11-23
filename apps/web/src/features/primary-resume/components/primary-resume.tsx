@@ -74,7 +74,7 @@ export function PrimaryResume({ resume }: { resume: Resume }) {
                 }
                 meta={formatDateRange(role.startDate, role.endDate)}
               />
-              <ResumeEntryMeta>{role.title}</ResumeEntryMeta>
+              <p className="text-ui">{role.title}</p>
               <Bullets items={role.bullets} />
             </ResumeEntry>
           ))}
