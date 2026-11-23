@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/input'
 import { authClient } from '@/lib/auth-client'
 import { PATHS } from '@/lib/auth/auth.constants'
 import { signInSchema, type SignInValues } from '@/lib/auth/auth-schemas'
-import { queryClient } from '@/lib/query-client'
 
 export function SignInPage() {
   const navigate = useNavigate()
@@ -33,8 +32,6 @@ export function SignInPage() {
       return
     }
 
-    // Nothing cached for an earlier account may show for this one.
-    queryClient.clear()
     navigate(PATHS.home)
   }
 

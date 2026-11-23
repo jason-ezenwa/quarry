@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/input'
 import { authClient } from '@/lib/auth-client'
 import { PASSWORD_MIN_LENGTH, PATHS } from '@/lib/auth/auth.constants'
 import { signUpSchema, type SignUpValues } from '@/lib/auth/auth-schemas'
-import { queryClient } from '@/lib/query-client'
 
 export function SignUpPage() {
   const navigate = useNavigate()
@@ -37,8 +36,6 @@ export function SignUpPage() {
       return
     }
 
-    // Nothing cached for an earlier account may show for this one.
-    queryClient.clear()
     navigate(PATHS.onboarding)
   }
 

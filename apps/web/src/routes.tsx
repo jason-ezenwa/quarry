@@ -1,10 +1,7 @@
 import { createBrowserRouter, type RouteObject } from 'react-router'
 import { AppLayout } from './layouts/app-layout.tsx'
 import { RootErrorBoundary, RootHydrateFallback, RootLayout } from './layouts/root-layout.tsx'
-import { primaryResumeQueryOptions } from './features/primary-resume/primary-resume-api.ts'
-import { currentUserQueryOptions } from './hooks/use-current-user.ts'
 import { PATHS } from './lib/auth/auth.constants.ts'
-import { queryClient } from './lib/query-client.ts'
 import {
   requireNoProfile,
   requireNoSession,
@@ -18,14 +15,6 @@ import { ProfilePage } from './pages/profile/index.tsx'
 import { ResumePage } from './pages/resume/index.tsx'
 import { SignInPage } from './pages/sign-in/index.tsx'
 import { SignUpPage } from './pages/sign-up/index.tsx'
-
-// Once a session is known, the account and resume that every app page reads start alongside the profile check
-// rather than after it. Not awaited, so the gate's answer alone decides when the page renders.
-async function prefetchAppData() {
-  void queryClient.prefetchQuery(currentUserQueryOptions)
-  void queryClient.prefetchQuery(primaryResumeQueryOptions)
-  return null
-}
 
 // The design system page is a development aid, so it is left out of production builds.
 const developmentRoutes: RouteObject[] = import.meta.env.DEV
@@ -46,7 +35,7 @@ export const routes: RouteObject[] = [
     children: [
       {
         Component: AppLayout,
-        loader: sequence(requireSession, prefetchAppData, requireProfile),
+        loader: sequence(requireSession, requireProfile),
         children: [
           { path: PATHS.home, Component: HomePage },
           { path: PATHS.profile, Component: ProfilePage },
