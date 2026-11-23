@@ -2,11 +2,9 @@ import { Controller, Get, INestApplication, UseGuards } from '@nestjs/common';
 import { Types } from 'mongoose';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import {
-  createTestApp,
-  getTestBucket,
-} from '../../../../test/integration/create-test-app';
+import { createTestApp } from '../../../../test/integration/create-test-app';
 import { getTestDatabase } from '../../../../test/integration/database';
+import { fakeR2 } from '../../../../test/integration/fake-r2';
 import {
   signUp,
   TEST_ORIGIN,
@@ -134,7 +132,7 @@ describe('Profile (integration)', () => {
       });
 
       const path = `users/${userId}/primary-resume/${uploaded.body.key}`;
-      expect(getTestBucket(app).objects.get(path)?.data).toEqual(pdf().data);
+      expect(fakeR2.objects.get(path)?.data).toEqual(pdf().data);
 
       const resume = await getTestDatabase()
         .collection('resumes')
@@ -240,7 +238,7 @@ describe('Profile (integration)', () => {
         .collection('resumes')
         .findOne({ user: new Types.ObjectId(userId) });
 
-      const committed = [...getTestBucket(app).objects.keys()].filter((path) =>
+      const committed = [...fakeR2.objects.keys()].filter((path) =>
         path.startsWith(`users/${userId}/`),
       );
 

@@ -33,14 +33,3 @@ export type StoredObjectInfo = {
   contentType: string;
   metadata: Record<string, string>;
 };
-
-// What StorageService needs from a bucket, so tests can swap in an in-memory one.
-export interface StorageBucket {
-  put(path: string, data: Buffer, options: PutObjectOptions): Promise<void>;
-  // Throws StorageObjectNotFoundError when the path holds nothing.
-  get(path: string): Promise<Buffer>;
-  // Throws StorageObjectNotFoundError when the source holds nothing.
-  copy(source: string, destination: string): Promise<StoredObjectInfo>;
-  delete(path: string): Promise<void>;
-  getSignedUrl(path: string, expiresInSeconds: number): Promise<string>;
-}
