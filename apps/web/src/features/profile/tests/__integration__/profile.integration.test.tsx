@@ -33,8 +33,9 @@ describe('Profile (integration)', () => {
   it('shows the account and the onboarding answers, read-only', async () => {
     await openProfile(primaryResumeResponse())
 
-    expect(await screen.findByText('Ada Obi')).toBeInTheDocument()
-    expect(screen.getByText('ada@example.com')).toBeInTheDocument()
+    const account = within(screen.getByRole('region', { name: 'Account' }))
+    expect(await account.findByText('Ada Obi')).toBeInTheDocument()
+    expect(account.getByText('ada@example.com')).toBeInTheDocument()
 
     const answers = within(screen.getByRole('region', { name: "What you're looking for" }))
     expect(await answers.findByText('Senior Product Engineer')).toBeInTheDocument()
@@ -71,7 +72,7 @@ describe('Profile (integration)', () => {
     expect(calls.sort()).toEqual(['profile', 'resume', 'user'])
   })
 
-  it('is reachable from the header', async () => {
+  it('is reachable from the sidebar', async () => {
     signInAs()
     const router = renderRoute('/')
 

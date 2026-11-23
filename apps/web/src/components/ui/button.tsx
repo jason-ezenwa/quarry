@@ -27,6 +27,8 @@ const buttonVariants = cva(
         icon: "size-control",
         "icon-sm": "size-control-sm [&_svg:not([class*='size-'])]:size-3.5",
         "icon-lg": "size-control-lg",
+        // The 44px touch target in the phone top bar.
+        "icon-touch": "size-11 [&_svg:not([class*='size-'])]:size-5",
       },
     },
     // Sizes add side padding and height, but a link sits flush with the text around it.
