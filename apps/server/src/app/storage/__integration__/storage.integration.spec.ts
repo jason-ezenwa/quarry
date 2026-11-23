@@ -6,7 +6,7 @@ import {
 import { Test } from '@nestjs/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { InMemoryBucket } from '../../../test-utils/in-memory-bucket';
-import { STORAGE_BUCKET } from '../storage-bucket';
+import { STORAGE_BUCKET } from '../storage.constants';
 import { StorageService } from '../storage.service';
 import type { UploadFile } from '../storage.types';
 

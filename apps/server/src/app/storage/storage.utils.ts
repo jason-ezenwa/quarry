@@ -4,9 +4,7 @@ import {
   type UploadedFileRef,
   type UploadPurpose,
 } from '@quarry/contracts';
-
-// `pending` holds uploads awaiting submit; `users` holds committed files.
-export type StorageStage = 'pending' | 'users';
+import type { StorageStage } from './storage.types';
 
 export function buildStorageFolder(
   stage: StorageStage,
@@ -25,9 +23,6 @@ export function assertMimeTypeMatchesKey({ key, mimeType }: UploadedFileRef) {
     throw new BadRequestException(`mimeType does not match upload ${key}`);
   }
 }
-
-// Object metadata travels as an HTTP header, which only carries ASCII.
-export const ORIGINAL_NAME_METADATA_KEY = 'original-name';
 
 export function encodeOriginalName(name: string): string {
   return encodeURIComponent(name);

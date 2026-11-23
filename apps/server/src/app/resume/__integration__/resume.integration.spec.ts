@@ -21,7 +21,7 @@ import {
   PARSE_MAX_OUTPUT_TOKENS,
   RESUME_PARSE_MODEL,
   STALE_PARSE_AFTER_MS,
-} from '../resume.constants';
+} from '../resume-parser.constants';
 
 const PDF = 'application/pdf';
 

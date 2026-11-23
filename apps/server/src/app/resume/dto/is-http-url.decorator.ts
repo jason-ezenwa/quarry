@@ -1,6 +1,5 @@
 import { ValidateBy, type ValidationOptions } from 'class-validator';
-
-const HTTP_PROTOCOLS = new Set(['http:', 'https:']);
+import { HTTP_PROTOCOLS } from '../resume.constants';
 
 // The same rule as the contract's zod `httpUrl`, so a link the parser stored
 // is never refused when the user saves it unchanged.

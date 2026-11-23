@@ -4,13 +4,15 @@ import { FormProvider, useForm } from 'react-hook-form'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { ApiError } from '@/lib/api/api-fetch'
-import {
-  onboardingSchema,
-  RESUME_ERRORS,
-  type OnboardingFormValues,
-  type OnboardingSubmission,
-} from '@/lib/profile/onboarding-schema'
+import { onboardingSchema } from '@/lib/profile/onboarding-schema'
 import { createProfile, uploadPrimaryResume } from '@/lib/profile/profile-api'
+import {
+  HTTP_BAD_REQUEST,
+  HTTP_CONFLICT,
+  HTTP_PAYLOAD_TOO_LARGE,
+  RESUME_ERRORS,
+} from '@/lib/profile/profile.constants'
+import type { OnboardingFormValues, OnboardingSubmission } from '@/lib/profile/profile.types'
 import type { ProfileResponse, UploadedFileRef } from '@quarry/contracts'
 import {
   CountryField,
@@ -21,10 +23,6 @@ import {
   WorkSetupField,
 } from './onboarding-fields'
 import { defaultLocation } from './onboarding-options'
-
-const HTTP_BAD_REQUEST = 400
-const HTTP_CONFLICT = 409
-const HTTP_PAYLOAD_TOO_LARGE = 413
 
 type OnboardingFormProps = {
   onSaved: (profile: ProfileResponse) => void

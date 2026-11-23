@@ -9,20 +9,14 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import type { FactoryProvider } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-  STORAGE_BUCKET,
-  StorageObjectNotFoundError,
-  type PutObjectOptions,
-  type StorageBucket,
-  type StoredObjectInfo,
-} from './storage-bucket';
-
-export type R2Config = {
-  accountId: string;
-  accessKeyId: string;
-  secretAccessKey: string;
-  bucketName: string;
-};
+import { StorageObjectNotFoundError } from './storage-bucket';
+import { STORAGE_BUCKET } from './storage.constants';
+import type {
+  PutObjectOptions,
+  R2Config,
+  StorageBucket,
+  StoredObjectInfo,
+} from './storage.types';
 
 export function createR2Client({
   accountId,

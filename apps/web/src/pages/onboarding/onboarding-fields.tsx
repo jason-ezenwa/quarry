@@ -8,7 +8,8 @@ import { FileDrop } from '@/components/ui/file-drop'
 import { Input } from '@/components/ui/input'
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '@/components/ui/input-group'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
-import { RESUME_MAX_MB, type OnboardingFormValues } from '@/lib/profile/onboarding-schema'
+import { RESUME_MAX_MB } from '@/lib/profile/profile.constants'
+import type { OnboardingFormValues } from '@/lib/profile/profile.types'
 import { COUNTRY_OPTIONS, CURRENCY_OPTIONS, isCountryCode, WORK_SETUP_OPTIONS } from './onboarding-options'
 
 type FormRowProps = {

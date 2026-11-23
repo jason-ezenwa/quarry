@@ -1,9 +1,9 @@
-import {
-  StorageObjectNotFoundError,
-  type PutObjectOptions,
-  type StorageBucket,
-  type StoredObjectInfo,
-} from '../app/storage/storage-bucket';
+import { StorageObjectNotFoundError } from '../app/storage/storage-bucket';
+import type {
+  PutObjectOptions,
+  StorageBucket,
+  StoredObjectInfo,
+} from '../app/storage/storage.types';
 
 export type StoredObject = PutObjectOptions & {
   data: Buffer;

@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
-import { STALE_PARSE_AFTER_MS } from './resume.constants';
+import { STALE_PARSE_AFTER_MS } from './resume-parser.constants';
 import { ResumeService } from './resume.service';
 
 // Re-runs parses that a restart cut off. Runs once at startup, never on a

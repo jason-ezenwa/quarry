@@ -1,7 +1,7 @@
 import type { AnthropicProvider } from '@ai-sdk/anthropic';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { resumeSchema, type Resume as ResumeContent } from '@quarry/contracts';
+import { resumeSchema } from '@quarry/contracts';
 import {
   APICallError,
   generateText,
@@ -16,15 +16,19 @@ import { Model } from 'mongoose';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { StorageObjectNotFoundError } from '../storage/storage-bucket';
 import { StorageService } from '../storage/storage.service';
-import { ANTHROPIC } from './anthropic.provider';
 import {
+  ANTHROPIC,
   PARSE_MAX_OUTPUT_TOKENS,
   PARSE_RETRY_DELAYS_MS,
   PARSE_TIMEOUT_MS,
   RESUME_PARSE_MODEL,
   RESUME_PARSE_SYSTEM_PROMPT,
-  type ParseFailureReason,
-} from './resume.constants';
+} from './resume-parser.constants';
+import type {
+  ParseFailureReason,
+  ParseLogContext,
+  ParseResult,
+} from './resume-parser.types';
 import {
   Resume,
   ResumeDocument,
@@ -38,17 +42,6 @@ class ParseAttemptError extends Error {
     super(reason);
   }
 }
-
-type ParseLogContext = {
-  resumeId: string;
-  userId: string;
-  model: string;
-};
-
-type ParseResult = {
-  content: ResumeContent;
-  usage: ResumeParseUsage;
-};
 
 // Logs carry ids, the model, token counts and failure reasons only: never
 // resume content, file contents or request and response bodies.

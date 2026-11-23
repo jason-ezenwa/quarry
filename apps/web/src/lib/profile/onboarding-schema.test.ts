@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { onboardingSchema, type OnboardingFormValues } from './onboarding-schema'
+import { onboardingSchema } from './onboarding-schema'
+import type { OnboardingFormValues } from './profile.types'
 
 const PDF = 'application/pdf'
 const MB = 1024 * 1024

@@ -1,10 +1,8 @@
 import {
-  BYTES_PER_MB,
   COUNTRY_CODES,
   CURRENCIES,
   FILE_EXTENSIONS,
   TARGET_ROLES_LIMITS,
-  UPLOAD_PURPOSES,
   WORK_SETUPS,
   YEARS_OF_EXPERIENCE_LIMITS,
   type CountryCode,
@@ -13,24 +11,15 @@ import {
   type UploadMimeType,
 } from '@quarry/contracts'
 import { z } from 'zod'
-
-const RESUME_LIMITS = UPLOAD_PURPOSES['primary-resume']
-export const RESUME_MAX_MB = RESUME_LIMITS.maxBytes / BYTES_PER_MB
-
-export const RESUME_ERRORS = {
-  missing: 'Add your resume',
-  wrongType: 'Use a PDF or DOCX',
-  tooLarge: `That file is over ${RESUME_MAX_MB} MB`,
-} as const
-
-const WHOLE_NUMBER = /^\d+$/
-const SALARY_SEPARATORS = /[,\s]/g
-
-const YEARS_MESSAGE = `Use a number from ${YEARS_OF_EXPERIENCE_LIMITS.min} to ${YEARS_OF_EXPERIENCE_LIMITS.max}`
-const SALARY_MESSAGE = 'Enter an amount above 0'
-
-// Some systems report no type, or a generic one, for a .docx, so fall back to the extension.
-const UNKNOWN_FILE_TYPES = ['', 'application/octet-stream']
+import {
+  RESUME_ERRORS,
+  RESUME_LIMITS,
+  SALARY_MESSAGE,
+  SALARY_SEPARATORS,
+  UNKNOWN_FILE_TYPES,
+  WHOLE_NUMBER,
+  YEARS_MESSAGE,
+} from './profile.constants'
 
 function resumeMimeType(file: File): UploadMimeType | null {
   const allowed: readonly string[] = RESUME_LIMITS.mimeTypes
@@ -114,8 +103,3 @@ export const onboardingSchema = z
       salaryFloor: { amount: salaryAmount, currency },
     }),
   )
-
-// The form's own values: selects and number fields hold strings until the schema parses them.
-export type OnboardingFormValues = z.input<typeof onboardingSchema>
-
-export type OnboardingSubmission = z.output<typeof onboardingSchema>

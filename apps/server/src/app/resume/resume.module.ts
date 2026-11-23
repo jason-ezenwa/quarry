@@ -9,7 +9,7 @@ import { ResumeController } from './resume.controller';
 import {
   DEFAULT_PARSE_RETRY_DELAYS_MS,
   PARSE_RETRY_DELAYS_MS,
-} from './resume.constants';
+} from './resume-parser.constants';
 import { Resume, ResumeSchema } from './resume.schema';
 import { ResumeService } from './resume.service';
 
