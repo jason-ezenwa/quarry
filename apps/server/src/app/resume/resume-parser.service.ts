@@ -106,13 +106,11 @@ export class ResumeParserService {
     context: ParseLogContext,
   ): Promise<{ result: ParseResult } | { reason: ParseFailureReason }> {
     const attempts = this.retryDelaysMs.length + 1;
-    // The message sent to Claude: the resume file (or its text) plus the
-    // instruction. Built on the first attempt and reused by retries, so a
-    // retry doesn't download and convert the file again.
     let content: UserContent | undefined;
 
     for (let attempt = 1; ; attempt++) {
       try {
+        // Built on the first attempt only; retries reuse it.
         content ??= await this.buildContent(file);
 
         return { result: await this.requestParse(content) };
