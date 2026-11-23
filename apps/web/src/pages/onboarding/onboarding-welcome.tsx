@@ -54,6 +54,10 @@ export function OnboardingWelcome({ answers }: { answers: OnboardingAnswers }) {
         <div className="flex items-center gap-2.5">
           <BirdIcon weight="fill" className="size-5" aria-hidden="true" />
           <span className="text-wordmark">Your search</span>
+          {/* Decorative, like a ticket number: not a real count. */}
+          <span className="ml-auto text-label opacity-72" aria-hidden="true">
+            No. 0001
+          </span>
         </div>
         <dl className="flex flex-col gap-6">
           <div className="flex flex-col gap-1.5">
