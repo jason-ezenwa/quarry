@@ -128,6 +128,14 @@ done
 echo "Writing environment variables to apps/server/.env..."
 printenv > apps/server/.env
 
+# Placeholders for anything the environment does not set, so the server boots.
+# Uploads and parsing need the real values, which tests never do.
+for name in R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET_NAME APP_ANTHROPIC_API_KEY; do
+  if ! grep -q "^${name}=" apps/server/.env; then
+    echo "${name}=" >> apps/server/.env
+  fi
+done
+
 # Vite only exposes VITE_* variables to the browser, and loads .env.local by
 # itself, independent of turbo's strict env mode — the same file a local
 # checkout has.

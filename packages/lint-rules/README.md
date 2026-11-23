@@ -5,9 +5,10 @@ They are written against the ESLint rule API, which oxlint's JS plugin support
 runs as is, so both apps load them from their `.oxlintrc.json` under the
 `local` namespace.
 
-Each app lists the rules it uses in its own config, because oxlint's JSON
+Each workspace lists the rules it uses in its own config, because oxlint's JSON
 config cannot import a rule set. When a rule is added here, add it to the
-config of each app it applies to.
+config of each workspace it applies to. `packages/contracts` runs the three
+rules both apps share.
 
 | Rule | Server | Web | Kind |
 | --- | --- | --- | --- |

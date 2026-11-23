@@ -19,7 +19,7 @@
     "noImplicitAny": true,
     "strictBindCallApply": false,
     "strictPropertyInitialization": false,
-    "types": ["node"],
+    "types": ["node", "multer"],
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": false
   }

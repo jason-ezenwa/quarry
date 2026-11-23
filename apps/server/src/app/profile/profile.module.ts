@@ -1,0 +1,21 @@
+import { forwardRef, Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
+import { ResumeModule } from '../resume/resume.module';
+import { StorageModule } from '../storage/storage.module';
+import { ProfileController } from './profile.controller';
+import { Profile, ProfileSchema } from './profile.schema';
+import { ProfileService } from './profile.service';
+import { RequireProfileGuard } from './require-profile.guard';
+
+@Module({
+  imports: [
+    MongooseModule.forFeature([{ name: Profile.name, schema: ProfileSchema }]),
+    StorageModule,
+    // ResumeModule imports this module back for RequireProfileGuard.
+    forwardRef(() => ResumeModule),
+  ],
+  controllers: [ProfileController],
+  providers: [ProfileService, RequireProfileGuard],
+  exports: [ProfileService, RequireProfileGuard],
+})
+export class ProfileModule {}
