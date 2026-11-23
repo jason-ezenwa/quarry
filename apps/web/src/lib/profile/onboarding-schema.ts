@@ -29,7 +29,8 @@ function resumeMimeType(file: File): UploadMimeType | null {
   return RESUME_LIMITS.mimeTypes.find((mimeType) => FILE_EXTENSIONS[mimeType] === extension) ?? null
 }
 
-const resume = z.custom<File | null>().transform((file, ctx) => {
+// The primary resume file, checked before it is uploaded, at onboarding or on re-upload.
+export const resumeFileSchema = z.custom<File | null>().transform((file, ctx) => {
   if (!(file instanceof File)) {
     ctx.addIssue({ code: 'custom', message: RESUME_ERRORS.missing })
     return z.NEVER
@@ -85,7 +86,7 @@ const salaryAmount = z.string().transform((value, ctx) => {
 
 export const onboardingSchema = z
   .object({
-    resume,
+    resume: resumeFileSchema,
     targetRoles: z
       .array(z.string().trim().min(1).max(TARGET_ROLES_LIMITS.maxLength))
       .min(TARGET_ROLES_LIMITS.minItems, 'Add at least one role')

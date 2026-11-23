@@ -1,10 +1,5 @@
 import { COUNTRIES, CURRENCIES, type CountryCode, type Currency, type WorkSetup } from '@quarry/contracts'
-
-export const WORK_SETUP_LABELS: Record<WorkSetup, string> = {
-  remote: 'Remote',
-  hybrid: 'Hybrid',
-  onsite: 'Onsite',
-}
+import { WORK_SETUP_LABELS } from '@/lib/profile/profile-format'
 
 export const WORK_SETUP_OPTIONS = Object.entries(WORK_SETUP_LABELS).map(([value, label]) => ({
   value: value as WorkSetup,

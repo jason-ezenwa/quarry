@@ -11,6 +11,8 @@ import {
 } from './lib/auth/session-loaders.ts'
 import { HomePage } from './pages/home/index.tsx'
 import { OnboardingPage } from './pages/onboarding/index.tsx'
+import { ProfilePage } from './pages/profile/index.tsx'
+import { ResumePage } from './pages/resume/index.tsx'
 import { SignInPage } from './pages/sign-in/index.tsx'
 import { SignUpPage } from './pages/sign-up/index.tsx'
 
@@ -34,7 +36,11 @@ export const routes: RouteObject[] = [
       {
         Component: AppLayout,
         loader: sequence(requireSession, requireProfile),
-        children: [{ path: PATHS.home, Component: HomePage }],
+        children: [
+          { path: PATHS.home, Component: HomePage },
+          { path: PATHS.profile, Component: ProfilePage },
+          { path: PATHS.resume, Component: ResumePage },
+        ],
       },
       { path: PATHS.onboarding, loader: sequence(requireSession, requireNoProfile), Component: OnboardingPage },
       { path: PATHS.signIn, loader: requireNoSession, Component: SignInPage },

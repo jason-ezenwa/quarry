@@ -4,16 +4,8 @@ import { FilePdfIcon } from "@phosphor-icons/react/dist/csr/FilePdf"
 import { UploadSimpleIcon } from "@phosphor-icons/react/dist/csr/UploadSimple"
 import { XIcon } from "@phosphor-icons/react/dist/csr/X"
 import { Button } from "@/components/ui/button"
+import { formatFileSize } from "@/lib/format-file-size"
 import { cn } from "@/lib/utils"
-
-const BYTES_PER_KB = 1024
-const BYTES_PER_MB = BYTES_PER_KB * 1024
-
-function formatFileSize(bytes: number) {
-  return bytes >= BYTES_PER_MB
-    ? `${(bytes / BYTES_PER_MB).toFixed(1)} MB`
-    : `${Math.max(1, Math.round(bytes / BYTES_PER_KB))} KB`
-}
 
 type FileDropProps = Omit<React.ComponentProps<"input">, "value" | "onChange" | "type"> & {
   file: File | null

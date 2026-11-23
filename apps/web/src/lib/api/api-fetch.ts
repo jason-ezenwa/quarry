@@ -26,5 +26,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     throw new ApiError(response.status, body?.message ?? response.statusText)
   }
 
-  return (await response.json()) as T
+  // A 202 or 204 can come back with no body at all.
+  const text = await response.text()
+  return (text ? JSON.parse(text) : undefined) as T
 }
