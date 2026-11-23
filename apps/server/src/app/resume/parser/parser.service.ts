@@ -14,8 +14,8 @@ import {
 import mammoth from 'mammoth';
 import { Model } from 'mongoose';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { StorageObjectNotFoundError } from '../storage/storage-bucket';
-import { StorageService } from '../storage/storage.service';
+import { StorageObjectNotFoundError } from '../../storage/storage-bucket';
+import { StorageService } from '../../storage/storage.service';
 import {
   ANTHROPIC,
   PARSE_MAX_OUTPUT_TOKENS,
@@ -23,19 +23,19 @@ import {
   PARSE_TIMEOUT_MS,
   RESUME_PARSE_MODEL,
   RESUME_PARSE_SYSTEM_PROMPT,
-} from './resume-parser.constants';
+} from './parser.constants';
 import type {
   ParseFailureReason,
   ParseLogContext,
   ParseResult,
-} from './resume-parser.types';
+} from './parser.types';
 import {
   Resume,
   ResumeDocument,
   ResumeFile,
   ResumeParseUsage,
-} from './resume.schema';
-import { toResumeContentUpdate } from './resume.utils';
+} from '../resume.schema';
+import { toResumeContentUpdate } from '../resume.utils';
 
 class ParseAttemptError extends Error {
   constructor(readonly reason: ParseFailureReason) {

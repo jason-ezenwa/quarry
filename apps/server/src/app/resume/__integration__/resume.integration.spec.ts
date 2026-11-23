@@ -16,12 +16,12 @@ import {
   TEST_ORIGIN,
 } from '../../../lib/__integration__/sign-up.fixture';
 import { InMemoryBucket } from '../../../test-utils/in-memory-bucket';
-import { InterruptedParseRecovery } from '../interrupted-parse-recovery';
+import { InterruptedParseRecovery } from '../parser/interrupted-parse-recovery';
 import {
   PARSE_MAX_OUTPUT_TOKENS,
   RESUME_PARSE_MODEL,
   STALE_PARSE_AFTER_MS,
-} from '../resume-parser.constants';
+} from '../parser/parser.constants';
 
 const PDF = 'application/pdf';
 

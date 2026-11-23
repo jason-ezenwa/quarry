@@ -1,6 +1,6 @@
 import type { Resume as ResumeContent } from '@quarry/contracts';
-import type { PARSE_FAILURE_REASONS } from './resume-parser.constants';
-import type { ResumeParseUsage } from './resume.schema';
+import type { PARSE_FAILURE_REASONS } from './parser.constants';
+import type { ResumeParseUsage } from '../resume.schema';
 
 export type ParseFailureReason = (typeof PARSE_FAILURE_REASONS)[number];
 

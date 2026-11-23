@@ -13,7 +13,7 @@ import type {
 import { ClientSession, Model, type QueryFilter, Types } from 'mongoose';
 import { StorageService } from '../storage/storage.service';
 import type { StoredFile } from '../storage/storage.types';
-import { ResumeParserService } from './resume-parser.service';
+import { ResumeParserService } from './parser/parser.service';
 import { Resume, ResumeDocument, ResumeFile } from './resume.schema';
 import type { CreatePrimaryResumeInput } from './resume.types';
 import { toPrimaryResumeResponse, toResumeContentUpdate } from './resume.utils';
