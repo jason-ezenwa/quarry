@@ -33,17 +33,23 @@ function SheetContent({
   className,
   children,
   side = "left",
+  hideFrom,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "left" | "right"
+  // Hides the sheet and its scrim from this breakpoint up, for a menu that only phones use.
+  hideFrom?: "md"
 }) {
+  const hidden = hideFrom === "md" && "md:hidden"
+
   return (
     <SheetPrimitive.Portal>
-      <SheetOverlay />
+      <SheetOverlay className={cn(hidden)} />
       <SheetPrimitive.Content
         data-slot="sheet-content"
         data-side={side}
         className={cn(
+          hidden,
           "fixed inset-y-0 z-50 flex h-full w-3/4 max-w-72 flex-col bg-panel text-ui text-foreground shadow-lifted outline-none transition ease-in-out data-[side=left]:left-0 data-[side=right]:right-0 data-open:animate-in data-open:duration-200 data-closed:animate-out data-closed:duration-150 data-[side=left]:data-open:slide-in-from-left data-[side=left]:data-closed:slide-out-to-left data-[side=right]:data-open:slide-in-from-right data-[side=right]:data-closed:slide-out-to-right",
           className
         )}

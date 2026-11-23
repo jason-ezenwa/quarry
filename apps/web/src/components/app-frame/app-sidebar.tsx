@@ -7,8 +7,8 @@ import { PATHS } from '@/lib/auth/auth.constants'
 import { AccountMenu } from './account-menu'
 import { NavItem } from './nav-item'
 
-// The sidebar on larger screens, and the menu sheet on phones. onNavigate closes the sheet.
-export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
+// The sidebar on larger screens, and the menu sheet on phones.
+export function AppSidebar() {
   return (
     <div className="flex h-full flex-col gap-4.5 px-2.5 py-3.5">
       <div className="flex h-8 items-center px-1.5">
@@ -20,10 +20,10 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
         New application
       </Button>
       <nav aria-label="Main" className="flex flex-col gap-px">
-        <NavItem to={PATHS.home} icon={HouseIcon} end onNavigate={onNavigate}>
+        <NavItem to={PATHS.home} icon={HouseIcon} end>
           Home
         </NavItem>
-        <NavItem to={PATHS.profile} icon={UserCircleIcon} onNavigate={onNavigate}>
+        <NavItem to={PATHS.profile} icon={UserCircleIcon}>
           Profile
         </NavItem>
       </nav>

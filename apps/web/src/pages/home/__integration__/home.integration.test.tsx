@@ -14,12 +14,16 @@ describe('Home (integration)', () => {
     expect(router.state.location.pathname).toBe('/sign-in')
   })
 
-  it('shows who is signed in at the foot of the sidebar', async () => {
+  it('shows who is signed in, in the account menu', async () => {
     signInAs()
 
     renderRoute('/')
+    await screen.findByText('Ada Obi')
+    await userEvent.click(screen.getByRole('button', { name: 'Account' }))
 
-    expect(await screen.findByText('Ada Obi')).toBeInTheDocument()
+    const menu = within(await screen.findByRole('menu'))
+    expect(menu.getByText('Ada Obi')).toBeInTheDocument()
+    expect(menu.getByText('ada@example.com')).toBeInTheDocument()
   })
 
   it('signs out and returns to sign-in', async () => {
