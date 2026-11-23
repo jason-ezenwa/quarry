@@ -1,7 +1,10 @@
 import { createBrowserRouter, type RouteObject } from 'react-router'
 import { AppLayout } from './layouts/app-layout.tsx'
 import { RootErrorBoundary, RootHydrateFallback, RootLayout } from './layouts/root-layout.tsx'
+import { primaryResumeQueryOptions } from './features/primary-resume/primary-resume-api.ts'
+import { currentUserQueryOptions } from './hooks/use-current-user.ts'
 import { PATHS } from './lib/auth/auth.constants.ts'
+import { queryClient } from './lib/query-client.ts'
 import {
   requireNoProfile,
   requireNoSession,
@@ -15,6 +18,18 @@ import { ProfilePage } from './pages/profile/index.tsx'
 import { ResumePage } from './pages/resume/index.tsx'
 import { SignInPage } from './pages/sign-in/index.tsx'
 import { SignUpPage } from './pages/sign-up/index.tsx'
+
+// A page's own queries start alongside the parent's session and profile checks, not after them.
+// Not awaited, so the page still renders as soon as the gate passes.
+function prefetchResume() {
+  void queryClient.prefetchQuery(primaryResumeQueryOptions)
+  return null
+}
+
+function prefetchUserAndResume() {
+  void queryClient.prefetchQuery(currentUserQueryOptions)
+  return prefetchResume()
+}
 
 // The design system page is a development aid, so it is left out of production builds.
 const developmentRoutes: RouteObject[] = import.meta.env.DEV
@@ -37,9 +52,17 @@ export const routes: RouteObject[] = [
         Component: AppLayout,
         loader: sequence(requireSession, requireProfile),
         children: [
-          { path: PATHS.home, Component: HomePage },
-          { path: PATHS.profile, Component: ProfilePage },
-          { path: PATHS.resume, Component: ResumePage },
+          {
+            path: PATHS.home,
+            loader: prefetchUserAndResume,
+            Component: HomePage,
+          },
+          {
+            path: PATHS.profile,
+            loader: prefetchUserAndResume,
+            Component: ProfilePage,
+          },
+          { path: PATHS.resume, loader: prefetchResume, Component: ResumePage },
         ],
       },
       { path: PATHS.onboarding, loader: sequence(requireSession, requireNoProfile), Component: OnboardingPage },

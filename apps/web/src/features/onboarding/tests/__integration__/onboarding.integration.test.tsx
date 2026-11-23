@@ -134,22 +134,25 @@ describe('Onboarding (integration)', () => {
     expect(writes.count).toBe(0)
   })
 
-  it('caps target roles at three', async () => {
+  it('refuses a fourth target role with an error, which clears once a role is removed', async () => {
     const user = userEvent.setup()
     await openOnboarding()
 
     for (const role of ['Product Engineer', 'Founding Engineer', 'Staff Engineer']) {
       await user.type(screen.getByLabelText('Target roles'), `${role}{Enter}`)
     }
-
     expect(screen.getByText('3 of 3')).toBeInTheDocument()
-    expect(screen.queryByLabelText('Target roles')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Remove Staff Engineer' })).toHaveFocus()
+
+    await user.type(screen.getByLabelText('Target roles'), 'Tech Lead{Enter}')
+
+    expect(screen.getByText('Add up to 3 roles')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Remove Tech Lead' })).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Target roles')).toHaveValue('Tech Lead')
 
     await user.click(screen.getByRole('button', { name: 'Remove Staff Engineer' }))
 
+    expect(screen.queryByText('Add up to 3 roles')).not.toBeInTheDocument()
     expect(screen.getByText('2 of 3')).toBeInTheDocument()
-    expect(screen.getByLabelText('Target roles')).toBeInTheDocument()
   })
 
   it('uploads the resume, creates the profile, welcomes the user and goes home on its own', async () => {

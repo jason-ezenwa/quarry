@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from "react"
+import { useState, type KeyboardEvent } from "react"
 import { XIcon } from "@phosphor-icons/react/dist/csr/X"
 import { cn } from "@/lib/utils"
 
@@ -6,28 +6,24 @@ type ChipInputProps = Omit<React.ComponentProps<"input">, "value" | "onChange" |
   value: string[]
   onChange: (value: string[]) => void
   max?: number
+  // Called with the typed value when adding it would go past max; the value stays in the input.
+  onLimit?: (rejected: string) => void
 }
 
-// Type a value and press Enter to add it as a removable chip. The input hides once max is reached.
-function ChipInput({ value, onChange, max, className, onBlur, ...props }: ChipInputProps) {
+// Type a value and press Enter to add it as a removable chip. Past max, nothing is added and onLimit fires.
+function ChipInput({ value, onChange, max, onLimit, className, onBlur, ...props }: ChipInputProps) {
   const [draft, setDraft] = useState("")
-  const containerRef = useRef<HTMLDivElement>(null)
-  const refocusRef = useRef(false)
   const full = max !== undefined && value.length >= max
-
-  // Adding the last chip removes the focused input, so keep focus on the last chip's remove button.
-  useEffect(() => {
-    if (!refocusRef.current) return
-    refocusRef.current = false
-    containerRef.current?.querySelector<HTMLButtonElement>("[data-slot=chip]:last-of-type button")?.focus()
-  }, [value])
 
   function commit() {
     const next = draft.trim()
+    if (!next) return
+    if (full) {
+      onLimit?.(next)
+      return
+    }
     setDraft("")
-    if (!next || full || value.includes(next)) return
-    refocusRef.current = max !== undefined && value.length + 1 >= max
-    onChange([...value, next])
+    if (!value.includes(next)) onChange([...value, next])
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -42,7 +38,6 @@ function ChipInput({ value, onChange, max, className, onBlur, ...props }: ChipIn
 
   return (
     <div
-      ref={containerRef}
       data-slot="chip-input"
       className={cn(
         "flex min-h-field w-full flex-wrap items-center gap-1.5 rounded-md border border-input bg-card px-2 py-1.5 transition-colors hover:border-border-strong has-[input:focus-visible]:border-border-strong has-[[aria-invalid=true]]:border-destructive has-[[aria-invalid=true]]:ring-3 has-[[aria-invalid=true]]:ring-destructive-tint",
@@ -66,8 +61,7 @@ function ChipInput({ value, onChange, max, className, onBlur, ...props }: ChipIn
           </button>
         </span>
       ))}
-      {full ? null : (
-        <input
+      <input
           {...props}
           data-slot="chip-input-control"
           value={draft}
@@ -79,7 +73,6 @@ function ChipInput({ value, onChange, max, className, onBlur, ...props }: ChipIn
           }}
           className="min-w-30 flex-1 bg-transparent px-1 py-0.5 text-field text-foreground outline-none placeholder:text-muted-foreground"
         />
-      )}
     </div>
   )
 }

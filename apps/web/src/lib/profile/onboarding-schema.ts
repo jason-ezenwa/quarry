@@ -16,6 +16,7 @@ import {
   RESUME_LIMITS,
   SALARY_MESSAGE,
   SALARY_SEPARATORS,
+  TARGET_ROLES_MAX_MESSAGE,
   UNKNOWN_FILE_TYPES,
   WHOLE_NUMBER,
   YEARS_MESSAGE,
@@ -90,7 +91,7 @@ export const onboardingSchema = z
     targetRoles: z
       .array(z.string().trim().min(1).max(TARGET_ROLES_LIMITS.maxLength))
       .min(TARGET_ROLES_LIMITS.minItems, 'Add at least one role')
-      .max(TARGET_ROLES_LIMITS.maxItems, `Add up to ${TARGET_ROLES_LIMITS.maxItems} roles`),
+      .max(TARGET_ROLES_LIMITS.maxItems, TARGET_ROLES_MAX_MESSAGE),
     yearsOfExperience,
     countryCode: z.string().pipe(z.enum(COUNTRY_CODES as [CountryCode, ...CountryCode[]], { error: 'Choose a country' })),
     workSetups: z.array(z.enum(WORK_SETUPS)).min(1, 'Pick at least one'),
