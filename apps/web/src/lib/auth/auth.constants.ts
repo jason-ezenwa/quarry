@@ -6,4 +6,7 @@ export const PATHS = {
   home: '/',
   signIn: '/sign-in',
   signUp: '/sign-up',
+  onboarding: '/onboarding',
+  profile: '/profile',
+  resume: '/profile/resume',
 } as const

@@ -7,7 +7,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { Spinner } from '@/components/ui/spinner'
 import { authClient } from '@/lib/auth-client'
 import { PATHS } from '@/lib/auth/auth.constants'
 import { signInSchema, type SignInValues } from '@/lib/auth/auth-schemas'
@@ -78,8 +77,7 @@ export function SignInPage() {
             />
             <FieldError errors={[errors.password]} />
           </Field>
-          <Button type="submit" variant="primary" disabled={isSubmitting}>
-            {isSubmitting ? <Spinner className="text-current" /> : null}
+          <Button type="submit" variant="primary" loading={isSubmitting}>
             Sign in
           </Button>
         </FieldGroup>

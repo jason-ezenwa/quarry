@@ -17,12 +17,12 @@ async function fillAndSubmit({ confirmPassword = 'correct-horse' }: { confirmPas
 }
 
 describe('Sign up (integration)', () => {
-  it('creates the account without the confirmation field and lands on home', async () => {
+  it('creates the account without the confirmation field and goes to onboarding', async () => {
     let body: unknown
     server.use(
       http.post(apiUrl('/api/auth/sign-up/email'), async ({ request }) => {
         body = await request.json()
-        signInAs()
+        signInAs({ profile: false })
         return HttpResponse.json({ token: 'token-1', user: TEST_USER })
       }),
     )
@@ -30,8 +30,8 @@ describe('Sign up (integration)', () => {
 
     await fillAndSubmit()
 
-    expect(await screen.findByText('Welcome, Ada Obi')).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe('/')
+    expect(await screen.findByRole('heading', { name: 'Set up your profile' })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/onboarding')
     expect(body).toEqual({ name: 'Ada Obi', email: 'ada@example.com', password: 'correct-horse' })
   })
 

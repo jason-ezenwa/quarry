@@ -7,7 +7,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { Spinner } from '@/components/ui/spinner'
 import { authClient } from '@/lib/auth-client'
 import { PASSWORD_MIN_LENGTH, PATHS } from '@/lib/auth/auth.constants'
 import { signUpSchema, type SignUpValues } from '@/lib/auth/auth-schemas'
@@ -37,7 +36,7 @@ export function SignUpPage() {
       return
     }
 
-    navigate(PATHS.home)
+    navigate(PATHS.onboarding)
   }
 
   return (
@@ -102,8 +101,7 @@ export function SignUpPage() {
             />
             <FieldError errors={[errors.confirmPassword]} />
           </Field>
-          <Button type="submit" variant="primary" disabled={isSubmitting}>
-            {isSubmitting ? <Spinner className="text-current" /> : null}
+          <Button type="submit" variant="primary" loading={isSubmitting}>
             Create account
           </Button>
         </FieldGroup>

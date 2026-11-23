@@ -1,4 +1,5 @@
 import { useMemo } from "react"
+import { WarningCircleIcon } from "@phosphor-icons/react/dist/csr/WarningCircle"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
@@ -214,10 +215,11 @@ function FieldError({
     <div
       role="alert"
       data-slot="field-error"
-      className={cn("text-small text-destructive-ink", className)}
+      className={cn("flex items-start gap-1.5 text-small text-destructive-ink", className)}
       {...props}
     >
-      {content}
+      <WarningCircleIcon weight="fill" aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
+      <div className="min-w-0">{content}</div>
     </div>
   )
 }
