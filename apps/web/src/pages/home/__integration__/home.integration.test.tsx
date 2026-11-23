@@ -46,14 +46,14 @@ describe('Home (integration)', () => {
       renderRoute('/')
 
       expect(await screen.findByText('Reading your resume')).toBeInTheDocument()
-      expect(screen.queryByRole('link', { name: 'Review resume' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('link', { name: 'Review' })).not.toBeInTheDocument()
     })
 
     it('links to the resume page once parsed', async () => {
       signInAs({ resume: primaryResumeResponse({ reviewedAt: null }) })
       const router = renderRoute('/')
 
-      await userEvent.click(await screen.findByRole('link', { name: 'Review resume' }))
+      await userEvent.click(await screen.findByRole('link', { name: 'Review' }))
 
       expect(router.state.location.pathname).toBe('/profile/resume')
     })
@@ -82,7 +82,7 @@ describe('Home (integration)', () => {
       await screen.findByText('Welcome, Ada Obi')
       await waitFor(() => expect(answered).toBe(true))
       expect(screen.queryByRole('status')).not.toBeInTheDocument()
-      expect(screen.queryByText('Review your resume')).not.toBeInTheDocument()
+      expect(screen.queryByText('Your resume is ready')).not.toBeInTheDocument()
     })
   })
 })

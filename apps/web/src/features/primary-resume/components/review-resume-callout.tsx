@@ -1,7 +1,7 @@
 import { ArrowRightIcon } from '@phosphor-icons/react/dist/csr/ArrowRight'
 import { Link } from 'react-router'
 import { Button } from '@/components/ui/button'
-import { Callout, CalloutActions, CalloutContent, CalloutTitle } from '@/components/ui/callout'
+import { Callout, CalloutActions, CalloutContent, CalloutMeta, CalloutTitle } from '@/components/ui/callout'
 import { PATHS } from '@/lib/auth/auth.constants'
 import { usePrimaryResume } from '../use-primary-resume'
 import { ReadingResumeCallout } from './resume-state-callouts'
@@ -35,11 +35,12 @@ export function ReviewResumeCallout() {
   return (
     <Callout tone="review">
       <CalloutContent>
-        <CalloutTitle>Review your resume</CalloutTitle>
+        <CalloutTitle>Your resume is ready</CalloutTitle>
+        <CalloutMeta>Check what we read from it before you use it.</CalloutMeta>
       </CalloutContent>
       <CalloutActions>
         <Button asChild variant="primary" size="sm">
-          <Link to={PATHS.resume}>Review resume</Link>
+          <Link to={PATHS.resume}>Review</Link>
         </Button>
       </CalloutActions>
     </Callout>
