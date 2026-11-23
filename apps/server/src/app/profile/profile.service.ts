@@ -5,6 +5,7 @@ import { isDuplicateKeyError } from '../../lib/mongo-errors/mongo-errors';
 import { ResumeService } from '../resume/resume.service';
 import { StorageService } from '../storage/storage.service';
 import type { CreateProfileDto } from './dto/create-profile.dto';
+import { ProfileGateService } from './profile-gate.service';
 import { Profile, ProfileDocument, SalaryFloor } from './profile.schema';
 
 @Injectable()
@@ -17,18 +18,11 @@ export class ProfileService {
     @InjectConnection() private readonly connection: Connection,
     private readonly storageService: StorageService,
     private readonly resumeService: ResumeService,
+    private readonly profileGateService: ProfileGateService,
   ) {}
 
   async findByUserId(userId: string): Promise<ProfileDocument | null> {
     return this.profileModel.findOne({ user: new Types.ObjectId(userId) });
-  }
-
-  async existsForUser(userId: string): Promise<boolean> {
-    const found = await this.profileModel.exists({
-      user: new Types.ObjectId(userId),
-    });
-
-    return found !== null;
   }
 
   // Finishes onboarding: the profile and its primary resume are written
@@ -38,7 +32,7 @@ export class ProfileService {
     dto: CreateProfileDto,
   ): Promise<ProfileDocument> {
     // Checked before any storage work, so a sequential duplicate costs nothing.
-    if (await this.existsForUser(userId)) {
+    if (await this.profileGateService.existsForUser(userId)) {
       throw new ConflictException('Profile already exists');
     }
 

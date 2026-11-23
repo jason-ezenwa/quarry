@@ -11,7 +11,7 @@ import {
   signUp,
   TEST_ORIGIN,
 } from '../../../lib/__integration__/sign-up.fixture';
-import { ProfileModule } from '../profile.module';
+import { ProfileGateModule } from '../profile-gate.module';
 import { RequireProfileGuard } from '../require-profile.guard';
 
 const PDF = 'application/pdf';
@@ -42,7 +42,7 @@ describe('Profile (integration)', () => {
   beforeAll(async () => {
     app = await createTestApp({
       controllers: [ProfileGatedController],
-      imports: [ProfileModule],
+      imports: [ProfileGateModule],
     });
   });
 

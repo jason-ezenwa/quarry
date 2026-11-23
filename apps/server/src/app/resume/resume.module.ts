@@ -1,6 +1,6 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { ProfileModule } from '../profile/profile.module';
+import { ProfileGateModule } from '../profile/profile-gate.module';
 import { StorageModule } from '../storage/storage.module';
 import { anthropicProvider } from './anthropic.provider';
 import { InterruptedParseRecovery } from './interrupted-parse-recovery';
@@ -17,8 +17,7 @@ import { ResumeService } from './resume.service';
   imports: [
     MongooseModule.forFeature([{ name: Resume.name, schema: ResumeSchema }]),
     StorageModule,
-    // For RequireProfileGuard on resume endpoints.
-    forwardRef(() => ProfileModule),
+    ProfileGateModule,
   ],
   controllers: [ResumeController],
   providers: [
