@@ -3,19 +3,18 @@ import type { PrimaryResumeResponse, Resume } from '@quarry/contracts';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Types } from 'mongoose';
+import { http } from 'msw';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import {
-  createTestApp,
-  getTestBucket,
-} from '../../../../test/integration/create-test-app';
+import { createTestApp } from '../../../../test/integration/create-test-app';
 import { getTestDatabase } from '../../../../test/integration/database';
 import { fakeAnthropicApi } from '../../../../test/integration/fake-anthropic-api';
+import { fakeR2, R2_BUCKET_URL } from '../../../../test/integration/fake-r2';
+import { mswServer } from '../../../../test/integration/msw-server';
 import {
   signUp,
   TEST_ORIGIN,
 } from '../../../lib/__integration__/sign-up.fixture';
-import { InMemoryBucket } from '../../../test-utils/in-memory-bucket';
 import { InterruptedParseRecovery } from '../parser/interrupted-parse-recovery';
 import {
   PARSE_MAX_OUTPUT_TOKENS,
@@ -370,11 +369,11 @@ describe('Resume (integration)', () => {
     const seedResume = async (
       parseStatus: 'parsing' | 'failed',
       parseStartedAt: Date,
-      bucket = getTestBucket(app),
     ) => {
       const path = `users/${new Types.ObjectId().toHexString()}/primary-resume/a.pdf`;
 
-      await bucket.put(path, pdfFile.data, {
+      fakeR2.objects.set(path, {
+        data: pdfFile.data,
         contentType: PDF,
         metadata: {},
       });
@@ -409,14 +408,13 @@ describe('Resume (integration)', () => {
       new Date(Date.now() - STALE_PARSE_AFTER_MS - 1_000);
 
     it('re-parses a stale parsing resume on startup and leaves fresh and failed ones alone', async () => {
-      const bucket = new InMemoryBucket();
-      const stale = await seedResume('parsing', staleStart(), bucket);
+      const stale = await seedResume('parsing', staleStart());
       const freshStart = new Date(Date.now() - 60_000);
-      const fresh = await seedResume('parsing', freshStart, bucket);
-      const failed = await seedResume('failed', staleStart(), bucket);
+      const fresh = await seedResume('parsing', freshStart);
+      const failed = await seedResume('failed', staleStart());
       fakeAnthropicApi.reply({ kind: 'resume', resume: parsedResume });
 
-      const restarted = await createTestApp({ bucket });
+      const restarted = await createTestApp();
 
       try {
         await vi.waitFor(
@@ -552,7 +550,7 @@ describe('Resume (integration)', () => {
         resume: parsedResume,
       });
 
-      const objects = getTestBucket(app).objects;
+      const objects = fakeR2.objects;
 
       expect(objects.has(`users/${userId}/primary-resume/${first.key}`)).toBe(
         false,
@@ -581,10 +579,8 @@ describe('Resume (integration)', () => {
       await onboardParsed(cookie);
       const uploaded = await upload(cookie, docxFile, '/resumes/uploads');
 
-      // Holds each commit's copy until both requests have passed the
+      // Holds each commit's CopyObject until both requests have passed the
       // `parsing` check, so the two really race for the update.
-      const bucket = getTestBucket(app);
-      const copy = bucket.copy.bind(bucket);
       let waiting = 0;
       let releaseBoth!: () => void;
 
@@ -592,27 +588,26 @@ describe('Resume (integration)', () => {
         releaseBoth = resolve;
       });
 
-      const held = vi
-        .spyOn(bucket, 'copy')
-        .mockImplementation(async (source, destination) => {
+      // Returning nothing hands the request on to the R2 fake.
+      mswServer.use(
+        http.put(`${R2_BUCKET_URL}/*`, async ({ request }) => {
+          if (!request.headers.has('x-amz-copy-source')) return;
           if (++waiting === 2) releaseBoth();
           await bothWaiting;
-          return copy(source, destination);
-        });
+        }),
+      );
 
       const responses = await Promise.all([
         api('put', '/resumes/primary/file', cookie).send(uploaded.body),
         api('put', '/resumes/primary/file', cookie).send(uploaded.body),
       ]);
 
-      held.mockRestore();
-
       expect(responses.map((response) => response.status).sort()).toEqual([
         200, 409,
       ]);
 
       expect(
-        getTestBucket(app).objects.has(
+        fakeR2.objects.has(
           `users/${userId}/primary-resume/${uploaded.body.key}`,
         ),
       ).toBe(true);

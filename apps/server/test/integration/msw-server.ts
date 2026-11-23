@@ -1,8 +1,12 @@
 import { setupServer } from 'msw/node';
 import { fakeAnthropicApi } from './fake-anthropic-api';
+import { fakeR2 } from './fake-r2';
 
-// Specs add handlers with `mswServer.use()`; the Anthropic API is always mocked.
-export const mswServer = setupServer(fakeAnthropicApi.handler);
+// Specs add handlers with `mswServer.use()`; Anthropic and R2 are always mocked.
+export const mswServer = setupServer(
+  fakeAnthropicApi.handler,
+  ...fakeR2.handlers,
+);
 
 const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]']);
 
