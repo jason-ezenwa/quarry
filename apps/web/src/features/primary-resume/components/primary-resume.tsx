@@ -5,6 +5,7 @@ import {
   ResumeContact,
   ResumeEntry,
   ResumeEntryHeading,
+  ResumeEntryList,
   ResumeEntryMeta,
   ResumeHeader,
   ResumeName,
@@ -63,43 +64,47 @@ export function PrimaryResume({ resume }: { resume: Resume }) {
       {resume.experience.length > 0 ? (
         <ResumeSection>
           <ResumeSectionTitle>Experience</ResumeSectionTitle>
-          {resume.experience.map((role, index) => (
-            <ResumeEntry key={index}>
-              <EntryTop
-                heading={
-                  <>
-                    <span>{role.company}</span>
-                    {role.location ? <span>{`  ·  ${role.location}`}</span> : null}
-                  </>
-                }
-                meta={formatDateRange(role.startDate, role.endDate)}
-              />
-              <p className="text-ui">{role.title}</p>
-              <Bullets items={role.bullets} />
-            </ResumeEntry>
-          ))}
+          <ResumeEntryList>
+            {resume.experience.map((role, index) => (
+              <ResumeEntry key={index}>
+                <EntryTop
+                  heading={
+                    <>
+                      <span>{role.company}</span>
+                      {role.location ? <span>{`  ·  ${role.location}`}</span> : null}
+                    </>
+                  }
+                  meta={formatDateRange(role.startDate, role.endDate)}
+                />
+                <p className="text-ui">{role.title}</p>
+                <Bullets items={role.bullets} />
+              </ResumeEntry>
+            ))}
+          </ResumeEntryList>
         </ResumeSection>
       ) : null}
       {resume.education.length > 0 ? (
         <ResumeSection>
           <ResumeSectionTitle>Education</ResumeSectionTitle>
-          {resume.education.map((school, index) => {
-            const qualification = [school.qualification, school.field].filter(Boolean).join(', ')
-            return (
-              <ResumeEntry key={index}>
-                <EntryTop
-                  heading={
-                    <>
-                      <span>{school.school}</span>
-                      {qualification ? <span>{`  ·  ${qualification}`}</span> : null}
-                    </>
-                  }
-                  meta={school.endDate ? formatPartialDate(school.endDate) : undefined}
-                />
-                <Bullets items={school.details} />
-              </ResumeEntry>
-            )
-          })}
+          <ResumeEntryList>
+            {resume.education.map((school, index) => {
+              const qualification = [school.qualification, school.field].filter(Boolean).join(', ')
+              return (
+                <ResumeEntry key={index}>
+                  <EntryTop
+                    heading={
+                      <>
+                        <span>{school.school}</span>
+                        {qualification ? <span>{`  ·  ${qualification}`}</span> : null}
+                      </>
+                    }
+                    meta={school.endDate ? formatPartialDate(school.endDate) : undefined}
+                  />
+                  <Bullets items={school.details} />
+                </ResumeEntry>
+              )
+            })}
+          </ResumeEntryList>
         </ResumeSection>
       ) : null}
       {resume.skills.length > 0 ? (
@@ -115,42 +120,46 @@ export function PrimaryResume({ resume }: { resume: Resume }) {
       {resume.projects.length > 0 ? (
         <ResumeSection>
           <ResumeSectionTitle>Projects</ResumeSectionTitle>
-          {resume.projects.map((project, index) => (
-            <ResumeEntry key={index}>
-              <EntryTop
-                heading={
-                  <>
-                    <span>{project.name}</span>
-                    {project.description ? <span>{`  ·  ${project.description}`}</span> : null}
-                  </>
-                }
-              />
-              {project.url ? (
-                <a href={project.url} target="_blank" rel="noreferrer" className="text-label text-muted-foreground underline underline-offset-3">
-                  {project.url}
-                </a>
-              ) : null}
-              <Bullets items={project.bullets} />
-            </ResumeEntry>
-          ))}
+          <ResumeEntryList>
+            {resume.projects.map((project, index) => (
+              <ResumeEntry key={index}>
+                <EntryTop
+                  heading={
+                    <>
+                      <span>{project.name}</span>
+                      {project.description ? <span>{`  ·  ${project.description}`}</span> : null}
+                    </>
+                  }
+                />
+                {project.url ? (
+                  <a href={project.url} target="_blank" rel="noreferrer" className="text-label text-muted-foreground underline underline-offset-3">
+                    {project.url}
+                  </a>
+                ) : null}
+                <Bullets items={project.bullets} />
+              </ResumeEntry>
+            ))}
+          </ResumeEntryList>
         </ResumeSection>
       ) : null}
       {resume.certifications.length > 0 ? (
         <ResumeSection>
           <ResumeSectionTitle>Certifications</ResumeSectionTitle>
-          {resume.certifications.map((certification, index) => (
-            <ResumeEntry key={index}>
-              <EntryTop
-                heading={
-                  <>
-                    <span>{certification.name}</span>
-                    {certification.issuer ? <span>{`  ·  ${certification.issuer}`}</span> : null}
-                  </>
-                }
-                meta={certification.date ? formatPartialDate(certification.date) : undefined}
-              />
-            </ResumeEntry>
-          ))}
+          <ResumeEntryList>
+            {resume.certifications.map((certification, index) => (
+              <ResumeEntry key={index}>
+                <EntryTop
+                  heading={
+                    <>
+                      <span>{certification.name}</span>
+                      {certification.issuer ? <span>{`  ·  ${certification.issuer}`}</span> : null}
+                    </>
+                  }
+                  meta={certification.date ? formatPartialDate(certification.date) : undefined}
+                />
+              </ResumeEntry>
+            ))}
+          </ResumeEntryList>
         </ResumeSection>
       ) : null}
     </ResumeRoot>

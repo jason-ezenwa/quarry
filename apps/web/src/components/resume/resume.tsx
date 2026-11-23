@@ -19,7 +19,7 @@ function ResumeRoot({
       data-variant={variant}
       className={cn(
         "group/resume flex w-full flex-col text-foreground",
-        "data-[variant=sheet]:max-w-160 data-[variant=sheet]:gap-4.5 data-[variant=sheet]:rounded-xs data-[variant=sheet]:bg-sheet data-[variant=sheet]:px-5.5 data-[variant=sheet]:py-6.5 data-[variant=sheet]:shadow-sheet sm:data-[variant=sheet]:px-13 sm:data-[variant=sheet]:py-12",
+        "data-[variant=sheet]:max-w-160 data-[variant=sheet]:gap-7.5 data-[variant=sheet]:rounded-xs data-[variant=sheet]:bg-sheet data-[variant=sheet]:px-5.5 data-[variant=sheet]:py-6.5 data-[variant=sheet]:shadow-sheet sm:data-[variant=sheet]:px-13 sm:data-[variant=sheet]:py-12",
         "data-[variant=editor]:gap-4",
         className
       )}
@@ -33,7 +33,7 @@ function ResumeHeader({ className, ...props }: React.ComponentProps<"header">) {
     <header
       data-slot="resume-header"
       className={cn(
-        "flex flex-col gap-1.25 group-data-[variant=sheet]/resume:border-b group-data-[variant=sheet]/resume:border-border-soft group-data-[variant=sheet]/resume:pb-4.5",
+        "flex flex-col gap-1.25 group-data-[variant=sheet]/resume:border-b group-data-[variant=sheet]/resume:border-border-soft group-data-[variant=sheet]/resume:pb-2.5",
         "group-data-[variant=editor]/resume:gap-4",
         EDITOR_CARD,
         className
@@ -80,7 +80,7 @@ function ResumeSection({ className, ...props }: React.ComponentProps<"section">)
     <section
       data-slot="resume-section"
       className={cn(
-        "flex flex-col gap-3",
+        "flex flex-col gap-[7.5px]",
         "group-data-[variant=editor]/resume:gap-3.5",
         EDITOR_CARD,
         className
@@ -102,6 +102,10 @@ function ResumeSectionTitle({ className, ...props }: React.ComponentProps<"h3">)
       {...props}
     />
   )
+}
+
+function ResumeEntryList({ className, ...props }: React.ComponentProps<"div">) {
+  return <div data-slot="resume-entry-list" className={cn("flex flex-col gap-3.75", className)} {...props} />
 }
 
 function ResumeEntry({ className, ...props }: React.ComponentProps<"div">) {
@@ -164,6 +168,7 @@ export {
   ResumeSummary,
   ResumeSection,
   ResumeSectionTitle,
+  ResumeEntryList,
   ResumeEntry,
   ResumeEntryHeading,
   ResumeEntryMeta,
