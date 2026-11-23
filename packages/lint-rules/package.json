@@ -1,0 +1,13 @@
+{
+  "name": "@quarry/lint-rules",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Custom lint rules shared across the monorepo apps, loaded through oxlint's JS plugin support.",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./plugin": "./src/plugin.js"
+  },
+  "files": ["src"]
+}

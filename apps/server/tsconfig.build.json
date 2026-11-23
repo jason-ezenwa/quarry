@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "exclude": [
+    "node_modules",
+    "test",
+    "scripts",
+    "dist",
+    "src/test-utils",
+    "**/*spec.ts",
+    "**/__integration__/**",
+    "vitest.config.mts",
+    ".oxlintrc.json"
+  ],
+  "compilerOptions": {
+    "rootDir": "./src",
+    "tsBuildInfoFile": "./dist/tsconfig.build.tsbuildinfo"
+  }
+}

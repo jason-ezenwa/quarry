@@ -1,0 +1,39 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "oxc"],
+  // Shared custom rules from packages/lint-rules. JSON cannot import a rule
+  // set, so keep this list in step with that package's README.
+  "jsPlugins": [{ "name": "local", "specifier": "@quarry/lint-rules/plugin" }],
+  "ignorePatterns": ["dist/**", "coverage/**"],
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/no-unstable-nested-components": "error",
+    "react/set-state-in-effect": "error",
+    "react-hooks/exhaustive-deps": "error",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }],
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "@phosphor-icons/react",
+            "message": "Import the icon directly: @phosphor-icons/react/dist/csr/<IconName>."
+          }
+        ]
+      }
+    ],
+    "local/no-adr-references": "error",
+    "local/no-noisy-comments": "warn",
+    "local/no-optional-nullable-mismatch": "error",
+    "local/no-hardcoded-tailwind-colors": "error",
+    "local/no-inline-styles": "error",
+    "local/no-await-waterfall": "error",
+    "local/no-regexp-in-render": "error"
+  },
+  "overrides": [
+    {
+      "files": ["src/components/ui/**", "src/pages/design-system/**"],
+      "rules": { "react/only-export-components": "off" }
+    }
+  ]
+}

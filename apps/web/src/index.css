@@ -1,0 +1,348 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource/geist-mono/400.css";
+@import "@fontsource/geist-mono/500.css";
+
+/* Light only: nothing sets `.dark`, so `dark:` classes in CLI-added components stay inert. */
+@custom-variant dark (&:is(.dark *));
+
+/* Ezenwa Grotesk, OFL. The licence sits beside the files in src/assets/fonts. */
+@font-face {
+  font-family: "Ezenwa Grotesk";
+  src: url("./assets/fonts/EzenwaGrotesk-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Ezenwa Grotesk";
+  src: url("./assets/fonts/EzenwaGrotesk-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Ezenwa Grotesk";
+  src: url("./assets/fonts/EzenwaGrotesk-Semibold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Ezenwa Grotesk";
+  src: url("./assets/fonts/EzenwaGrotesk-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/*
+ * Quarry palette, named as in the design system. Components never read these:
+ * the semantic tokens below point at them, so a re-skin edits one layer.
+ */
+:root {
+  /* Surfaces, back to front */
+  --plaster: #eee9e1;
+  --panel: #f9f7f3;
+  --paper: #fffefb;
+  --page: #fffefc;
+
+  /* Lines */
+  --line: #e1dad0;
+  --line-strong: #cfc6b9;
+  --line-soft: #ece6dd;
+
+  /* Ink */
+  --ink: #24201b;
+  --ink-muted: #6a6056;
+  --ink-faint: #8c8073;
+
+  /* Primary action */
+  --chocolate: #5a3826;
+  --chocolate-hover: #4a2e20;
+  --on-chocolate: #ffffff;
+
+  /* Fit and readiness */
+  --moss: #3f5036;
+  --on-moss: #f1f2e8;
+  --matcha: #e3e8d6;
+
+  /* Status pills */
+  --lilac-deep: #5b4a86;
+  --on-lilac-deep: #efeaf8;
+  --ochre-dark: #8a5f17;
+  --on-ochre-dark: #f8eedc;
+
+  /* Signals: a solid for dots, a soft tint for highlights, an ink for text */
+  --leaf: #2e9958;
+  --leaf-soft: #e1f0e4;
+  --leaf-ink: #1f6b3d;
+  --amber: #d48a12;
+  --amber-soft: #f7ebd3;
+  --amber-ink: #8a5a06;
+  --rose: #d2405a;
+  --rose-soft: #f8e2e5;
+  --rose-ink: #9a2439;
+
+  /* Ink at low alpha, for hover washes and the dialog scrim */
+  --ink-wash: rgb(60 45 30 / 0.06);
+  --ink-scrim: rgb(36 32 27 / 0.32);
+}
+
+:root {
+  color-scheme: light;
+
+  --background: var(--plaster);
+  --foreground: var(--ink);
+  --panel-surface: var(--panel);
+  --card: var(--paper);
+  --card-foreground: var(--ink);
+  --popover: var(--paper);
+  --popover-foreground: var(--ink);
+  --sheet: var(--page);
+
+  --primary: var(--chocolate);
+  --primary-hover: var(--chocolate-hover);
+  --primary-foreground: var(--on-chocolate);
+
+  --secondary: var(--paper);
+  --secondary-hover: var(--panel);
+  --secondary-foreground: var(--ink);
+
+  --muted: var(--line-soft);
+  --muted-foreground: var(--ink-muted);
+  --icon: var(--ink-faint);
+  --accent: var(--ink-wash);
+  --accent-foreground: var(--ink);
+
+  --fit: var(--moss);
+  --fit-foreground: var(--on-moss);
+  --fit-tint: var(--matcha);
+
+  --status-ready: var(--moss);
+  --status-ready-foreground: var(--on-moss);
+  --status-interview: var(--lilac-deep);
+  --status-interview-foreground: var(--on-lilac-deep);
+  --status-drafting: var(--ochre-dark);
+  --status-drafting-foreground: var(--on-ochre-dark);
+
+  --success: var(--leaf);
+  --success-tint: var(--leaf-soft);
+  --success-ink: var(--leaf-ink);
+  --warning: var(--amber);
+  --warning-tint: var(--amber-soft);
+  --warning-ink: var(--amber-ink);
+  --destructive: var(--rose);
+  --destructive-tint: var(--rose-soft);
+  --destructive-ink: var(--rose-ink);
+
+  --border: var(--line);
+  --border-strong: var(--line-strong);
+  --border-soft: var(--line-soft);
+  --input: var(--line);
+  --ring: var(--chocolate);
+  --scrim: var(--ink-scrim);
+
+  /* 16px on phones so iOS Safari doesn't zoom the page when a field is focused. */
+  --t-field-size: 1rem;
+  --t-field-lh: 1.375rem;
+}
+
+@media (width >= 48rem) {
+  :root {
+    --t-field-size: 0.9375rem;
+    --t-field-lh: 1.5rem;
+  }
+}
+
+@theme {
+  --font-sans: "Ezenwa Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-heading: var(--font-sans);
+  --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  /* Control heights: buttons, then fields */
+  --spacing-control: 1.875rem;
+  --spacing-control-sm: 1.75rem;
+  --spacing-control-lg: 2.25rem;
+  --spacing-field: 2.5rem;
+  --spacing-field-lg: 3.25rem;
+
+  --shadow-panel: 0 1px 2px rgb(50 35 20 / 0.04);
+  --shadow-tab: 0 1px 2px rgb(50 35 20 / 0.08);
+  --shadow-sheet: 0 0 0 1px rgb(50 35 20 / 0.06), 0 8px 24px -8px rgb(50 35 20 / 0.12);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-panel: var(--panel-surface);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-sheet: var(--sheet);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-icon: var(--icon);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-fit: var(--fit);
+  --color-fit-foreground: var(--fit-foreground);
+  --color-fit-tint: var(--fit-tint);
+  --color-status-ready: var(--status-ready);
+  --color-status-ready-foreground: var(--status-ready-foreground);
+  --color-status-interview: var(--status-interview);
+  --color-status-interview-foreground: var(--status-interview-foreground);
+  --color-status-drafting: var(--status-drafting);
+  --color-status-drafting-foreground: var(--status-drafting-foreground);
+  --color-success: var(--success);
+  --color-success-tint: var(--success-tint);
+  --color-success-ink: var(--success-ink);
+  --color-warning: var(--warning);
+  --color-warning-tint: var(--warning-tint);
+  --color-warning-ink: var(--warning-ink);
+  --color-destructive: var(--destructive);
+  --color-destructive-tint: var(--destructive-tint);
+  --color-destructive-ink: var(--destructive-ink);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-border-soft: var(--border-soft);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-scrim: var(--scrim);
+
+  --radius-xs: 4px;
+  --radius-sm: 5px;
+  --radius-md: 7px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+}
+
+/*
+ * Type roles from the design system. Each sets size, line height, weight and
+ * tracking together, so a call site never adds font-medium or a tracking class.
+ */
+@utility text-title {
+  font-size: 1.625rem;
+  line-height: 2rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+@utility text-question {
+  font-size: 1rem;
+  line-height: 1.4375rem;
+  font-weight: 500;
+}
+
+@utility text-reading {
+  font-size: 0.9375rem;
+  line-height: 1.5rem;
+  font-weight: 400;
+}
+
+@utility text-ui {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+}
+
+@utility text-ui-strong {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+}
+
+@utility text-small {
+  font-size: 0.8125rem;
+  line-height: 1.125rem;
+  font-weight: 400;
+}
+
+@utility text-label {
+  font-family: var(--font-mono);
+  font-size: 0.71875rem;
+  line-height: 1rem;
+  font-weight: 400;
+}
+
+@utility text-pill {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+}
+
+@utility text-doc-title {
+  font-size: 1.0625rem;
+  line-height: 1.375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+@utility text-doc-body {
+  font-size: 0.8125rem;
+  line-height: 1.1875rem;
+  font-weight: 400;
+}
+
+@utility text-doc-caps {
+  font-size: 0.6875rem;
+  line-height: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* The product name beside the mark. */
+@utility text-wordmark {
+  font-size: 0.9375rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Typed text in inputs and textareas. */
+@utility text-field {
+  font-size: var(--t-field-size);
+  line-height: var(--t-field-lh);
+}
+
+/* The plaster grain. App ground and output panels only, never behind text-heavy cards. */
+@utility texture-plaster {
+  background-image: url("./assets/textures/plaster.png");
+  background-size: 320px 320px;
+}
+
+/* Surface variables Sonner reads for its toasts. */
+.toaster {
+  --normal-bg: var(--popover);
+  --normal-text: var(--popover-foreground);
+  --normal-border: var(--border);
+  --border-radius: var(--radius-lg);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply bg-background texture-plaster text-ui text-foreground antialiased;
+  }
+}
