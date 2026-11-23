@@ -21,6 +21,13 @@ export class InMemoryBucket implements StorageBucket {
     this.objects.set(path, { data, ...options });
   }
 
+  async get(path: string): Promise<Buffer> {
+    const object = this.objects.get(path);
+    if (!object) throw new StorageObjectNotFoundError(path);
+
+    return object.data;
+  }
+
   async copy(source: string, destination: string): Promise<StoredObjectInfo> {
     const object = this.objects.get(source);
     if (!object) throw new StorageObjectNotFoundError(source);

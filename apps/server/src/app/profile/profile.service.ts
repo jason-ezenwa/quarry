@@ -51,14 +51,18 @@ export class ProfileService {
     );
 
     try {
-      const profile = await this.connection.transaction(async (session) => {
-        const created = await this.insert(userId, dto, session);
-        await this.resumeService.createPrimary({ userId, file }, session);
-
-        return created;
-      });
+      const { profile, resume } = await this.connection.transaction(
+        async (session) => ({
+          profile: await this.insert(userId, dto, session),
+          resume: await this.resumeService.createPrimary(
+            { userId, file },
+            session,
+          ),
+        }),
+      );
 
       this.logger.log('Profile created', { userId, profileId: profile.id });
+      this.resumeService.startParse(resume.id);
 
       return profile;
     } catch (error) {

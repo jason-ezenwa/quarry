@@ -23,6 +23,7 @@
     "seed": "ts-node --transpile-only -P tsconfig.migrate-mongo.json scripts/seed.ts"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.107",
     "@aws-sdk/client-s3": "^3.1175.0",
     "@aws-sdk/s3-request-presigner": "^3.1175.0",
     "@nestjs/common": "^11.2.11",
@@ -32,10 +33,12 @@
     "@nestjs/platform-express": "^11.2.11",
     "@quarry/contracts": "workspace:*",
     "@thallesp/nestjs-better-auth": "^2.8.0",
+    "ai": "^7.0.179",
     "better-auth": "1.7.27",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "dotenv": "^17.4.2",
+    "mammoth": "^1.13.0",
     "migrate-mongo": "^14.0.7",
     "mongodb": "^7.9.1",
     "mongoose": "^9.12.3",

@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw';
-import { setupServer } from 'msw/node';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { mswServer as server } from '../../../../test/integration/msw-server';
 import { createR2Client, R2Bucket } from '../r2-bucket';
 import { StorageObjectNotFoundError } from '../storage-bucket';
 
@@ -16,7 +16,6 @@ type SeenRequest = { method: string; path: string; headers: Headers };
 
 describe('R2Bucket (integration)', () => {
   const seen: SeenRequest[] = [];
-  const server = setupServer();
   const bucket = new R2Bucket(createR2Client(config), config.bucketName);
 
   const record = (request: Request) => {
@@ -27,12 +26,9 @@ describe('R2Bucket (integration)', () => {
     });
   };
 
-  beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
   afterEach(() => {
-    server.resetHandlers();
     seen.length = 0;
   });
-  afterAll(() => server.close());
 
   it('puts the object with its type and metadata', async () => {
     server.use(
@@ -121,6 +117,35 @@ describe('R2Bucket (integration)', () => {
 
     await expect(
       bucket.copy('pending/user-1/primary-resume/a.pdf', 'users/user-1/a.pdf'),
+    ).rejects.toThrow(StorageObjectNotFoundError);
+  });
+
+  it('reads the bytes stored at the path', async () => {
+    server.use(
+      http.get(`${BUCKET_URL}/*`, ({ request }) => {
+        record(request);
+        return new HttpResponse(Buffer.from('%PDF-1.7'), { status: 200 });
+      }),
+    );
+
+    const data = await bucket.get('users/user-1/primary-resume/a.pdf');
+
+    expect(data.toString()).toBe('%PDF-1.7');
+    expect(seen[0].path).toBe('/users/user-1/primary-resume/a.pdf');
+  });
+
+  it('throws StorageObjectNotFoundError when reading a path that holds nothing', async () => {
+    server.use(
+      http.get(`${BUCKET_URL}/*`, () =>
+        HttpResponse.xml(
+          '<Error><Code>NoSuchKey</Code><Message>gone</Message></Error>',
+          { status: 404 },
+        ),
+      ),
+    );
+
+    await expect(
+      bucket.get('users/user-1/primary-resume/a.pdf'),
     ).rejects.toThrow(StorageObjectNotFoundError);
   });
 
