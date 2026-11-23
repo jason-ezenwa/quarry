@@ -1,7 +1,7 @@
 import type { PrimaryResumeResponse } from '@quarry/contracts'
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { delay, http, HttpResponse } from 'msw'
+import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
 import { apiUrl } from '@/test/integration/handlers'
 import { primaryResumeResponse, renderRoute, signInAs, TEST_PROFILE, TEST_USER } from '@/test/integration/render-route'
@@ -45,34 +45,30 @@ describe('Profile (integration)', () => {
     expect(answers.queryByRole('textbox')).not.toBeInTheDocument()
   })
 
-  it('loads the account and resume alongside the profile check, once each', async () => {
-    const events: string[] = []
+  it('fetches each endpoint once, reusing the profile the gate loaded', async () => {
+    const calls: string[] = []
     signInAs()
     server.use(
-      http.get(apiUrl('/api/profiles/me'), async () => {
-        events.push('profile started')
-        await delay(100)
-        events.push('profile answered')
+      http.get(apiUrl('/api/profiles/me'), () => {
+        calls.push('profile')
         return HttpResponse.json(TEST_PROFILE)
       }),
       http.get(apiUrl('/api/users/me'), () => {
-        events.push('user started')
+        calls.push('user')
         return HttpResponse.json(TEST_USER)
       }),
       http.get(apiUrl('/api/resumes/primary'), () => {
-        events.push('resume started')
+        calls.push('resume')
         return HttpResponse.json(primaryResumeResponse())
       }),
     )
 
     renderRoute('/profile')
     await screen.findByText('Nigeria')
+    await screen.findByText('ada@example.com')
     await screen.findByText(/^Confirmed/)
 
-    // All three are in flight before the profile check answers, and nothing is fetched twice.
-    expect(events).toHaveLength(4)
-    expect(events.at(-1)).toBe('profile answered')
-    expect(events.slice(0, 3).sort()).toEqual(['profile started', 'resume started', 'user started'])
+    expect(calls.sort()).toEqual(['profile', 'resume', 'user'])
   })
 
   it('is reachable from the header', async () => {

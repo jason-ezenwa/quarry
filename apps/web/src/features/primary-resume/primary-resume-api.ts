@@ -6,8 +6,6 @@ import { PARSE_POLL_INTERVAL_MS } from './primary-resume.constants'
 export const primaryResumeQueryOptions = queryOptions({
   queryKey: ['resumes', 'primary'] as const,
   queryFn: () => apiFetch<PrimaryResumeResponse>('/api/resumes/primary'),
-  // Long enough that a page mounting right after its loader prefetched doesn't fetch again. Writes update the cache directly.
-  staleTime: 30_000,
   // Keeps asking while the resume is being read, so every view moves on by itself once it lands.
   refetchInterval: (query) => (query.state.data?.parseStatus === 'parsing' ? PARSE_POLL_INTERVAL_MS : false),
 })
