@@ -21,11 +21,6 @@ function formatSalaryFloor({ amount, currency }: OnboardingAnswers['salaryFloor'
   return `${formatted} a year`
 }
 
-// "No. 0001": the number of this search, padded to four digits.
-function formatSearchNumber(searchNumber: number) {
-  return `No. ${String(searchNumber).padStart(4, '0')}`
-}
-
 function formatYears(years: number) {
   return years === 1 ? '1 year' : `${years} years`
 }
@@ -40,13 +35,7 @@ function Detail({ label, value }: { label: string; value: string }) {
 }
 
 // Shown after onboarding saves, built from the answers just submitted, then hands over to Home.
-type OnboardingWelcomeProps = {
-  answers: OnboardingAnswers
-  // A placeholder until searches are numbered.
-  searchNumber?: number
-}
-
-export function OnboardingWelcome({ answers, searchNumber = 1 }: OnboardingWelcomeProps) {
+export function OnboardingWelcome({ answers }: { answers: OnboardingAnswers }) {
   const navigate = useNavigate()
   const { data: user } = useCurrentUser()
   const firstName = user?.name.trim().split(WHITESPACE)[0]
@@ -65,7 +54,10 @@ export function OnboardingWelcome({ answers, searchNumber = 1 }: OnboardingWelco
         <div className="flex items-center gap-2.5">
           <BirdIcon weight="fill" className="size-5" aria-hidden="true" />
           <span className="text-wordmark">Your search</span>
-          <span className="ml-auto text-label opacity-72">{formatSearchNumber(searchNumber)}</span>
+          {/* Decorative, like a ticket number: not a real count. */}
+          <span className="ml-auto text-label opacity-72" aria-hidden="true">
+            No. 0001
+          </span>
         </div>
         <dl className="flex flex-col gap-6">
           <div className="flex flex-col gap-1.5">
