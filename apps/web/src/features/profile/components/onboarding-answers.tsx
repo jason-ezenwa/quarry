@@ -17,7 +17,8 @@ function Answer({ label, value }: { label: string; value: string }) {
 
 // The onboarding answers, read-only: they can't be changed after onboarding.
 export function OnboardingAnswers() {
-  const { data: profile, isPending, isError } = useQuery(profileQueryOptions)
+  // The gate has just fetched the profile, and the answers can't change after onboarding, so reuse it.
+  const { data: profile, isPending, isError } = useQuery({ ...profileQueryOptions, staleTime: Infinity })
 
   return (
     <Card size="sm" role="region" aria-label="What you're looking for">

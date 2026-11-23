@@ -134,22 +134,37 @@ describe('Onboarding (integration)', () => {
     expect(writes.count).toBe(0)
   })
 
-  it('caps target roles at three', async () => {
+  it('shows an error for a fourth target role, which clears once a role is removed', async () => {
     const user = userEvent.setup()
     await openOnboarding()
 
-    for (const role of ['Product Engineer', 'Founding Engineer', 'Staff Engineer']) {
+    for (const role of ['Product Engineer', 'Founding Engineer', 'Staff Engineer', 'Tech Lead']) {
       await user.type(screen.getByLabelText('Target roles'), `${role}{Enter}`)
     }
 
+    expect(screen.getByText('Add up to 3 roles')).toBeInTheDocument()
+    expect(screen.getByText('4 of 3')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Remove Tech Lead' }))
+
+    expect(screen.queryByText('Add up to 3 roles')).not.toBeInTheDocument()
     expect(screen.getByText('3 of 3')).toBeInTheDocument()
-    expect(screen.queryByLabelText('Target roles')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Remove Staff Engineer' })).toHaveFocus()
+  })
 
-    await user.click(screen.getByRole('button', { name: 'Remove Staff Engineer' }))
+  it('saves nothing when a fourth role is typed and the form submitted without pressing Enter', async () => {
+    const user = userEvent.setup()
+    const writes = recordWrites()
+    await openOnboarding()
+    await fillValidAnswers(user)
 
-    expect(screen.getByText('2 of 3')).toBeInTheDocument()
-    expect(screen.getByLabelText('Target roles')).toBeInTheDocument()
+    for (const role of ['Founding Engineer', 'Staff Engineer']) {
+      await user.type(screen.getByLabelText('Target roles'), `${role}{Enter}`)
+    }
+    await user.type(screen.getByLabelText('Target roles'), 'Tech Lead')
+    await user.click(screen.getByRole('button', { name: 'Save and continue' }))
+
+    expect(await screen.findByText('Add up to 3 roles')).toBeInTheDocument()
+    expect(writes.count).toBe(0)
   })
 
   it('uploads the resume, creates the profile, welcomes the user and goes home on its own', async () => {

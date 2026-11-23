@@ -75,7 +75,7 @@ export function ResumeUploadField() {
 }
 
 export function TargetRolesField() {
-  const { control } = useFormContext<OnboardingFormValues>()
+  const { control, trigger, formState } = useFormContext<OnboardingFormValues>()
 
   return (
     <Controller
@@ -93,9 +93,12 @@ export function TargetRolesField() {
             id="target-roles"
             placeholder="Add a role"
             maxLength={TARGET_ROLES_LIMITS.maxLength}
-            max={TARGET_ROLES_LIMITS.maxItems}
             value={field.value}
-            onChange={field.onChange}
+            onChange={(roles) => {
+              field.onChange(roles)
+              // One role too many shows its error straight away, not only on submit, and clears once one is removed.
+              if (roles.length > TARGET_ROLES_LIMITS.maxItems || formState.errors.targetRoles) void trigger('targetRoles')
+            }}
             onBlur={field.onBlur}
             {...errorProps('target-roles-label', fieldState.error?.message)}
           />

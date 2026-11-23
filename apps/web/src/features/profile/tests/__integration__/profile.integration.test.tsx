@@ -1,10 +1,10 @@
 import type { PrimaryResumeResponse } from '@quarry/contracts'
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { http, HttpResponse } from 'msw'
+import { delay, http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
 import { apiUrl } from '@/test/integration/handlers'
-import { primaryResumeResponse, renderRoute, signInAs } from '@/test/integration/render-route'
+import { primaryResumeResponse, renderRoute, signInAs, TEST_PROFILE, TEST_USER } from '@/test/integration/render-route'
 import { server } from '@/test/integration/server'
 
 const UPLOAD_KEY = 'V1StGXR8_Z5jdHi6B-myT.pdf'
@@ -43,6 +43,36 @@ describe('Profile (integration)', () => {
     expect(answers.getByText('Remote')).toBeInTheDocument()
     expect(answers.getByText('$60,000 a year')).toBeInTheDocument()
     expect(answers.queryByRole('textbox')).not.toBeInTheDocument()
+  })
+
+  it('loads the account and resume alongside the profile check, once each', async () => {
+    const events: string[] = []
+    signInAs()
+    server.use(
+      http.get(apiUrl('/api/profiles/me'), async () => {
+        events.push('profile started')
+        await delay(100)
+        events.push('profile answered')
+        return HttpResponse.json(TEST_PROFILE)
+      }),
+      http.get(apiUrl('/api/users/me'), () => {
+        events.push('user started')
+        return HttpResponse.json(TEST_USER)
+      }),
+      http.get(apiUrl('/api/resumes/primary'), () => {
+        events.push('resume started')
+        return HttpResponse.json(primaryResumeResponse())
+      }),
+    )
+
+    renderRoute('/profile')
+    await screen.findByText('Nigeria')
+    await screen.findByText(/^Confirmed/)
+
+    // All three are in flight before the profile check answers, and nothing is fetched twice.
+    expect(events).toHaveLength(4)
+    expect(events.at(-1)).toBe('profile answered')
+    expect(events.slice(0, 3).sort()).toEqual(['profile started', 'resume started', 'user started'])
   })
 
   it('is reachable from the header', async () => {
