@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ChipInput } from '@/components/ui/chip-input'
 import { ChoiceChips } from '@/components/ui/choice-chips'
+import { Combobox } from '@/components/ui/combobox'
 import { FileDrop } from '@/components/ui/file-drop'
 import {
   Field,
@@ -12,7 +13,6 @@ import {
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '@/components/ui/input-group'
-import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Section, Specimen } from './section.tsx'
@@ -79,14 +79,25 @@ const SPECIMEN_CHOICES = [
   { value: 'onsite', label: 'Onsite' },
 ] as const
 
+const SPECIMEN_COUNTRIES = [
+  { value: 'GH', label: 'Ghana' },
+  { value: 'KE', label: 'Kenya' },
+  { value: 'NG', label: 'Nigeria' },
+  { value: 'ZA', label: 'South Africa' },
+  { value: 'GB', label: 'United Kingdom' },
+  { value: 'US', label: 'United States' },
+] as const
+
 function ProfileControls() {
   const [roles, setRoles] = useState(['Senior Product Engineer', 'Founding Engineer'])
   const [setups, setSetups] = useState<string[]>(['remote'])
   const [file, setFile] = useState<File | null>(null)
+  const [country, setCountry] = useState('NG')
+  const [currency, setCurrency] = useState('USD')
 
   return (
     <>
-      <Specimen label="Chip input, choice chips and suffixed input">
+      <Specimen label="Chip input, choice chips, suffixed input and combobox">
         <FieldGroup>
           <Field>
             <FieldLabel htmlFor="ds-chips">Target roles</FieldLabel>
@@ -105,11 +116,31 @@ function ProfileControls() {
                   <InputGroupText>per year</InputGroupText>
                 </InputGroupAddon>
               </InputGroup>
-              <NativeSelect aria-label="Currency" defaultValue="USD">
-                <NativeSelectOption value="USD">USD</NativeSelectOption>
-                <NativeSelectOption value="NGN">NGN</NativeSelectOption>
-              </NativeSelect>
+              <Select value={currency} onValueChange={setCurrency}>
+                <SelectTrigger aria-label="Currency" className="w-28 shrink-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="USD">USD</SelectItem>
+                  <SelectItem value="NGN">NGN</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+          </Field>
+          <Field>
+            <FieldLabel id="ds-combobox-label" htmlFor="ds-combobox">
+              Combobox
+            </FieldLabel>
+            <Combobox
+              id="ds-combobox"
+              aria-labelledby="ds-combobox-label"
+              options={SPECIMEN_COUNTRIES}
+              value={country}
+              onChange={setCountry}
+              placeholder="Choose a country"
+              searchPlaceholder="Search countries"
+              emptyMessage="No country matches"
+            />
           </Field>
         </FieldGroup>
       </Specimen>

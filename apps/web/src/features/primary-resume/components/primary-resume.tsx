@@ -69,12 +69,12 @@ export function PrimaryResume({ resume }: { resume: Resume }) {
                 heading={
                   <>
                     <span>{role.company}</span>
-                    <span>{`  ·  ${role.title}`}</span>
+                    {role.location ? <span>{`  ·  ${role.location}`}</span> : null}
                   </>
                 }
                 meta={formatDateRange(role.startDate, role.endDate)}
               />
-              {role.location ? <ResumeEntryMeta>{role.location}</ResumeEntryMeta> : null}
+              <ResumeEntryMeta>{role.title}</ResumeEntryMeta>
               <Bullets items={role.bullets} />
             </ResumeEntry>
           ))}

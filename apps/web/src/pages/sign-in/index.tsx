@@ -39,7 +39,10 @@ export function SignInPage() {
     <AuthCard
       title="Sign in"
       description="Welcome back. Enter your email and password."
-      footer={
+      submitLabel="Sign in"
+      submitting={isSubmitting}
+      onSubmit={handleSubmit(onSubmit)}
+      alternative={
         <p className="text-ui text-muted-foreground">
           New to Quarry?{' '}
           <Button asChild variant="link">
@@ -48,40 +51,35 @@ export function SignInPage() {
         </p>
       }
     >
-      <form noValidate onSubmit={handleSubmit(onSubmit)}>
-        <FieldGroup>
-          {formError ? (
-            <Alert variant="destructive">
-              <AlertDescription>{formError}</AlertDescription>
-            </Alert>
-          ) : null}
-          <Field data-invalid={Boolean(errors.email)}>
-            <FieldLabel htmlFor="email">Email</FieldLabel>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              aria-invalid={Boolean(errors.email)}
-              {...register('email')}
-            />
-            <FieldError errors={[errors.email]} />
-          </Field>
-          <Field data-invalid={Boolean(errors.password)}>
-            <FieldLabel htmlFor="password">Password</FieldLabel>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              aria-invalid={Boolean(errors.password)}
-              {...register('password')}
-            />
-            <FieldError errors={[errors.password]} />
-          </Field>
-          <Button type="submit" variant="primary" loading={isSubmitting}>
-            Sign in
-          </Button>
-        </FieldGroup>
-      </form>
+      <FieldGroup>
+        {formError ? (
+          <Alert variant="destructive">
+            <AlertDescription>{formError}</AlertDescription>
+          </Alert>
+        ) : null}
+        <Field data-invalid={Boolean(errors.email)}>
+          <FieldLabel htmlFor="email">Email</FieldLabel>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            aria-invalid={Boolean(errors.email)}
+            {...register('email')}
+          />
+          <FieldError errors={[errors.email]} />
+        </Field>
+        <Field data-invalid={Boolean(errors.password)}>
+          <FieldLabel htmlFor="password">Password</FieldLabel>
+          <Input
+            id="password"
+            type="password"
+            autoComplete="current-password"
+            aria-invalid={Boolean(errors.password)}
+            {...register('password')}
+          />
+          <FieldError errors={[errors.password]} />
+        </Field>
+      </FieldGroup>
     </AuthCard>
   )
 }

@@ -1,13 +1,14 @@
 import { COUNTRIES, TARGET_ROLES_LIMITS } from '@quarry/contracts'
-import type { ChangeEvent, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 import { ChipInput } from '@/components/ui/chip-input'
 import { ChoiceChips } from '@/components/ui/choice-chips'
+import { Combobox } from '@/components/ui/combobox'
 import { FieldError } from '@/components/ui/field'
 import { FileDrop } from '@/components/ui/file-drop'
 import { Input } from '@/components/ui/input'
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '@/components/ui/input-group'
-import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { RESUME_MAX_MB } from '@/lib/profile/profile.constants'
 import type { OnboardingFormValues } from '@/lib/profile/profile.types'
 import { COUNTRY_OPTIONS, CURRENCY_OPTIONS, isCountryCode, WORK_SETUP_OPTIONS } from '../onboarding-options'
@@ -124,35 +125,34 @@ export function ExperienceField() {
 }
 
 export function CountryField() {
-  const {
-    register,
-    setValue,
-    formState: { errors },
-  } = useFormContext<OnboardingFormValues>()
-
-  const error = errors.countryCode?.message
-
-  const field = register('countryCode', {
-    // The salary currency follows the country; it can still be changed after.
-    onChange: (event: ChangeEvent<HTMLSelectElement>) => {
-      const code = event.target.value
-      if (isCountryCode(code)) setValue('currency', COUNTRIES[code].currency)
-    },
-  })
+  const { control, setValue } = useFormContext<OnboardingFormValues>()
 
   return (
-    <FormRow label="Country" labelId="country-label" htmlFor="country" error={error}>
-      <NativeSelect id="country" className="w-full sm:max-w-80" {...errorProps('country-label', error)} {...field}>
-        <NativeSelectOption value="" disabled>
-          Choose a country
-        </NativeSelectOption>
-        {COUNTRY_OPTIONS.map((option) => (
-          <NativeSelectOption key={option.value} value={option.value}>
-            {option.label}
-          </NativeSelectOption>
-        ))}
-      </NativeSelect>
-    </FormRow>
+    <Controller
+      control={control}
+      name="countryCode"
+      render={({ field, fieldState }) => (
+        <FormRow label="Country" labelId="country-label" htmlFor="country" error={fieldState.error?.message}>
+          <Combobox
+            id="country"
+            aria-labelledby="country-label"
+            className="sm:max-w-80"
+            options={COUNTRY_OPTIONS}
+            value={field.value}
+            onChange={(code) => {
+              field.onChange(code)
+              // The salary currency follows the country; it can still be changed after.
+              if (isCountryCode(code)) setValue('currency', COUNTRIES[code].currency)
+            }}
+            onBlur={field.onBlur}
+            placeholder="Choose a country"
+            searchPlaceholder="Search countries"
+            emptyMessage="No country matches"
+            {...errorProps('country-label', fieldState.error?.message)}
+          />
+        </FormRow>
+      )}
+    />
   )
 }
 
@@ -181,6 +181,7 @@ export function WorkSetupField() {
 
 export function SalaryFloorField() {
   const {
+    control,
     register,
     formState: { errors },
   } = useFormContext<OnboardingFormValues>()
@@ -201,13 +202,30 @@ export function SalaryFloorField() {
             <InputGroupText>per year</InputGroupText>
           </InputGroupAddon>
         </InputGroup>
-        <NativeSelect aria-label="Currency" className="w-full" {...errorProps('salary-label', errors.currency?.message)} {...register('currency')}>
-          {CURRENCY_OPTIONS.map((currency) => (
-            <NativeSelectOption key={currency} value={currency}>
-              {currency}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
+        <Controller
+          control={control}
+          name="currency"
+          render={({ field }) => (
+            <Select name={field.name} value={field.value} onValueChange={field.onChange}>
+              <SelectTrigger
+                ref={field.ref}
+                aria-label="Currency"
+                className="w-full"
+                onBlur={field.onBlur}
+                {...errorProps('salary-label', errors.currency?.message)}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CURRENCY_OPTIONS.map((currency) => (
+                  <SelectItem key={currency} value={currency}>
+                    {currency}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
       </div>
     </FormRow>
   )
