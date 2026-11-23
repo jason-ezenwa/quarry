@@ -2,6 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from '@thallesp/nestjs-better-auth';
+import { ProfileModule } from './app/profile/profile.module';
+import { ResumeModule } from './app/resume/resume.module';
+import { StorageModule } from './app/storage/storage.module';
 import { UserModule } from './app/user/user.module';
 import { AppController } from './app.controller';
 import { auth } from './lib/auth';
@@ -14,6 +17,9 @@ import { DATABASE_NAME, getMongoUri } from './lib/database';
     AuthModule.forRoot({ auth, enableRawBodyParser: true }),
     MongooseModule.forRoot(getMongoUri(), { dbName: DATABASE_NAME }),
     UserModule,
+    StorageModule,
+    ProfileModule,
+    ResumeModule,
   ],
   controllers: [AppController],
   providers: [AuthIndexesProvider],

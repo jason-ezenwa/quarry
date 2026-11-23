@@ -6,7 +6,7 @@ import { Section, Specimen } from './section.tsx'
 
 const variants = ['primary', 'secondary', 'ghost', 'destructive', 'link'] as const
 const sizes = ['sm', 'default', 'lg'] as const
-const iconSizes = ['icon-sm', 'icon', 'icon-lg'] as const
+const iconSizes = ['icon-sm', 'icon', 'icon-lg', 'icon-touch'] as const
 
 export function ButtonSection() {
   return (
@@ -52,6 +52,14 @@ export function ButtonSection() {
             <Button variant="ghost">
               All applications
               <ArrowRightIcon data-icon="inline-end" />
+            </Button>
+          </div>
+        </Specimen>
+        <Specimen label='align="start": a full-width button at the top of a list, lined up with the nav items'>
+          <div className="flex w-58 flex-col">
+            <Button align="start" className="w-full">
+              <PlusIcon data-icon="inline-start" />
+              New application
             </Button>
           </div>
         </Specimen>

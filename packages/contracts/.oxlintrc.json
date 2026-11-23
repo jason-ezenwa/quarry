@@ -1,0 +1,11 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "oxc"],
+  "jsPlugins": [{ "name": "local", "specifier": "@quarry/lint-rules/plugin" }],
+  "ignorePatterns": ["dist/**", "coverage/**"],
+  "rules": {
+    "local/no-adr-references": "error",
+    "local/no-noisy-comments": "warn",
+    "local/no-optional-nullable-mismatch": "error"
+  }
+}

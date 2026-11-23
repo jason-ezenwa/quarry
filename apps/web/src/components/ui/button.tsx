@@ -27,23 +27,39 @@ const buttonVariants = cva(
         icon: "size-control",
         "icon-sm": "size-control-sm [&_svg:not([class*='size-'])]:size-3.5",
         "icon-lg": "size-control-lg",
+        // The 44px touch target in the phone top bar.
+        "icon-touch": "size-11 [&_svg:not([class*='size-'])]:size-5",
+      },
+      // start: a full-width button at the top of a list, such as New application in the sidebar.
+      align: {
+        center: "",
+        start: "justify-start",
       },
     },
-    // Sizes add side padding and height, but a link sits flush with the text around it.
-    compoundVariants: [{ variant: "link", className: "h-auto px-0" }],
+    compoundVariants: [
+      // Sizes add side padding and height, but a link sits flush with the text around it.
+      { variant: "link", className: "h-auto px-0" },
+      // Start aligned, the icon and label line up with the nav items below: 16px icon, 9px gap, 10px in from the edge.
+      {
+        size: "default",
+        align: "start",
+        className: "gap-2.25 has-data-[icon=inline-start]:pl-2.25 [&_svg:not([class*='size-'])]:size-4",
+      },
+    ],
     defaultVariants: {
       variant: "secondary",
       size: "default",
+      align: "center",
     },
   }
 )
 
-// loading disables the button, marks it busy and puts a spinner in the leading
-// slot, in place of a leading icon. The label stays.
+// loading disables the button and swaps the leading icon for a spinner.
 function Button({
   className,
   variant = "secondary",
   size = "default",
+  align = "center",
   asChild = false,
   loading = false,
   disabled,
@@ -61,16 +77,22 @@ function Button({
       data-slot="button"
       data-variant={variant}
       data-size={size}
+      data-align={align}
       data-loading={loading || undefined}
       aria-busy={loading || undefined}
       disabled={disabled || loading}
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={cn(buttonVariants({ variant, size, align, className }))}
       {...props}
     >
-      {loading && !asChild ? (
-        <Spinner data-icon="inline-start" aria-hidden="true" className="text-current" />
-      ) : null}
-      {children}
+      {/* Slot needs its one child alone, so asChild never gets the spinner. */}
+      {asChild ? (
+        children
+      ) : (
+        <>
+          {loading ? <Spinner data-icon="inline-start" aria-hidden="true" className="text-current" /> : null}
+          {children}
+        </>
+      )}
     </Comp>
   )
 }
