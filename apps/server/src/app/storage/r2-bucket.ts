@@ -10,11 +10,9 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import type { FactoryProvider } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { StorageObjectNotFoundError } from './storage-bucket';
-import { STORAGE_BUCKET } from './storage.constants';
 import type {
   PutObjectOptions,
   R2Config,
-  StorageBucket,
   StoredObjectInfo,
 } from './storage.types';
 
@@ -41,7 +39,7 @@ function isNotFound(error: unknown): boolean {
 }
 
 // Cloudflare R2 through its S3-compatible API.
-export class R2Bucket implements StorageBucket {
+export class R2Bucket {
   constructor(
     private readonly client: S3Client,
     private readonly bucketName: string,
@@ -128,8 +126,8 @@ export class R2Bucket implements StorageBucket {
 }
 
 // Nothing is sent until the first request against the bucket.
-export const r2BucketProvider: FactoryProvider<StorageBucket> = {
-  provide: STORAGE_BUCKET,
+export const r2BucketProvider: FactoryProvider<R2Bucket> = {
+  provide: R2Bucket,
   inject: [ConfigService],
   useFactory: (configService: ConfigService) => {
     const config: R2Config = {

@@ -3,10 +3,14 @@ import {
   NotFoundException,
   PayloadTooLargeException,
 } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { InMemoryBucket } from '../../../test-utils/in-memory-bucket';
-import { STORAGE_BUCKET } from '../storage.constants';
+import {
+  fakeR2 as bucket,
+  R2_BUCKET_URL,
+} from '../../../../test/integration/fake-r2';
+import { StorageModule } from '../storage.module';
 import { StorageService } from '../storage.service';
 import type { UploadFile } from '../storage.types';
 
@@ -26,15 +30,12 @@ const file = (overrides: Partial<UploadFile> = {}): UploadFile => ({
 
 describe('StorageService (integration)', () => {
   let service: StorageService;
-  let bucket: InMemoryBucket;
 
   beforeEach(async () => {
-    bucket = new InMemoryBucket();
-
     const moduleRef = await Test.createTestingModule({
-      providers: [
-        StorageService,
-        { provide: STORAGE_BUCKET, useValue: bucket },
+      imports: [
+        ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }),
+        StorageModule,
       ],
     }).compile();
 
@@ -175,14 +176,18 @@ describe('StorageService (integration)', () => {
 
   describe('getSignedUrl', () => {
     it('returns a URL for the path that expires after the given time', async () => {
-      const url = await service.getSignedUrl(
-        'users/user-1/primary-resume/a.pdf',
-        5 * 60 * 1000,
+      const url = new URL(
+        await service.getSignedUrl(
+          'users/user-1/primary-resume/a.pdf',
+          5 * 60 * 1000,
+        ),
       );
 
-      expect(url).toBe(
-        'https://storage.test/users/user-1/primary-resume/a.pdf?expires-in=300',
+      expect(`${url.origin}${url.pathname}`).toBe(
+        `${R2_BUCKET_URL}/users/user-1/primary-resume/a.pdf`,
       );
+
+      expect(url.searchParams.get('X-Amz-Expires')).toBe('300');
     });
   });
 });

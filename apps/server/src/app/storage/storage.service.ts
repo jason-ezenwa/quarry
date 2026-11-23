@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  Inject,
   Injectable,
   Logger,
   NotFoundException,
@@ -16,11 +15,9 @@ import {
 } from '@quarry/contracts';
 import { nanoid } from 'nanoid';
 import { StorageObjectNotFoundError } from './storage-bucket';
-import {
-  ORIGINAL_NAME_METADATA_KEY,
-  STORAGE_BUCKET,
-} from './storage.constants';
-import type { StorageBucket, StoredFile, UploadFile } from './storage.types';
+import { R2Bucket } from './r2-bucket';
+import { ORIGINAL_NAME_METADATA_KEY } from './storage.constants';
+import type { StoredFile, UploadFile } from './storage.types';
 import {
   assertMimeTypeMatchesKey,
   buildStorageFolder,
@@ -32,7 +29,7 @@ import {
 export class StorageService {
   private readonly logger = new Logger(StorageService.name);
 
-  constructor(@Inject(STORAGE_BUCKET) private readonly bucket: StorageBucket) {}
+  constructor(private readonly bucket: R2Bucket) {}
 
   async uploadPending(
     userId: string,
