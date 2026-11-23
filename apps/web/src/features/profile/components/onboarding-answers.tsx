@@ -4,7 +4,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { profileQueryOptions } from '@/lib/profile/profile-api'
-import { formatSalaryFloor, formatWorkSetups } from '@/lib/profile/profile-format'
+import { formatSalaryFloor, formatWorkSetups, formatYears } from '@/lib/profile/profile-format'
 
 function Answer({ label, value }: { label: string; value: string }) {
   return (
@@ -34,7 +34,7 @@ export function OnboardingAnswers() {
         ) : (
           <dl>
             <Answer label="Target roles" value={profile.targetRoles.join(', ')} />
-            <Answer label="Years of experience" value={String(profile.yearsOfExperience)} />
+            <Answer label="Years of experience" value={formatYears(profile.yearsOfExperience)} />
             <Answer label="Country" value={COUNTRIES[profile.countryCode].name} />
             <Answer label="Work setup" value={formatWorkSetups(profile.workSetups)} />
             <Answer label="Salary floor" value={formatSalaryFloor(profile)} />

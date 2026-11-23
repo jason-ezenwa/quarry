@@ -20,6 +20,8 @@ export type ResumeEditorMeta = {
   errors: Record<string, string>
   saving: boolean
   saveError: string | null
+  // Changes whenever an item is removed, so list items keyed by position can remount instead of inheriting a neighbour's state.
+  revision: number
 }
 
 // The one interface every resume editor implements, whoever holds the draft.

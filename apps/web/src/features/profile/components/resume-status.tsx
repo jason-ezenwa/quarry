@@ -17,7 +17,7 @@ import { formatDay } from '@/features/primary-resume/resume-format'
 import { usePrimaryResume } from '@/features/primary-resume/use-primary-resume'
 
 function ResumeFile({ file }: { file: PrimaryResumeResponse['file'] }) {
-  const Icon = file.mimeType === 'application/pdf' ? FilePdfIcon : FileDocIcon
+  const Icon = FILE_EXTENSIONS[file.mimeType] === 'pdf' ? FilePdfIcon : FileDocIcon
 
   return (
     <div className="flex items-center gap-3">

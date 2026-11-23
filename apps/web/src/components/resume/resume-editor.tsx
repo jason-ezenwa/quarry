@@ -34,7 +34,8 @@ function setIn<T>(value: T, path: ResumeFieldPath, next: unknown): T {
   return copy as T
 }
 
-// Trims every string, drops blank optional fields and blank list items, so an untouched empty field is never sent.
+// Trims every string and drops blank fields and blank list items, so an untouched empty field is never sent.
+// A blank required field becomes a missing one, which the schema then reports as Required.
 function normalize(value: unknown): unknown {
   if (typeof value === "string") return value.trim()
   if (Array.isArray(value)) {
@@ -70,6 +71,7 @@ function ResumeEditorProvider({ resume, onSave, children }: ResumeEditorProvider
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [revision, setRevision] = useState(0)
 
   async function save() {
     const result = resumeSchema.safeParse(normalize(draft))
@@ -98,13 +100,15 @@ function ResumeEditorProvider({ resume, onSave, children }: ResumeEditorProvider
       setField: (path, next) => setDraft((current) => setIn(current, path, next)),
       addItem: (path, item) =>
         setDraft((current) => setIn(current, path, [...(getIn(current, path) as unknown[]), item])),
-      removeItem: (path, index) =>
+      removeItem: (path, index) => {
+        setRevision((current) => current + 1)
         setDraft((current) =>
           setIn(current, path, (getIn(current, path) as unknown[]).filter((_, position) => position !== index)),
-        ),
+        )
+      },
       save,
     },
-    meta: { errors, saving, saveError },
+    meta: { errors, saving, saveError, revision },
   }
 
   return <ResumeEditorContext value={value}>{children}</ResumeEditorContext>
@@ -186,14 +190,14 @@ function ResumeEditorChipField({ path, label, placeholder }: { path: ResumeField
 }
 
 function ResumeEditorBulletList({ path, label, itemLabel }: { path: ResumeFieldPath; label: string; itemLabel: string }) {
-  const { state, actions } = useResumeEditor()
+  const { state, actions, meta } = useResumeEditor()
   const bullets = getIn(state.draft, path) as string[]
 
   return (
     <div role="group" aria-label={label} className="flex flex-col gap-2">
       <p className="text-small text-foreground">{label}</p>
       {bullets.map((_, index) => (
-        <div key={index} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+        <div key={`${meta.revision}-${index}`} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
           <ResumeEditorTextArea path={[...path, index]} label={`${itemLabel} ${index + 1}`} hideLabel rows={2} />
           <Button
             type="button"

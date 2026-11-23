@@ -34,7 +34,7 @@ function SectionHead({ title, count }: { title: string; count?: number }) {
 }
 
 function BasicsSection() {
-  const { state, actions } = useResumeEditor()
+  const { state, actions, meta } = useResumeEditor()
   const links = state.draft.contact.links
 
   return (
@@ -49,7 +49,7 @@ function BasicsSection() {
       <div role="group" aria-label="Links" className="flex flex-col gap-2">
         <p className="text-small text-foreground">Links</p>
         {links.map((_, index) => (
-          <div key={index} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 md:grid-cols-[9rem_minmax(0,1fr)_auto]">
+          <div key={`${meta.revision}-${index}`} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 md:grid-cols-[9rem_minmax(0,1fr)_auto]">
             <ResumeEditorField path={['contact', 'links', index, 'label']} label={`Link ${index + 1} label`} hideLabel placeholder="Label" className="col-span-2 md:col-span-1" />
             <ResumeEditorField path={['contact', 'links', index, 'url']} label={`Link ${index + 1} URL`} hideLabel type="url" placeholder="https://" />
             <Button type="button" variant="ghost" size="icon-sm" aria-label={`Remove link ${index + 1}`} className="mt-1.5" onClick={() => actions.removeItem(['contact', 'links'], index)}>
@@ -68,7 +68,7 @@ function BasicsSection() {
 }
 
 function ExperienceSection() {
-  const { state } = useResumeEditor()
+  const { state, meta } = useResumeEditor()
   const roles = state.draft.experience
 
   return (
@@ -79,7 +79,7 @@ function ExperienceSection() {
           const path = ['experience', index] as const
           return (
             <ResumeEditorEntry
-              key={index}
+              key={`${meta.revision}-${index}`}
               path={path}
               title={role.title}
               meta={[role.company, formatDateRange(role.startDate, role.endDate)].filter(Boolean).join('  ·  ')}
@@ -107,7 +107,7 @@ function ExperienceSection() {
 }
 
 function EducationSection() {
-  const { state } = useResumeEditor()
+  const { state, meta } = useResumeEditor()
   const schools = state.draft.education
 
   return (
@@ -117,7 +117,7 @@ function EducationSection() {
         {schools.map((school, index) => {
           const path = ['education', index] as const
           return (
-            <ResumeEditorEntry key={index} path={path} title={school.school} meta={school.qualification} defaultOpen={!school.school}>
+            <ResumeEditorEntry key={`${meta.revision}-${index}`} path={path} title={school.school} meta={school.qualification} defaultOpen={!school.school}>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <ResumeEditorField path={[...path, 'school']} label="School" />
                 <ResumeEditorField path={[...path, 'qualification']} label="Qualification" />
@@ -150,7 +150,7 @@ function SkillsSection() {
 }
 
 function ProjectsSection() {
-  const { state } = useResumeEditor()
+  const { state, meta } = useResumeEditor()
   const projects = state.draft.projects
 
   return (
@@ -160,7 +160,7 @@ function ProjectsSection() {
         {projects.map((project, index) => {
           const path = ['projects', index] as const
           return (
-            <ResumeEditorEntry key={index} path={path} title={project.name} meta={project.description} defaultOpen={!project.name}>
+            <ResumeEditorEntry key={`${meta.revision}-${index}`} path={path} title={project.name} meta={project.description} defaultOpen={!project.name}>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <ResumeEditorField path={[...path, 'name']} label="Name" />
                 <ResumeEditorField path={[...path, 'url']} label="Link" type="url" placeholder="https://" />
@@ -181,7 +181,7 @@ function ProjectsSection() {
 }
 
 function CertificationsSection() {
-  const { state } = useResumeEditor()
+  const { state, meta } = useResumeEditor()
   const certifications = state.draft.certifications
 
   return (
@@ -191,7 +191,7 @@ function CertificationsSection() {
         {certifications.map((certification, index) => {
           const path = ['certifications', index] as const
           return (
-            <ResumeEditorEntry key={index} path={path} title={certification.name} meta={certification.issuer} defaultOpen={!certification.name}>
+            <ResumeEditorEntry key={`${meta.revision}-${index}`} path={path} title={certification.name} meta={certification.issuer} defaultOpen={!certification.name}>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <ResumeEditorField path={[...path, 'name']} label="Name" />
                 <ResumeEditorField path={[...path, 'issuer']} label="Issuer" />

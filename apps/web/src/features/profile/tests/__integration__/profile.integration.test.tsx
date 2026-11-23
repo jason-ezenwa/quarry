@@ -38,7 +38,7 @@ describe('Profile (integration)', () => {
 
     const answers = within(screen.getByRole('generic', { name: "What you're looking for" }))
     expect(await answers.findByText('Senior Product Engineer')).toBeInTheDocument()
-    expect(answers.getByText('4')).toBeInTheDocument()
+    expect(answers.getByText('4 years')).toBeInTheDocument()
     expect(answers.getByText('Nigeria')).toBeInTheDocument()
     expect(answers.getByText('Remote')).toBeInTheDocument()
     expect(answers.getByText('$60,000 a year')).toBeInTheDocument()

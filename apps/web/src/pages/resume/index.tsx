@@ -23,49 +23,40 @@ function ResumeContent({ data }: { data: PrimaryResumeResponse }) {
   if (data.parseStatus === 'parsing') return <ReadingResumeCallout fileName={data.file.originalName} />
   if (data.parseStatus === 'failed' || !data.resume) return <FailedResumeCallout />
 
-  // A new parse starts a fresh draft.
-  const editorKey = data.parsedAt ?? data.id
+  const resume = data.resume
+  const reviewing = !data.reviewedAt
 
-  if (!data.reviewedAt) {
+  if (reviewing || editing) {
+    async function onSave(edited: Resume) {
+      await save.mutateAsync(edited)
+      setEditing(false)
+      toast.success(reviewing ? 'Resume confirmed' : 'Changes saved')
+    }
+
     return (
       <PrimaryResumeEditor
-        key={editorKey}
-        resume={data.resume}
-        onSave={async (resume: Resume) => {
-          await save.mutateAsync(resume)
-          toast.success('Resume confirmed')
-        }}
+        // A new parse starts a fresh draft.
+        key={data.parsedAt ?? data.id}
+        resume={resume}
+        onSave={onSave}
         actions={
-          <>
-            <ReuploadButton />
-            <ResumeEditorSubmit className="ml-auto">Confirm resume</ResumeEditorSubmit>
-          </>
+          reviewing ? (
+            <>
+              <ReuploadButton />
+              <ResumeEditorSubmit className="ml-auto">Confirm resume</ResumeEditorSubmit>
+            </>
+          ) : (
+            <>
+              <Button type="button" variant="ghost" onClick={() => setEditing(false)}>
+                Cancel
+              </Button>
+              <ResumeEditorSubmit className="ml-auto">Save changes</ResumeEditorSubmit>
+            </>
+          )
         }
       >
-        <ResumeReviewBanner fileName={data.file.originalName} />
+        {reviewing ? <ResumeReviewBanner fileName={data.file.originalName} /> : null}
       </PrimaryResumeEditor>
-    )
-  }
-
-  if (editing) {
-    return (
-      <PrimaryResumeEditor
-        key={editorKey}
-        resume={data.resume}
-        onSave={async (resume: Resume) => {
-          await save.mutateAsync(resume)
-          setEditing(false)
-          toast.success('Changes saved')
-        }}
-        actions={
-          <>
-            <Button type="button" variant="ghost" onClick={() => setEditing(false)}>
-              Cancel
-            </Button>
-            <ResumeEditorSubmit className="ml-auto">Save changes</ResumeEditorSubmit>
-          </>
-        }
-      />
     )
   }
 
@@ -79,7 +70,7 @@ function ResumeContent({ data }: { data: PrimaryResumeResponse }) {
         </Button>
       </div>
       <div className="flex justify-center">
-        <PrimaryResume resume={data.resume} />
+        <PrimaryResume resume={resume} />
       </div>
     </>
   )
