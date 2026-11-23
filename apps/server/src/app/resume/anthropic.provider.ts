@@ -10,7 +10,6 @@ export const anthropicProvider: FactoryProvider<AnthropicProvider> = {
   inject: [ConfigService],
   useFactory: (configService: ConfigService) =>
     createAnthropic({
-      // Not ANTHROPIC_API_KEY, which the cloud environment reserves.
       apiKey: configService.getOrThrow<string>('APP_ANTHROPIC_API_KEY'),
       baseURL: ANTHROPIC_BASE_URL,
     }),
