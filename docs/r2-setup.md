@@ -53,4 +53,5 @@ sessions, add the staging values to the Quarry cloud environment's variables;
 `scripts/claude-cloud-setup.sh` writes them to the server's `.env`, with empty
 placeholders for any that are missing. Production gets its own bucket's token.
 
-Tests never reach R2: the integration tests swap in an in-memory bucket.
+Tests never reach R2: the integration tests run the real R2 client against an
+MSW fake of R2's S3 API (`apps/server/test/integration/fake-r2.ts`).
