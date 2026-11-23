@@ -1,8 +1,7 @@
 // Change to claude-sonnet-5-5 if extraction quality falls short.
 export const RESUME_PARSE_MODEL = 'claude-haiku-5-5';
 
-// Set explicitly so an ANTHROPIC_BASE_URL in the environment, which the cloud
-// environment reserves for its own use, never redirects the app's calls.
+// Always call the Anthropic API directly.
 export const ANTHROPIC_BASE_URL = 'https://api.anthropic.com/v1';
 
 export const PARSE_TIMEOUT_MS = 60_000;
