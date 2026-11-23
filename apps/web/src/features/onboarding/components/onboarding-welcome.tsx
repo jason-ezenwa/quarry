@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router'
 import { Spinner } from '@/components/ui/spinner'
 import { useCurrentUser } from '@/hooks/use-current-user'
 import { PATHS } from '@/lib/auth/auth.constants'
-import { WORK_SETUP_LABELS } from './onboarding-options'
+import { WORK_SETUP_LABELS } from '../onboarding-options'
 
 const WELCOME_DURATION_MS = 2500
 const WHITESPACE = /\s+/

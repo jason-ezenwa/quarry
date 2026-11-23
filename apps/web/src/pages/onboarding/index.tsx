@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router'
 import { Wordmark } from '@/components/app-header/wordmark'
 import { PATHS } from '@/lib/auth/auth.constants'
 import { cn } from '@/lib/utils'
-import { OnboardingForm } from './onboarding-form'
-import { OnboardingWelcome } from './onboarding-welcome'
+import { OnboardingForm } from '@/features/onboarding/components/onboarding-form'
+import { OnboardingWelcome } from '@/features/onboarding/components/onboarding-welcome'
 
 export function OnboardingPage() {
   const navigate = useNavigate()

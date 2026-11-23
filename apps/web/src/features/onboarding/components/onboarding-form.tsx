@@ -22,7 +22,7 @@ import {
   TargetRolesField,
   WorkSetupField,
 } from './onboarding-fields'
-import { defaultLocation } from './onboarding-options'
+import { defaultLocation } from '../onboarding-options'
 
 type OnboardingFormProps = {
   onSaved: (profile: ProfileResponse) => void
