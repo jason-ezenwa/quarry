@@ -1,8 +1,8 @@
 import { INestApplication, Type } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AppModule } from '../../src/app.module';
-import { STORAGE_BUCKET } from '../../src/app/storage/storage-bucket';
-import { PARSE_RETRY_DELAYS_MS } from '../../src/app/resume/resume.constants';
+import { STORAGE_BUCKET } from '../../src/app/storage/storage.constants';
+import { PARSE_RETRY_DELAYS_MS } from '../../src/app/resume/parser/parser.constants';
 import { configureApp } from '../../src/configure-app';
 import { InMemoryBucket } from '../../src/test-utils/in-memory-bucket';
 

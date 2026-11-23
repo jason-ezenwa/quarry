@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
-import { STALE_PARSE_AFTER_MS } from './resume.constants';
-import { ResumeService } from './resume.service';
+import { STALE_PARSE_AFTER_MS } from './parser.constants';
+import { ResumeService } from '../resume.service';
 
 // Re-runs parses that a restart cut off. Runs once at startup, never on a
 // timer, and never touches failed parses.
@@ -32,6 +32,7 @@ export class InterruptedParseRecovery implements OnApplicationBootstrap {
         resumeId: claimed.id,
         userId: claimed.user.toHexString(),
       });
+
       await this.resumeService.runParse(claimed.id);
     }
   }

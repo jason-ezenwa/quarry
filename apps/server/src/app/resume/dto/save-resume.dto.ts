@@ -10,19 +10,19 @@ import {
   Matches,
   ValidateNested,
 } from 'class-validator';
-
-type ResumeContact = Resume['contact'];
-type ResumeLink = ResumeContact['links'][number];
-type ResumeExperience = Resume['experience'][number];
-type ResumeEducation = Resume['education'][number];
-type ResumeSkill = Resume['skills'][number];
-type ResumeProject = Resume['projects'][number];
-type ResumeCertification = Resume['certifications'][number];
+import { DATE_MESSAGE } from '../resume.constants';
+import type {
+  ResumeCertification,
+  ResumeContact,
+  ResumeEducation,
+  ResumeExperience,
+  ResumeLink,
+  ResumeProject,
+  ResumeSkill,
+} from '../resume.types';
 
 const trim = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim() : value;
-
-const DATE_MESSAGE = '$property must be YYYY or YYYY-MM';
 
 export class ResumeLinkDto implements ResumeLink {
   @Transform(trim)

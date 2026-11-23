@@ -1,10 +1,8 @@
 import {
-  BYTES_PER_MB,
   COUNTRY_CODES,
   CURRENCIES,
   FILE_EXTENSIONS,
   TARGET_ROLES_LIMITS,
-  UPLOAD_PURPOSES,
   WORK_SETUPS,
   YEARS_OF_EXPERIENCE_LIMITS,
   type CountryCode,
@@ -13,22 +11,15 @@ import {
   type UploadMimeType,
 } from '@quarry/contracts'
 import { z } from 'zod'
-
-const RESUME_LIMITS = UPLOAD_PURPOSES['primary-resume']
-export const RESUME_MAX_MB = RESUME_LIMITS.maxBytes / BYTES_PER_MB
-export const RESUME_ERRORS = {
-  missing: 'Add your resume',
-  wrongType: 'Use a PDF or DOCX',
-  tooLarge: `That file is over ${RESUME_MAX_MB} MB`,
-} as const
-const WHOLE_NUMBER = /^\d+$/
-const SALARY_SEPARATORS = /[,\s]/g
-
-const YEARS_MESSAGE = `Use a number from ${YEARS_OF_EXPERIENCE_LIMITS.min} to ${YEARS_OF_EXPERIENCE_LIMITS.max}`
-const SALARY_MESSAGE = 'Enter an amount above 0'
-
-// Some systems report no type, or a generic one, for a .docx, so fall back to the extension.
-const UNKNOWN_FILE_TYPES = ['', 'application/octet-stream']
+import {
+  RESUME_ERRORS,
+  RESUME_LIMITS,
+  SALARY_MESSAGE,
+  SALARY_SEPARATORS,
+  UNKNOWN_FILE_TYPES,
+  WHOLE_NUMBER,
+  YEARS_MESSAGE,
+} from './profile.constants'
 
 function resumeMimeType(file: File): UploadMimeType | null {
   const allowed: readonly string[] = RESUME_LIMITS.mimeTypes
@@ -43,15 +34,19 @@ const resume = z.custom<File | null>().transform((file, ctx) => {
     ctx.addIssue({ code: 'custom', message: RESUME_ERRORS.missing })
     return z.NEVER
   }
+
   const mimeType = resumeMimeType(file)
+
   if (!mimeType) {
     ctx.addIssue({ code: 'custom', message: RESUME_ERRORS.wrongType })
     return z.NEVER
   }
+
   if (file.size > RESUME_LIMITS.maxBytes) {
     ctx.addIssue({ code: 'custom', message: RESUME_ERRORS.tooLarge })
     return z.NEVER
   }
+
   // Uploaded with its real type, which the server checks.
   return file.type === mimeType ? file : new File([file], file.name, { type: mimeType })
 })
@@ -66,20 +61,25 @@ const yearsOfExperience = z
 // Accepts "60,000" and "60 000" as well as "60000".
 const salaryAmount = z.string().transform((value, ctx) => {
   const digits = value.replace(SALARY_SEPARATORS, '')
+
   if (digits !== '' && !WHOLE_NUMBER.test(digits)) {
     ctx.addIssue({ code: 'custom', message: 'Enter a whole number' })
     return z.NEVER
   }
+
   const amount = Number(digits)
+
   // An empty field reads as 0 here, so it gets the same message as a zero.
   if (amount <= 0) {
     ctx.addIssue({ code: 'custom', message: SALARY_MESSAGE })
     return z.NEVER
   }
+
   if (!Number.isSafeInteger(amount)) {
     ctx.addIssue({ code: 'custom', message: 'Enter a smaller amount' })
     return z.NEVER
   }
+
   return amount
 })
 
@@ -103,8 +103,3 @@ export const onboardingSchema = z
       salaryFloor: { amount: salaryAmount, currency },
     }),
   )
-
-// The form's own values: selects and number fields hold strings until the schema parses them.
-export type OnboardingFormValues = z.input<typeof onboardingSchema>
-
-export type OnboardingSubmission = z.output<typeof onboardingSchema>

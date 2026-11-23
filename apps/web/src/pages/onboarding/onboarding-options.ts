@@ -26,11 +26,13 @@ export function isCountryCode(value: string | undefined): value is CountryCode {
 // Starts the country on the browser's region, so most people don't have to change it.
 export function defaultLocation(locale: string): { countryCode: CountryCode | ''; currency: Currency } {
   let region: string | undefined
+
   try {
     region = new Intl.Locale(locale).maximize().region
   } catch {
     region = undefined
   }
+
   return isCountryCode(region)
     ? { countryCode: region, currency: COUNTRIES[region].currency }
     : { countryCode: '', currency: DEFAULT_CURRENCY }

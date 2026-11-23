@@ -31,6 +31,7 @@ function ChoiceChips<T extends string>({
     >
       {options.map((option) => {
         const selected = value.includes(option.value)
+
         return (
           <button
             key={option.value}

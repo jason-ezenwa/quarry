@@ -3,7 +3,7 @@ import { delay, http, HttpResponse } from 'msw';
 import {
   ANTHROPIC_BASE_URL,
   RESUME_PARSE_MODEL,
-} from '../../src/app/resume/resume.constants';
+} from '../../src/app/resume/parser/parser.constants';
 
 export const ANTHROPIC_MESSAGES_URL = `${ANTHROPIC_BASE_URL}/messages`;
 

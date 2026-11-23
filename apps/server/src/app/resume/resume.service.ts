@@ -13,7 +13,7 @@ import type {
 import { ClientSession, Model, type QueryFilter, Types } from 'mongoose';
 import { StorageService } from '../storage/storage.service';
 import type { StoredFile } from '../storage/storage.types';
-import { ResumeParserService } from './resume-parser.service';
+import { ResumeParserService } from './parser/parser.service';
 import { Resume, ResumeDocument, ResumeFile } from './resume.schema';
 import type { CreatePrimaryResumeInput } from './resume.types';
 import { toPrimaryResumeResponse, toResumeContentUpdate } from './resume.utils';
@@ -118,6 +118,7 @@ export class ResumeService {
     upload: UploadedFileRef,
   ): Promise<PrimaryResumeResponse> {
     const current = await this.findPrimary(userId);
+
     // Checked before committing, so a refused request leaves storage alone.
     if (current.parseStatus === 'parsing') {
       throw new ConflictException('Resume is being parsed');
@@ -128,9 +129,11 @@ export class ResumeService {
       'primary-resume',
       upload,
     );
+
     const previousPath = current.file?.path;
 
     let replaced: ResumeDocument | null;
+
     try {
       replaced = await this.resumeModel.findOneAndUpdate(
         { _id: current._id, parseStatus: { $ne: 'parsing' } },

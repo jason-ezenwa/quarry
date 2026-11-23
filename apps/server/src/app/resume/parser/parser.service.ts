@@ -1,7 +1,7 @@
 import type { AnthropicProvider } from '@ai-sdk/anthropic';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { resumeSchema, type Resume as ResumeContent } from '@quarry/contracts';
+import { resumeSchema } from '@quarry/contracts';
 import {
   APICallError,
   generateText,
@@ -14,41 +14,34 @@ import {
 import mammoth from 'mammoth';
 import { Model } from 'mongoose';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { StorageObjectNotFoundError } from '../storage/storage-bucket';
-import { StorageService } from '../storage/storage.service';
-import { ANTHROPIC } from './anthropic.provider';
+import { StorageObjectNotFoundError } from '../../storage/storage-bucket';
+import { StorageService } from '../../storage/storage.service';
 import {
+  ANTHROPIC,
   PARSE_MAX_OUTPUT_TOKENS,
   PARSE_RETRY_DELAYS_MS,
   PARSE_TIMEOUT_MS,
   RESUME_PARSE_MODEL,
   RESUME_PARSE_SYSTEM_PROMPT,
-  type ParseFailureReason,
-} from './resume.constants';
+} from './parser.constants';
+import type {
+  ParseFailureReason,
+  ParseLogContext,
+  ParseResult,
+} from './parser.types';
 import {
   Resume,
   ResumeDocument,
   ResumeFile,
   ResumeParseUsage,
-} from './resume.schema';
-import { toResumeContentUpdate } from './resume.utils';
+} from '../resume.schema';
+import { toResumeContentUpdate } from '../resume.utils';
 
 class ParseAttemptError extends Error {
   constructor(readonly reason: ParseFailureReason) {
     super(reason);
   }
 }
-
-type ParseLogContext = {
-  resumeId: string;
-  userId: string;
-  model: string;
-};
-
-type ParseResult = {
-  content: ResumeContent;
-  usage: ResumeParseUsage;
-};
 
 // Logs carry ids, the model, token counts and failure reasons only: never
 // resume content, file contents or request and response bodies.
@@ -71,11 +64,13 @@ export class ResumeParserService {
     if (resume?.parseStatus !== 'parsing' || !resume.file) return;
 
     const claim = resume.parseStartedAt;
+
     const context: ParseLogContext = {
       resumeId,
       userId: resume.user.toHexString(),
       model: RESUME_PARSE_MODEL,
     };
+
     const startedAt = Date.now();
     this.logger.log('Resume parse started', context);
 
@@ -83,15 +78,18 @@ export class ResumeParserService {
 
     if ('reason' in outcome) {
       await this.markFailed(resumeId, claim, outcome.reason);
+
       this.logger.warn('Resume parse failed', {
         ...context,
         reason: outcome.reason,
         durationMs: Date.now() - startedAt,
       });
+
       return;
     }
 
     const stored = await this.markParsed(resumeId, claim, outcome.result);
+
     this.logger.log(stored ? 'Resume parsed' : 'Resume parse superseded', {
       ...context,
       inputTokens: outcome.result.usage.inputTokens,
@@ -116,6 +114,7 @@ export class ResumeParserService {
         return { result: await this.requestParse(content) };
       } catch (error) {
         const reason = this.reasonFor(error);
+
         this.logger.warn('Resume parse attempt failed', {
           ...context,
           attempt,
@@ -147,11 +146,13 @@ export class ResumeParserService {
     }
 
     let text: string;
+
     try {
       ({ value: text } = await mammoth.extractRawText({ buffer: data }));
     } catch {
       throw new ParseAttemptError('unreadable-file');
     }
+
     if (!text.trim()) throw new ParseAttemptError('unreadable-file');
 
     return [
@@ -188,6 +189,7 @@ export class ResumeParserService {
     if (result.finishReason === 'content-filter') {
       throw new ParseAttemptError('refused');
     }
+
     if (result.finishReason === 'length') {
       throw new ParseAttemptError('invalid-output');
     }
@@ -204,13 +206,16 @@ export class ResumeParserService {
     const cause = RetryError.isInstance(error) ? error.lastError : error;
 
     if (cause instanceof ParseAttemptError) return cause.reason;
+
     if (
       cause instanceof Error &&
       (cause.name === 'TimeoutError' || cause.name === 'AbortError')
     ) {
       return 'timeout';
     }
+
     if (APICallError.isInstance(cause)) return 'api-error';
+
     if (
       NoObjectGeneratedError.isInstance(cause) ||
       NoOutputGeneratedError.isInstance(cause)

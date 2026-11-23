@@ -1,7 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import type {
   ParseStatus,
-  Resume as ResumeContent,
   ResumeKind,
   UploadMimeType,
 } from '@quarry/contracts';
@@ -11,14 +10,15 @@ import {
   RESUME_KINDS,
 } from '@quarry/contracts';
 import { HydratedDocument, Types } from 'mongoose';
-
-type ResumeContact = ResumeContent['contact'];
-type ResumeLink = ResumeContact['links'][number];
-type ResumeExperience = ResumeContent['experience'][number];
-type ResumeEducation = ResumeContent['education'][number];
-type ResumeSkill = ResumeContent['skills'][number];
-type ResumeProject = ResumeContent['projects'][number];
-type ResumeCertification = ResumeContent['certifications'][number];
+import type {
+  ResumeCertification,
+  ResumeContact,
+  ResumeEducation,
+  ResumeExperience,
+  ResumeLink,
+  ResumeProject,
+  ResumeSkill,
+} from './resume.types';
 
 @Schema({ _id: false })
 export class ResumeLinkEntry implements ResumeLink {

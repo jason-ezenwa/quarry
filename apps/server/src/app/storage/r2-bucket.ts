@@ -9,20 +9,14 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import type { FactoryProvider } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-  STORAGE_BUCKET,
-  StorageObjectNotFoundError,
-  type PutObjectOptions,
-  type StorageBucket,
-  type StoredObjectInfo,
-} from './storage-bucket';
-
-export type R2Config = {
-  accountId: string;
-  accessKeyId: string;
-  secretAccessKey: string;
-  bucketName: string;
-};
+import { StorageObjectNotFoundError } from './storage-bucket';
+import { STORAGE_BUCKET } from './storage.constants';
+import type {
+  PutObjectOptions,
+  R2Config,
+  StorageBucket,
+  StoredObjectInfo,
+} from './storage.types';
 
 export function createR2Client({
   accountId,
@@ -75,6 +69,7 @@ export class R2Bucket implements StorageBucket {
       const object = await this.client.send(
         new GetObjectCommand({ Bucket: this.bucketName, Key: path }),
       );
+
       if (!object.Body) throw new StorageObjectNotFoundError(path);
 
       return Buffer.from(await object.Body.transformToByteArray());
@@ -87,6 +82,7 @@ export class R2Bucket implements StorageBucket {
   // Read first, because a copy's response does not carry the object's size.
   async copy(source: string, destination: string): Promise<StoredObjectInfo> {
     let head;
+
     try {
       head = await this.client.send(
         new HeadObjectCommand({ Bucket: this.bucketName, Key: source }),

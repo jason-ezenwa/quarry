@@ -15,18 +15,17 @@ import {
   type UploadPurpose,
 } from '@quarry/contracts';
 import { nanoid } from 'nanoid';
+import { StorageObjectNotFoundError } from './storage-bucket';
 import {
+  ORIGINAL_NAME_METADATA_KEY,
   STORAGE_BUCKET,
-  StorageObjectNotFoundError,
-  type StorageBucket,
-} from './storage-bucket';
-import type { StoredFile, UploadFile } from './storage.types';
+} from './storage.constants';
+import type { StorageBucket, StoredFile, UploadFile } from './storage.types';
 import {
   assertMimeTypeMatchesKey,
   buildStorageFolder,
   decodeOriginalName,
   encodeOriginalName,
-  ORIGINAL_NAME_METADATA_KEY,
 } from './storage.utils';
 
 @Injectable()
