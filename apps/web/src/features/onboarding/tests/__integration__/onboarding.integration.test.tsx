@@ -42,6 +42,17 @@ async function fillValidAnswers(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText('Salary floor'), '60000')
 }
 
+async function chooseCountry(user: ReturnType<typeof userEvent.setup>, name: string) {
+  await user.click(screen.getByRole('combobox', { name: 'Country' }))
+  await user.type(screen.getByPlaceholderText('Search countries'), name)
+  await user.click(screen.getByRole('option', { name }))
+}
+
+async function chooseCurrency(user: ReturnType<typeof userEvent.setup>, name: string) {
+  await user.click(screen.getByRole('combobox', { name: 'Currency' }))
+  await user.click(screen.getByRole('option', { name }))
+}
+
 async function openOnboarding() {
   signInAs({ profile: false })
   const router = renderRoute('/onboarding')
@@ -175,11 +186,11 @@ describe('Onboarding (integration)', () => {
     await user.upload(screen.getByLabelText('Resume'), resumeFile())
     await user.type(screen.getByLabelText('Target roles'), 'Senior Product Engineer{Enter}Founding Engineer{Enter}')
     await user.type(screen.getByLabelText('Years of experience'), '4')
-    await user.selectOptions(screen.getByLabelText('Country'), 'Nigeria')
+    await chooseCountry(user, 'Nigeria')
     await user.click(screen.getByRole('button', { name: 'Remote' }))
     await user.click(screen.getByRole('button', { name: 'Hybrid' }))
     await user.type(screen.getByLabelText('Salary floor'), '60,000')
-    await user.selectOptions(screen.getByLabelText('Currency'), 'USD')
+    await chooseCurrency(user, 'USD')
     await user.click(screen.getByRole('button', { name: 'Save and continue' }))
 
     const card = await screen.findByRole('region', { name: 'Your search' })
@@ -214,9 +225,25 @@ describe('Onboarding (integration)', () => {
     const user = userEvent.setup()
     await openOnboarding()
 
-    await user.selectOptions(screen.getByLabelText('Country'), 'Nigeria')
+    await chooseCountry(user, 'Nigeria')
 
-    expect(screen.getByLabelText('Currency')).toHaveValue('NGN')
+    expect(screen.getByRole('combobox', { name: 'Country' })).toHaveTextContent('Nigeria')
+    expect(screen.getByRole('combobox', { name: 'Currency' })).toHaveTextContent('NGN')
+  })
+
+  it('chooses a country with the keyboard alone', async () => {
+    const user = userEvent.setup()
+    await openOnboarding()
+    const country = screen.getByRole('combobox', { name: 'Country' })
+
+    country.focus()
+    await user.keyboard('{Enter}')
+    await user.keyboard('Ghana')
+    await user.keyboard('{Enter}')
+
+    expect(country).toHaveTextContent('Ghana')
+    expect(country).toHaveFocus()
+    expect(screen.getByRole('combobox', { name: 'Currency' })).toHaveTextContent('GHS')
   })
 
   it.each([
