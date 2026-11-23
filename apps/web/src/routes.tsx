@@ -19,16 +19,12 @@ import { ResumePage } from './pages/resume/index.tsx'
 import { SignInPage } from './pages/sign-in/index.tsx'
 import { SignUpPage } from './pages/sign-up/index.tsx'
 
-// A page's own queries start alongside the parent's session and profile checks, not after them.
-// Not awaited, so the page still renders as soon as the gate passes.
-function prefetchResume() {
+// Once a session is known, the account and resume that every app page reads start alongside the profile check
+// rather than after it. Not awaited, so the gate's answer alone decides when the page renders.
+async function prefetchAppData() {
+  void queryClient.prefetchQuery(currentUserQueryOptions)
   void queryClient.prefetchQuery(primaryResumeQueryOptions)
   return null
-}
-
-function prefetchUserAndResume() {
-  void queryClient.prefetchQuery(currentUserQueryOptions)
-  return prefetchResume()
 }
 
 // The design system page is a development aid, so it is left out of production builds.
@@ -50,19 +46,11 @@ export const routes: RouteObject[] = [
     children: [
       {
         Component: AppLayout,
-        loader: sequence(requireSession, requireProfile),
+        loader: sequence(requireSession, prefetchAppData, requireProfile),
         children: [
-          {
-            path: PATHS.home,
-            loader: prefetchUserAndResume,
-            Component: HomePage,
-          },
-          {
-            path: PATHS.profile,
-            loader: prefetchUserAndResume,
-            Component: ProfilePage,
-          },
-          { path: PATHS.resume, loader: prefetchResume, Component: ResumePage },
+          { path: PATHS.home, Component: HomePage },
+          { path: PATHS.profile, Component: ProfilePage },
+          { path: PATHS.resume, Component: ResumePage },
         ],
       },
       { path: PATHS.onboarding, loader: sequence(requireSession, requireNoProfile), Component: OnboardingPage },

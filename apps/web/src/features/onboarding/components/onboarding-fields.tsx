@@ -8,7 +8,7 @@ import { FileDrop } from '@/components/ui/file-drop'
 import { Input } from '@/components/ui/input'
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '@/components/ui/input-group'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
-import { RESUME_MAX_MB, TARGET_ROLES_MAX_MESSAGE } from '@/lib/profile/profile.constants'
+import { RESUME_MAX_MB } from '@/lib/profile/profile.constants'
 import type { OnboardingFormValues } from '@/lib/profile/profile.types'
 import { COUNTRY_OPTIONS, CURRENCY_OPTIONS, isCountryCode, WORK_SETUP_OPTIONS } from '../onboarding-options'
 
@@ -75,7 +75,7 @@ export function ResumeUploadField() {
 }
 
 export function TargetRolesField() {
-  const { control, setError, clearErrors } = useFormContext<OnboardingFormValues>()
+  const { control, trigger, formState } = useFormContext<OnboardingFormValues>()
 
   return (
     <Controller
@@ -93,14 +93,12 @@ export function TargetRolesField() {
             id="target-roles"
             placeholder="Add a role"
             maxLength={TARGET_ROLES_LIMITS.maxLength}
-            max={TARGET_ROLES_LIMITS.maxItems}
             value={field.value}
             onChange={(roles) => {
-              // Removing a chip after hitting the limit takes the limit error away.
-              if (roles.length <= TARGET_ROLES_LIMITS.maxItems) clearErrors('targetRoles')
               field.onChange(roles)
+              // One role too many shows its error straight away, not only on submit, and clears once one is removed.
+              if (roles.length > TARGET_ROLES_LIMITS.maxItems || formState.errors.targetRoles) void trigger('targetRoles')
             }}
-            onLimit={() => setError('targetRoles', { message: TARGET_ROLES_MAX_MESSAGE })}
             onBlur={field.onBlur}
             {...errorProps('target-roles-label', fieldState.error?.message)}
           />
