@@ -23,7 +23,7 @@ Uploads land under `pending/` and are copied out when onboarding is submitted,
 so anything left there is abandoned. On each bucket, open **Settings → Object
 lifecycle rules → Add rule** and add:
 
-- Name: `expire-pending-uploads`
+- Name: `Cleanup pending objects`
 - Prefix: `pending/`
 - Action: delete objects 1 day after upload
 
