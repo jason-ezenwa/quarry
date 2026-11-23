@@ -2,8 +2,7 @@ import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { STALE_PARSE_AFTER_MS } from './parser.constants';
 import { ResumeService } from '../resume.service';
 
-// Re-runs parses that a restart cut off. Runs once at startup, never on a
-// timer, and never touches failed parses.
+// Re-runs parses a restart cut off; failed parses are left alone.
 @Injectable()
 export class InterruptedParseRecovery implements OnApplicationBootstrap {
   private readonly logger = new Logger(InterruptedParseRecovery.name);
@@ -19,8 +18,7 @@ export class InterruptedParseRecovery implements OnApplicationBootstrap {
     });
   }
 
-  // One parse at a time, so a backlog after a crash doesn't hit Claude's
-  // rate limits all at once.
+  // One at a time, so a post-crash backlog doesn't hit Claude's rate limits.
   async recover(): Promise<void> {
     const staleBefore = new Date(Date.now() - STALE_PARSE_AFTER_MS);
 

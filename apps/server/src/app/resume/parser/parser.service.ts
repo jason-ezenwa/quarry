@@ -130,7 +130,6 @@ export class ResumeParserService {
     }
   }
 
-  // A PDF goes as a file part; a DOCX goes as its plain text.
   private async buildContent({
     path,
     mimeType,

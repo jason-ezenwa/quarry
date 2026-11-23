@@ -25,8 +25,7 @@ export class ProfileService {
     return this.profileModel.findOne({ user: new Types.ObjectId(userId) });
   }
 
-  // Finishes onboarding: the profile and its primary resume are written
-  // together, after the uploaded file is committed.
+  // Finishes onboarding: a profile only ever exists with its primary resume.
   async create(
     userId: string,
     dto: CreateProfileDto,

@@ -5,8 +5,7 @@ import type {
 import type { UpdateQuery } from 'mongoose';
 import type { Resume, ResumeDocument } from './resume.schema';
 
-// An optional field the new content leaves out is unset, so nothing from the
-// previous content survives.
+// Unsets optional fields the new content leaves out, so nothing old survives.
 export function toResumeContentUpdate(
   content: ResumeContent,
   fields: Partial<Resume>,

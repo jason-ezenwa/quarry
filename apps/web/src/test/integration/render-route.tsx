@@ -40,8 +40,7 @@ export const TEST_PROFILE = {
   createdAt: '2026-01-02T00:00:00.000Z',
 }
 
-// Serves a session, `GET /api/users/me` and the user's profile; without this the
-// visitor is signed out. `profile: false` is a user who hasn't finished onboarding.
+// Signs the visitor in; `profile: false` is a user who hasn't finished onboarding.
 export function signInAs({ profile = true }: { profile?: boolean } = {}) {
   server.use(
     http.get(apiUrl('/api/auth/get-session'), () => HttpResponse.json(sessionResponse())),

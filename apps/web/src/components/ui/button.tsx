@@ -38,8 +38,7 @@ const buttonVariants = cva(
   }
 )
 
-// loading disables the button, marks it busy and puts a spinner in the leading
-// slot, in place of a leading icon. The label stays.
+// loading disables the button and swaps the leading icon for a spinner.
 function Button({
   className,
   variant = "secondary",

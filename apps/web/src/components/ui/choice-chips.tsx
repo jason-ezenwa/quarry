@@ -8,7 +8,7 @@ type ChoiceChipsProps<T extends string> = Omit<React.ComponentProps<"div">, "onC
   invalid?: boolean
 }
 
-// Toggle chips for picking one or more options. Selected chips get an ink outline and a check.
+// Toggle chips for picking one or more options.
 function ChoiceChips<T extends string>({
   options,
   value,

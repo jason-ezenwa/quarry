@@ -34,8 +34,7 @@ export type StoredObjectInfo = {
   metadata: Record<string, string>;
 };
 
-// The object store calls StorageService makes, so tests can swap in a bucket
-// held in memory.
+// What StorageService needs from a bucket, so tests can swap in an in-memory one.
 export interface StorageBucket {
   put(path: string, data: Buffer, options: PutObjectOptions): Promise<void>;
   // Throws StorageObjectNotFoundError when the path holds nothing.

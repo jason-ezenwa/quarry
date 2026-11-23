@@ -145,7 +145,6 @@ describe('Resume (integration)', () => {
       .collection('resumes')
       .findOne({ user: new Types.ObjectId(userId), kind: 'primary' });
 
-  // Onboards and lets the first parse succeed.
   const onboardParsed = async (cookie: string[]) => {
     fakeAnthropicApi.reply({ kind: 'resume', resume: parsedResume });
     await onboard(cookie);

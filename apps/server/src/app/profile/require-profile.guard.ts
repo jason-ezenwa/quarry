@@ -7,8 +7,7 @@ import {
 import type { SessionUser } from '../common/common.types';
 import { ProfileGateService } from './profile-gate.service';
 
-// For endpoints that need a finished onboarding. Runs after the session
-// check, so a request without a session has already been refused with 401.
+// Runs after the session check, so a missing session has already had a 401.
 @Injectable()
 export class RequireProfileGuard implements CanActivate {
   constructor(private readonly profileGateService: ProfileGateService) {}

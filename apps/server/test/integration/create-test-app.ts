@@ -7,8 +7,7 @@ import { configureApp } from '../../src/configure-app';
 import { InMemoryBucket } from '../../src/test-utils/in-memory-bucket';
 
 export type TestAppOptions = {
-  // Extra controllers, for exercising guards and decorators through a route,
-  // with the modules that export what they need.
+  // Extra test controllers, plus the modules that export what they need.
   controllers?: Type[];
   imports?: Type[];
   // To seed files before the app starts, for code that runs on startup.

@@ -48,13 +48,11 @@ export class ResumeService {
     return new this.resumeModel(resume).save({ session });
   }
 
-  // Runs the parse in the background.
   startParse(resumeId: string): void {
     void this.runParse(resumeId);
   }
 
-  // The parse records its own failures on the resume, so anything reaching
-  // here is logged and dropped.
+  // Parse failures are recorded on the resume; this only logs crashes.
   async runParse(resumeId: string): Promise<void> {
     try {
       await this.resumeParserService.parse(resumeId);
@@ -179,8 +177,7 @@ export class ResumeService {
     return resume;
   }
 
-  // Claims one primary resume left `parsing` since before `staleBefore`,
-  // moving parseStartedAt to now in the same write so no one else claims it.
+  // Moves parseStartedAt to now in the same write, so no one else claims it.
   async claimStaleParse(staleBefore: Date): Promise<ResumeDocument | null> {
     return this.resumeModel.findOneAndUpdate(
       {

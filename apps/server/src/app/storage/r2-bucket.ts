@@ -27,8 +27,7 @@ export function createR2Client({
     region: 'auto',
     endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
     credentials: { accessKeyId, secretAccessKey },
-    // Keeps the SDK's newer default checksums off, which R2 has not always
-    // accepted.
+    // R2 has not always accepted the SDK's newer default checksums.
     requestChecksumCalculation: 'WHEN_REQUIRED',
     responseChecksumValidation: 'WHEN_REQUIRED',
   });
