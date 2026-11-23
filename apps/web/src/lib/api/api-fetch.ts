@@ -11,11 +11,13 @@ export class ApiError extends Error {
 }
 
 // Every API call sends the session cookie and throws ApiError on a non-2xx.
+// A FormData body keeps the multipart content type fetch sets for it.
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const contentType = init?.body instanceof FormData ? undefined : { 'Content-Type': 'application/json' }
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
+    headers: { ...contentType, ...init?.headers },
   })
 
   if (!response.ok) {

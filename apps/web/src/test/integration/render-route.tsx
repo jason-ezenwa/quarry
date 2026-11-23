@@ -30,11 +30,27 @@ export function sessionResponse() {
   }
 }
 
-// Serves a session and `GET /api/users/me`; without this the visitor is signed out.
-export function signInAs() {
+export const TEST_PROFILE = {
+  id: 'profile-1',
+  targetRoles: ['Senior Product Engineer'],
+  yearsOfExperience: 4,
+  countryCode: 'NG',
+  workSetups: ['remote'],
+  salaryFloor: { amount: 60000, currency: 'USD' },
+  createdAt: '2026-01-02T00:00:00.000Z',
+}
+
+// Serves a session, `GET /api/users/me` and the user's profile; without this the
+// visitor is signed out. `profile: false` is a user who hasn't finished onboarding.
+export function signInAs({ profile = true }: { profile?: boolean } = {}) {
   server.use(
     http.get(apiUrl('/api/auth/get-session'), () => HttpResponse.json(sessionResponse())),
     http.get(apiUrl('/api/users/me'), () => HttpResponse.json(TEST_USER)),
+    http.get(apiUrl('/api/profiles/me'), () =>
+      profile
+        ? HttpResponse.json(TEST_PROFILE)
+        : HttpResponse.json({ message: 'Profile not found', statusCode: 404 }, { status: 404 }),
+    ),
   )
 }
 

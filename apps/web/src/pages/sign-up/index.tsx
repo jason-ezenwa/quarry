@@ -36,7 +36,7 @@ export function SignUpPage() {
       return
     }
 
-    navigate(PATHS.home)
+    navigate(PATHS.onboarding)
   }
 
   return (

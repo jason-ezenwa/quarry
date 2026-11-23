@@ -2,8 +2,15 @@ import { createBrowserRouter, type RouteObject } from 'react-router'
 import { AppLayout } from './layouts/app-layout.tsx'
 import { RootErrorBoundary, RootHydrateFallback, RootLayout } from './layouts/root-layout.tsx'
 import { PATHS } from './lib/auth/auth.constants.ts'
-import { requireNoSession, requireSession } from './lib/auth/session-loaders.ts'
+import {
+  requireNoProfile,
+  requireNoSession,
+  requireProfile,
+  requireSession,
+  sequence,
+} from './lib/auth/session-loaders.ts'
 import { HomePage } from './pages/home/index.tsx'
+import { OnboardingPage } from './pages/onboarding/index.tsx'
 import { SignInPage } from './pages/sign-in/index.tsx'
 import { SignUpPage } from './pages/sign-up/index.tsx'
 
@@ -26,9 +33,10 @@ export const routes: RouteObject[] = [
     children: [
       {
         Component: AppLayout,
-        loader: requireSession,
+        loader: sequence(requireSession, requireProfile),
         children: [{ path: PATHS.home, Component: HomePage }],
       },
+      { path: PATHS.onboarding, loader: sequence(requireSession, requireNoProfile), Component: OnboardingPage },
       { path: PATHS.signIn, loader: requireNoSession, Component: SignInPage },
       { path: PATHS.signUp, loader: requireNoSession, Component: SignUpPage },
       ...developmentRoutes,

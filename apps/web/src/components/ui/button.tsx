@@ -67,10 +67,15 @@ function Button({
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     >
-      {loading && !asChild ? (
-        <Spinner data-icon="inline-start" aria-hidden="true" className="text-current" />
-      ) : null}
-      {children}
+      {/* Slot needs its one child alone, so asChild never gets the spinner. */}
+      {asChild ? (
+        children
+      ) : (
+        <>
+          {loading ? <Spinner data-icon="inline-start" aria-hidden="true" className="text-current" /> : null}
+          {children}
+        </>
+      )}
     </Comp>
   )
 }
