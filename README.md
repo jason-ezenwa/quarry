@@ -18,8 +18,8 @@ A pnpm + Turborepo monorepo:
    variables; see [docs/r2-setup.md](docs/r2-setup.md).
 3. `pnpm install`, then `pnpm --filter server migrate:up` and
    `pnpm --filter server seed`.
-4. `pnpm dev` starts the API on `http://localhost:3000` and the web app on
-   `http://localhost:5173`.
+4. `pnpm dev` applies any pending migrations, then starts the API on
+   `http://localhost:3000` and the web app on `http://localhost:5173`.
 
 In a Claude cloud session, `pnpm dev:claude:cloud` does all of this for you.
 See [AGENTS.md](AGENTS.md).
@@ -28,7 +28,7 @@ See [AGENTS.md](AGENTS.md).
 
 | Command | What it does |
 | --- | --- |
-| `pnpm dev` | Server and web app in watch mode |
+| `pnpm dev` | Pending migrations, then server and web app in watch mode |
 | `pnpm build` | Build every workspace |
 | `pnpm lint` | oxlint in every workspace |
 | `pnpm test` | Unit tests in every workspace |
