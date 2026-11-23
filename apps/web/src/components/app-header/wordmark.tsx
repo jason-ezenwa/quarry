@@ -4,7 +4,7 @@ import { Mark } from './mark'
 
 export function Wordmark() {
   return (
-    <Link to={PATHS.home} className="flex items-center gap-2 text-wordmark text-foreground">
+    <Link to={PATHS.home} className="flex items-center gap-1.25 text-wordmark text-foreground">
       <Mark />
       Quarry
     </Link>
