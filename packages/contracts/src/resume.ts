@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { UploadMimeType } from "./uploads.js";
 
 // "YYYY" or "YYYY-MM": resumes often give only a year.
 export const PARTIAL_DATE_PATTERN = /^\d{4}(-(0[1-9]|1[0-2]))?$/;
@@ -61,3 +62,20 @@ export const resumeSchema = z.object({
 });
 
 export type Resume = z.infer<typeof resumeSchema>;
+
+// The uploaded file behind a primary resume, as the client sees it.
+export type ResumeFileSummary = {
+  originalName: string;
+  mimeType: UploadMimeType;
+  size: number;
+};
+
+export type PrimaryResumeResponse = {
+  id: string;
+  parseStatus: ParseStatus;
+  parsedAt: string | null;
+  reviewedAt: string | null;
+  file: ResumeFileSummary;
+  // Null until the first successful parse.
+  resume: Resume | null;
+};

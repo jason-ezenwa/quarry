@@ -15,6 +15,8 @@ export type StoredObjectInfo = {
 // held in memory.
 export interface StorageBucket {
   put(path: string, data: Buffer, options: PutObjectOptions): Promise<void>;
+  // Throws StorageObjectNotFoundError when the path holds nothing.
+  get(path: string): Promise<Buffer>;
   // Throws StorageObjectNotFoundError when the source holds nothing.
   copy(source: string, destination: string): Promise<StoredObjectInfo>;
   delete(path: string): Promise<void>;

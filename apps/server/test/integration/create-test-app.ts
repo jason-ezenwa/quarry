@@ -2,6 +2,7 @@ import { INestApplication, Type } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AppModule } from '../../src/app.module';
 import { STORAGE_BUCKET } from '../../src/app/storage/storage-bucket';
+import { PARSE_RETRY_DELAYS_MS } from '../../src/app/resume/resume.constants';
 import { configureApp } from '../../src/configure-app';
 import { InMemoryBucket } from '../../src/test-utils/in-memory-bucket';
 
@@ -10,6 +11,8 @@ export type TestAppOptions = {
   // with the modules that export what they need.
   controllers?: Type[];
   imports?: Type[];
+  // To seed files before the app starts, for code that runs on startup.
+  bucket?: InMemoryBucket;
 };
 
 // The full AppModule as main.ts configures it, on the in-memory database and
@@ -17,13 +20,17 @@ export type TestAppOptions = {
 export async function createTestApp({
   controllers = [],
   imports = [],
+  bucket = new InMemoryBucket(),
 }: TestAppOptions = {}): Promise<INestApplication> {
   const moduleRef = await Test.createTestingModule({
     imports: [AppModule, ...imports],
     controllers,
   })
     .overrideProvider(STORAGE_BUCKET)
-    .useValue(new InMemoryBucket())
+    .useValue(bucket)
+    // Retries run back to back, so failure tests don't wait out the backoff.
+    .overrideProvider(PARSE_RETRY_DELAYS_MS)
+    .useValue([0, 0])
     .compile();
 
   const app = moduleRef.createNestApplication({ bodyParser: false });

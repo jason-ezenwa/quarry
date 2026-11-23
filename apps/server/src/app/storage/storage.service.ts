@@ -105,6 +105,10 @@ export class StorageService {
     }
   }
 
+  async read(path: string): Promise<Buffer> {
+    return this.logFailure('read', path, () => this.bucket.get(path));
+  }
+
   async delete(path: string): Promise<void> {
     await this.logFailure('delete', path, () => this.bucket.delete(path));
   }
