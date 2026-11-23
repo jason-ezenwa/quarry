@@ -1,3 +1,4 @@
+import { Wordmark } from '@/components/app-header/wordmark'
 import { ButtonSection } from './button-section.tsx'
 import { ColorSection } from './color-section.tsx'
 import { FeedbackSection } from './feedback-section.tsx'
@@ -10,10 +11,10 @@ import { TypeSection } from './type-section.tsx'
 export function Component() {
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-12 px-4 py-8 sm:px-6 lg:py-12">
-      <header className="flex flex-col gap-1">
-        <p className="text-wordmark text-brand">quarry</p>
-        <h1 className="text-h1">Design system</h1>
-        <p className="text-body text-muted-foreground">
+      <header className="flex flex-col items-start gap-3">
+        <Wordmark />
+        <h1 className="text-title">Design system</h1>
+        <p className="text-ui text-muted-foreground">
           Every token and primitive, in every state. Build screens from these as they are.
         </p>
       </header>

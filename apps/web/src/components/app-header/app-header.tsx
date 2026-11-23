@@ -15,8 +15,8 @@ export function AppHeader() {
   }
 
   return (
-    <header className="border-b bg-card">
-      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
+    <header className="border-b border-border-soft">
+      <div className="mx-auto flex h-12 max-w-5xl items-center justify-between px-4 sm:px-6">
         <Wordmark />
         <Button variant="ghost" size="sm" onClick={signOut}>
           Sign out

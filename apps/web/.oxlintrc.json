@@ -16,8 +16,8 @@
       {
         "paths": [
           {
-            "name": "lucide-react",
-            "message": "Import the icon directly: lucide-react/icons/<icon-name>."
+            "name": "@phosphor-icons/react",
+            "message": "Import the icon directly: @phosphor-icons/react/dist/csr/<IconName>."
           }
         ]
       }

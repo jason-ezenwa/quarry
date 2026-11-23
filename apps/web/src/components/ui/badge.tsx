@@ -3,34 +3,27 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 import { Slot } from "radix-ui"
 
+// Status pills: solid, with light mono text naming where something stands.
 const badgeVariants = cva(
-  "group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-4xl border border-transparent px-2 py-0.5 text-caption font-semibold whitespace-nowrap transition-all focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 aria-invalid:border-destructive aria-invalid:ring-destructive/20 [&>svg]:pointer-events-none [&>svg]:size-3!",
+  "inline-flex h-5 w-fit shrink-0 items-center gap-1 rounded-sm px-2 text-pill whitespace-nowrap [&>svg]:pointer-events-none [&>svg]:size-3",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground [a]:hover:bg-primary-hover",
-        secondary:
-          "bg-primary-tint text-primary-tint-foreground [a]:hover:bg-accent",
-        destructive:
-          "bg-destructive-tint text-destructive focus-visible:ring-destructive/20",
-        success: "bg-success-tint text-success",
-        info: "bg-info-tint text-info",
-        outline:
-          "border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground",
-        ghost:
-          "hover:bg-muted hover:text-muted-foreground",
-        link: "text-link underline-offset-4 hover:underline",
+        ready: "bg-status-ready text-status-ready-foreground",
+        interview: "bg-status-interview text-status-interview-foreground",
+        drafting: "bg-status-drafting text-status-drafting-foreground",
+        neutral: "bg-muted text-muted-foreground",
       },
     },
     defaultVariants: {
-      variant: "default",
+      variant: "neutral",
     },
   }
 )
 
 function Badge({
   className,
-  variant = "default",
+  variant = "neutral",
   asChild = false,
   ...props
 }: React.ComponentProps<"span"> &

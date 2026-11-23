@@ -6,8 +6,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Spinner } from '@/components/ui/spinner'
 import { Section, Specimen } from './section.tsx'
 
-const alertVariants = ['default', 'info', 'success', 'destructive'] as const
-const badgeVariants = ['default', 'secondary', 'outline', 'info', 'success', 'destructive'] as const
+const alertVariants = ['default', 'success', 'warning', 'destructive'] as const
+const badgeVariants = ['ready', 'interview', 'drafting', 'neutral'] as const
 
 export function FeedbackSection() {
   return (
@@ -23,24 +23,24 @@ export function FeedbackSection() {
             ))}
           </div>
         </Specimen>
-        <Specimen label="Badge">
+        <Specimen label="Badge (status pill)">
           <div className="flex flex-wrap gap-2">
             {badgeVariants.map((variant) => (
               <Badge key={variant} variant={variant}>
-                {variant}
+                {variant.charAt(0).toUpperCase() + variant.slice(1)}
               </Badge>
             ))}
           </div>
         </Specimen>
         <Specimen label="Toast">
           <div className="flex flex-wrap gap-3">
-            <Button variant="outline" onClick={() => toast('Changes saved')}>
+            <Button onClick={() => toast('Changes saved')}>
               Default
             </Button>
-            <Button variant="outline" onClick={() => toast.success('Account created')}>
+            <Button onClick={() => toast.success('Account created')}>
               Success
             </Button>
-            <Button variant="outline" onClick={() => toast.error('Could not save')}>
+            <Button onClick={() => toast.error('Could not save')}>
               Error
             </Button>
           </div>

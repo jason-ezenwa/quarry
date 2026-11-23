@@ -1,21 +1,26 @@
 import { Section, Specimen } from './section.tsx'
 
 const roles = [
-  { role: 'text-wordmark', spec: '20 · extrabold · -4%', sample: 'quarry' },
-  { role: 'text-h1', spec: '28 / 36 · bold · -2%', sample: 'Account settings' },
-  { role: 'text-title', spec: '18 / 24 · semibold', sample: 'Welcome back' },
-  { role: 'text-lead', spec: '16 / 24', sample: 'Sign up with your email and a password.' },
-  { role: 'text-body', spec: '14 / 20', sample: 'The default for running text and controls.' },
-  { role: 'text-label', spec: '14 / 20 · semibold', sample: 'Email address' },
-  { role: 'text-caption', spec: '12 / 16', sample: 'Last updated 2 minutes ago' },
-  { role: 'text-field', spec: '16 below md, 14 from md', sample: 'ada@example.com' },
+  { role: 'text-title', spec: '26 / 32 · 600 · -2%', sample: 'New application' },
+  { role: 'text-question', spec: '16 / 23 · 500', sample: 'Tell me about a system you designed end to end.' },
+  { role: 'text-reading', spec: '15 / 24', sample: 'You line up well. Go is the main gap.' },
+  { role: 'text-ui', spec: '14 / 20', sample: 'Senior backend engineer' },
+  { role: 'text-ui-strong', spec: '14 / 20 · 500', sample: 'Fit report' },
+  { role: 'text-small', spec: '13 / 18', sample: 'Applications' },
+  { role: 'text-label', spec: '11.5 / 16 · mono', sample: '22 Nov · v3' },
+  { role: 'text-pill', spec: '11 / 20 · mono', sample: 'Ready' },
+  { role: 'text-wordmark', spec: '15 / 20 · 600 · -1%', sample: 'Quarry' },
+  { role: 'text-field', spec: '16 / 22 on phones, 15 / 24 from md', sample: 'Paste a job link' },
+  { role: 'text-doc-title', spec: '17 / 22 · 600 · -1%', sample: 'Cover letter' },
+  { role: 'text-doc-body', spec: '13 / 19', sample: 'I build backend systems that stay boring under load.' },
+  { role: 'text-doc-caps', spec: '11 / 14 · 600 · 6% · caps', sample: 'Experience' },
 ]
 
 export function TypeSection() {
   return (
     <Section
       title="Type"
-      description="Manrope. Each role sets size and line height together. Use the roles, not text-sm and friends."
+      description="Ezenwa Grotesk for everything, Geist Mono for labels. Each role sets size, line height and weight together."
     >
       <div className="flex flex-col gap-4">
         {roles.map((item) => (
@@ -23,15 +28,6 @@ export function TypeSection() {
             <p className={item.role}>{item.sample}</p>
           </Specimen>
         ))}
-        <Specimen label="Weights">
-          <p className="text-lead">
-            <span className="font-normal">Regular 400 </span>
-            <span className="font-medium">Medium 500 </span>
-            <span className="font-semibold">Semibold 600 </span>
-            <span className="font-bold">Bold 700 </span>
-            <span className="font-extrabold">Extrabold 800</span>
-          </p>
-        </Specimen>
       </div>
     </Section>
   )

@@ -34,7 +34,7 @@ export function SurfaceSection() {
               </CardHeader>
               <CardContent>Card content sits here.</CardContent>
               <CardFooter>
-                <Button size="sm">Action</Button>
+                <Button size="sm" variant="primary">Action</Button>
               </CardFooter>
             </Card>
             <Card size="sm">
@@ -50,7 +50,7 @@ export function SurfaceSection() {
           <div className="flex flex-wrap items-center gap-3">
             <Dialog>
               <DialogTrigger asChild>
-                <Button variant="outline">Open dialog</Button>
+                <Button>Open dialog</Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
@@ -59,7 +59,7 @@ export function SurfaceSection() {
                 </DialogHeader>
                 <DialogFooter>
                   <DialogClose asChild>
-                    <Button variant="outline">Cancel</Button>
+                    <Button>Cancel</Button>
                   </DialogClose>
                   <Button variant="destructive">Delete</Button>
                 </DialogFooter>

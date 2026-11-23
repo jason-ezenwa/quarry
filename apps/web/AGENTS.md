@@ -11,8 +11,12 @@
   primitive and the tokens in `src/index.css`, never from the call site.
 - Colours are semantic tokens (`bg-primary`, `text-muted-foreground`). Raw
   palette colours, hex values and inline styles fail lint.
-- Text uses the type roles (`text-h1`, `text-title`, `text-lead`, `text-body`,
-  `text-label`, `text-caption`), not `text-sm` and friends.
+- Text uses the type roles (`text-title`, `text-reading`, `text-ui`,
+  `text-ui-strong`, `text-small`, `text-label` and the rest in `src/index.css`),
+  not `text-sm` and friends. Each role owns its weight, so don't add
+  `font-medium` or a tracking class.
+- Icons are Phosphor, imported one at a time from
+  `@phosphor-icons/react/dist/csr/<IconName>`.
 
 ## When the design needs something a primitive can't do
 

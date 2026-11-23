@@ -8,7 +8,7 @@ export function HomePage() {
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6">
-      <h1 className="text-h1">Home</h1>
+      <h1 className="text-title">Home</h1>
       {isPending ? (
         <Skeleton className="h-28 w-full max-w-md" />
       ) : isError ? (
@@ -22,7 +22,7 @@ export function HomePage() {
             <CardTitle>Welcome, {user.name}</CardTitle>
             <CardDescription>Signed in as {user.email}</CardDescription>
           </CardHeader>
-          <CardContent className="text-body text-muted-foreground">
+          <CardContent className="text-ui text-muted-foreground">
             Member since {new Date(user.createdAt).toLocaleDateString()}
           </CardContent>
         </Card>

@@ -13,7 +13,7 @@ const developmentRoutes: RouteObject[] = import.meta.env.DEV
       {
         path: '/design-system',
         lazy: () => import('./pages/design-system/index.tsx'),
-        hydrateFallbackElement: <p className="m-auto text-body text-muted-foreground">Loading…</p>,
+        hydrateFallbackElement: <p className="m-auto text-ui text-muted-foreground">Loading…</p>,
       },
     ]
   : []

@@ -13,14 +13,14 @@
     "test:integration": "vitest run --project integration"
   },
   "dependencies": {
-    "@fontsource-variable/manrope": "^5.3.0",
+    "@fontsource/geist-mono": "^5.3.0",
     "@hookform/resolvers": "^7.0.8",
+    "@phosphor-icons/react": "^2.1.10",
     "@tailwindcss/vite": "^4.3.5",
     "@tanstack/react-query": "^5.108.3",
     "better-auth": "1.7.27",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.5.2",
-    "lucide-react": "^1.77.0",
     "radix-ui": "^1.8.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

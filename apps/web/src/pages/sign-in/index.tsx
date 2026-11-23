@@ -41,7 +41,7 @@ export function SignInPage() {
       title="Sign in"
       description="Welcome back. Enter your email and password."
       footer={
-        <p className="text-body text-muted-foreground">
+        <p className="text-ui text-muted-foreground">
           New to Quarry?{' '}
           <Button asChild variant="link">
             <Link to={PATHS.signUp}>Create an account</Link>
@@ -78,7 +78,7 @@ export function SignInPage() {
             />
             <FieldError errors={[errors.password]} />
           </Field>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" variant="primary" disabled={isSubmitting}>
             {isSubmitting ? <Spinner className="text-current" /> : null}
             Sign in
           </Button>

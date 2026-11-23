@@ -45,7 +45,7 @@ export function SignUpPage() {
       title="Create an account"
       description="Sign up with your email and a password."
       footer={
-        <p className="text-body text-muted-foreground">
+        <p className="text-ui text-muted-foreground">
           Already have an account?{' '}
           <Button asChild variant="link">
             <Link to={PATHS.signIn}>Sign in</Link>
@@ -102,7 +102,7 @@ export function SignUpPage() {
             />
             <FieldError errors={[errors.confirmPassword]} />
           </Field>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" variant="primary" disabled={isSubmitting}>
             {isSubmitting ? <Spinner className="text-current" /> : null}
             Create account
           </Button>

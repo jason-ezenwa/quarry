@@ -5,12 +5,26 @@ import { createCn } from 'cn/config'
 export const cn = createCn({
   extend: {
     theme: {
-      spacing: ['control', 'control-sm', 'control-lg', 'control-xs'],
+      spacing: ['control', 'control-sm', 'control-lg', 'field', 'field-lg'],
     },
     classGroups: {
       'font-size': [
         {
-          text: ['h1', 'title', 'lead', 'body', 'label', 'caption', 'wordmark', 'field'],
+          text: [
+            'title',
+            'question',
+            'reading',
+            'ui',
+            'ui-strong',
+            'small',
+            'label',
+            'pill',
+            'doc-title',
+            'doc-body',
+            'doc-caps',
+            'wordmark',
+            'field',
+          ],
         },
       ],
     },

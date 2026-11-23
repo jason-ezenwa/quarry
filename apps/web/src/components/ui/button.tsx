@@ -4,39 +4,34 @@ import { cn } from "@/lib/utils"
 import { Slot } from "radix-ui"
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-label whitespace-nowrap transition-colors outline-none select-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-md border border-transparent text-small font-medium whitespace-nowrap transition-colors select-none active:not-aria-[haspopup]:translate-y-[0.5px] disabled:pointer-events-none disabled:opacity-45 aria-invalid:border-destructive [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-[15px]",
   {
     variants: {
       variant: {
-        default:
-          "bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active",
-        outline:
-          "border-input bg-secondary text-secondary-foreground hover:bg-secondary-hover active:bg-secondary-active aria-expanded:bg-secondary-hover",
+        primary:
+          "bg-primary text-primary-foreground hover:bg-primary-hover",
         secondary:
-          "bg-primary-tint text-primary-tint-foreground hover:bg-accent active:bg-accent-active aria-expanded:bg-accent",
+          "border-border bg-secondary text-secondary-foreground hover:border-border-strong hover:bg-secondary-hover aria-expanded:border-border-strong aria-expanded:bg-secondary-hover",
         ghost:
-          "hover:bg-accent hover:text-accent-foreground active:bg-accent-active aria-expanded:bg-accent",
+          "text-muted-foreground hover:bg-accent hover:text-accent-foreground aria-expanded:bg-accent aria-expanded:text-accent-foreground",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive-hover active:bg-destructive-active focus-visible:border-destructive focus-visible:ring-destructive/30",
-        link: "text-link underline-offset-4 hover:underline",
+          "border-border bg-secondary text-destructive-ink hover:border-destructive hover:bg-destructive-tint",
+        link: "text-foreground underline underline-offset-3 hover:text-primary",
       },
       size: {
         default:
-          "h-control gap-2 px-4 has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
-        xs: "h-control-xs gap-1 rounded-sm px-2 text-caption font-semibold has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-control-sm gap-1.5 rounded-md px-3 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 [&_svg:not([class*='size-'])]:size-3.5",
-        lg: "h-control-lg gap-2 px-5 has-data-[icon=inline-end]:pr-4 has-data-[icon=inline-start]:pl-4",
+          "h-control gap-1.5 px-3 has-data-[icon=inline-end]:pr-2.5 has-data-[icon=inline-start]:pl-2.5",
+        sm: "h-control-sm gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 [&_svg:not([class*='size-'])]:size-3.5",
+        lg: "h-control-lg gap-2 px-3.5 text-ui-strong has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
         icon: "size-control",
-        "icon-xs":
-          "size-control-xs rounded-sm [&_svg:not([class*='size-'])]:size-3",
-        "icon-sm": "size-control-sm rounded-md",
+        "icon-sm": "size-control-sm [&_svg:not([class*='size-'])]:size-3.5",
         "icon-lg": "size-control-lg",
       },
     },
-    // Sizes add side padding, but a link sits flush with the text around it.
-    compoundVariants: [{ variant: "link", className: "px-0" }],
+    // Sizes add side padding and height, but a link sits flush with the text around it.
+    compoundVariants: [{ variant: "link", className: "h-auto px-0" }],
     defaultVariants: {
-      variant: "default",
+      variant: "secondary",
       size: "default",
     },
   }
@@ -44,7 +39,7 @@ const buttonVariants = cva(
 
 function Button({
   className,
-  variant = "default",
+  variant = "secondary",
   size = "default",
   asChild = false,
   ...props

@@ -27,11 +27,11 @@ export function RootHydrateFallback() {
 export function RootErrorBoundary() {
   return (
     <main className="flex min-h-svh flex-col items-center justify-center gap-4 px-4 text-center">
-      <h1 className="text-h1">Something went wrong</h1>
-      <p className="text-body text-muted-foreground">
+      <h1 className="text-title">Something went wrong</h1>
+      <p className="text-ui text-muted-foreground">
         We couldn't load this page. Check your connection and try again.
       </p>
-      <Button onClick={() => window.location.reload()}>Try again</Button>
+      <Button variant="primary" onClick={() => window.location.reload()}>Try again</Button>
     </main>
   )
 }
