@@ -69,3 +69,8 @@ export function createSession(request: CreateSessionRequest): Promise<CreateSess
 export function setSessionArchived(sessionId: string, archived: boolean): Promise<SessionSummary> {
   return apiFetch<SessionSummary>(sessionUrl(sessionId), { method: 'PATCH', body: JSON.stringify({ archived }) })
 }
+
+// Stops the turn answering `messageId`. Resolves once the server has dropped its reply and released the session.
+export function stopTurn(sessionId: string, messageId: string): Promise<void> {
+  return apiFetch<void>(`${sessionUrl(sessionId)}/turns/stop`, { method: 'POST', body: JSON.stringify({ messageId }) })
+}

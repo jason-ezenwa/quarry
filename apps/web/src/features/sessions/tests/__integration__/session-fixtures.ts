@@ -135,6 +135,20 @@ export function uiStream(chunks: UIMessageChunk[]) {
   })
 }
 
+// A turn still running: sends `chunks`, then stays open until the client goes away.
+export function openUiStream(chunks: UIMessageChunk[]) {
+  const encoder = new TextEncoder()
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (const chunk of chunks) controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`))
+    },
+  })
+
+  return new HttpResponse(body, {
+    headers: { 'Content-Type': 'text/event-stream', 'x-vercel-ai-ui-message-stream': 'v1' },
+  })
+}
+
 // `documentReads` holds the id of every document fetched, in order.
 type Recorded = { turns: unknown[]; patches: unknown[]; sessionReads: number; documentReads: string[] }
 

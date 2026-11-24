@@ -960,5 +960,179 @@ describe('Sessions (integration)', () => {
 
       expect((await findSession(id))?.turnStartedAt).toBeNull();
     });
+
+    describe('stopping a turn', () => {
+      const stop = (cookie: string[], id: string, messageId: string) =>
+        api('post', `/sessions/${id}/turns/stop`, cookie).send({ messageId });
+
+      const firstMessageId = async (id: string) =>
+        (await findMessages(id))[0].uiId as string;
+
+      const waitForTurn = (id: string) =>
+        vi.waitFor(
+          async () =>
+            expect((await findSession(id))?.turnStartedAt).toBeTruthy(),
+          { timeout: 5_000, interval: 20 },
+        );
+
+      it('stores none of a stopped reply, keeps a saved document and releases the lock', async () => {
+        const { cookie } = await onboardedUser();
+        const id = await startPasted(cookie);
+        const [toolStep] = fitReportReplies();
+        // Held open after its first block until the test ends.
+        const never = deferred();
+        onTestFinished(() => never.resolve());
+
+        fakeAnthropicApi.reply(toolStep, {
+          kind: 'stream',
+          blocks: [
+            { type: 'text', text: 'Partly written. ' },
+            { type: 'text', text: 'Never sent.' },
+          ],
+          pauseAfterFirstBlock: never.promise,
+        });
+
+        const running = turn(cookie, id).then((response) => response);
+        await vi.waitFor(
+          () => expect(fakeAnthropicApi.requests).toHaveLength(2),
+          { timeout: 5_000, interval: 20 },
+        );
+
+        const stopped = await stop(cookie, id, await firstMessageId(id));
+
+        expect(stopped.status).toBe(204);
+        expect((await running).status).toBe(200);
+        // The held second request to Claude was cancelled.
+        expect(fakeAnthropicApi.cancelled.has(1)).toBe(true);
+        // The lock is released by the time the stop is answered.
+        expect((await findSession(id))?.turnStartedAt).toBeNull();
+        expect(await findMessages(id)).toHaveLength(1);
+        expect(
+          await getTestDatabase()
+            .collection('fit-scores')
+            .countDocuments({ session: new Types.ObjectId(id) }),
+        ).toBe(1);
+
+        // Retry answers the same message without counting it again.
+        fakeAnthropicApi.reply(textReply('Here it is.'));
+        const retried = await turn(cookie, id);
+
+        expect(retried.status).toBe(200);
+        expect(await findMessages(id)).toHaveLength(2);
+        expect((await findSession(id))?.userMessageCount).toBe(1);
+      });
+
+      it('saves nothing from a job fetch still running at the stop', async () => {
+        const { cookie } = await onboardedUser();
+        const created = await api('post', '/sessions', cookie).send({
+          jobUrl: JOB_URL,
+        });
+        const id = created.body.id as string;
+        const fetching = deferred();
+        const release = deferred();
+        onTestFinished(() => release.resolve());
+
+        mswServer.use(
+          http.get(
+            'https://boards-api.greenhouse.io/v1/boards/moniepoint/jobs/4012345',
+            async () => {
+              fetching.resolve();
+              await release.promise;
+              return HttpResponse.json({
+                id: 4012345,
+                title: 'Senior Backend Engineer',
+                company_name: 'Moniepoint',
+                content: '&lt;p&gt;Build payments in Go.&lt;/p&gt;',
+              });
+            },
+          ),
+        );
+        fakeAnthropicApi.reply({
+          kind: 'stream',
+          blocks: [
+            {
+              type: 'tool_use',
+              id: 'toolu_job',
+              name: 'get_job_description',
+              input: { url: JOB_URL },
+            },
+          ],
+          stopReason: 'tool_use',
+        });
+
+        const running = turn(cookie, id).then((response) => response);
+        await fetching.promise;
+        await stop(cookie, id, await firstMessageId(id));
+        await running;
+
+        release.resolve();
+        // Lets the cut-off fetch finish before checking it wrote nothing.
+        await new Promise((done) => setTimeout(done, 200));
+
+        const session = await findSession(id);
+        expect(session?.title).toBe('New application');
+        expect(session?.job).toEqual({ url: JOB_URL });
+      });
+
+      it('answers a stop with no turn running', async () => {
+        const { cookie } = await onboardedUser();
+        const id = await startPasted(cookie);
+
+        const stopped = await stop(cookie, id, await firstMessageId(id));
+
+        expect(stopped.status).toBe(204);
+      });
+
+      it('leaves a turn answering another message running', async () => {
+        const { cookie } = await onboardedUser();
+        const id = await startPasted(cookie);
+        const gate = deferred();
+        onTestFinished(() => gate.resolve());
+
+        fakeAnthropicApi.reply({
+          kind: 'stream',
+          blocks: [
+            { type: 'text', text: 'First half. ' },
+            { type: 'text', text: 'Second half.' },
+          ],
+          pauseAfterFirstBlock: gate.promise,
+        });
+        const running = turn(cookie, id).then((response) => response);
+        await waitForTurn(id);
+
+        const stopped = await stop(cookie, id, 'msg-earlier');
+
+        expect(stopped.status).toBe(204);
+        gate.resolve();
+        await running;
+        expect(await findMessages(id)).toHaveLength(2);
+      });
+
+      it("returns 404 for another user's session", async () => {
+        const { cookie } = await onboardedUser();
+        const id = await startPasted(cookie);
+        const other = await onboardedUser('other@example.com');
+        const gate = deferred();
+        onTestFinished(() => gate.resolve());
+
+        fakeAnthropicApi.reply({
+          kind: 'stream',
+          blocks: [
+            { type: 'text', text: 'First half. ' },
+            { type: 'text', text: 'Second half.' },
+          ],
+          pauseAfterFirstBlock: gate.promise,
+        });
+        const running = turn(cookie, id).then((response) => response);
+        await waitForTurn(id);
+
+        const refused = await stop(other.cookie, id, await firstMessageId(id));
+
+        expect(refused.status).toBe(404);
+        gate.resolve();
+        await running;
+        expect(await findMessages(id)).toHaveLength(2);
+      });
+    });
   });
 });

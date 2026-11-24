@@ -1,29 +1,33 @@
 import { ArrowUpIcon } from '@phosphor-icons/react/dist/csr/ArrowUp'
+import { StopIcon } from '@phosphor-icons/react/dist/csr/Stop'
 import { SESSION_LIMITS } from '@quarry/contracts'
 import { useState, type FormEvent, type KeyboardEvent, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { PATHS } from '@/lib/auth/auth.constants'
 
-export type ComposerState = 'open' | 'busy' | 'archived' | 'limit'
+// busy: a reply is on its way and can't be stopped yet; stoppable: it streams and can be.
+export type ComposerState = 'open' | 'busy' | 'stoppable' | 'stopping' | 'archived' | 'limit'
 
 function Notice({ children }: { children: ReactNode }) {
   return <p className="px-1 text-small text-muted-foreground">{children}</p>
 }
 
-// Asks for changes. Enter sends and Shift+Enter starts a new line. Closed while
-// a reply is written, when the session is archived, or at the message limit.
+// Enter sends and Shift+Enter starts a new line. Stop replaces Send while a reply
+// is written. Closed when archived or at the message limit.
 export function Composer({
   state,
   messageLimit,
   draft = '',
   onSend,
+  onStop,
 }: {
   state: ComposerState
   messageLimit: number
   // Text to start with, such as a message the server refused.
   draft?: string
   onSend: (text: string) => void
+  onStop: () => void
 }) {
   const [text, setText] = useState(draft)
   const closed = state === 'archived' || state === 'limit'
@@ -72,9 +76,15 @@ export function Composer({
             className="field-sizing-content max-h-48 min-w-0 flex-1 resize-none bg-transparent py-1.5 text-field text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
           />
         </label>
-        <Button type="submit" variant="primary" size="icon-lg" aria-label="Send" disabled={!canSend} loading={state === 'busy'}>
-          {state === 'busy' ? null : <ArrowUpIcon aria-hidden="true" />}
-        </Button>
+        {state === 'stoppable' || state === 'stopping' ? (
+          <Button type="button" variant="primary" size="icon-lg" aria-label="Stop" onClick={onStop} loading={state === 'stopping'}>
+            {state === 'stopping' ? null : <StopIcon weight="fill" aria-hidden="true" />}
+          </Button>
+        ) : (
+          <Button type="submit" variant="primary" size="icon-lg" aria-label="Send" disabled={!canSend} loading={state === 'busy'}>
+            {state === 'busy' ? null : <ArrowUpIcon aria-hidden="true" />}
+          </Button>
+        )}
       </form>
     </div>
   )

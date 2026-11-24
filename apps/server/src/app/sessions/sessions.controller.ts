@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
   Param,
   Patch,
   Post,
@@ -23,6 +24,7 @@ import { AgentService } from './agent/agent.service';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { ListSessionsDto } from './dto/list-sessions.dto';
 import { RunTurnDto } from './dto/run-turn.dto';
+import { StopTurnDto } from './dto/stop-turn.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
 import { SessionsService } from './sessions.service';
 
@@ -79,5 +81,16 @@ export class SessionsController {
   ): Promise<void> {
     const turn = await this.sessionsService.claimTurn(user.id, id, dto.message);
     await this.agentService.runTurn(turn, response);
+  }
+
+  // Answered once the stopped turn has released the lock.
+  @Post(':id/turns/stop')
+  @HttpCode(204)
+  async stopTurn(
+    @CurrentUser() user: SessionUser,
+    @Param('id') id: string,
+    @Body() dto: StopTurnDto,
+  ): Promise<void> {
+    await this.agentService.stopTurn(user.id, id, dto.messageId);
   }
 }

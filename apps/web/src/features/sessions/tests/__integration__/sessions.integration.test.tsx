@@ -11,6 +11,7 @@ import {
   fitDocument,
   fitTurnChunks,
   JOB_URL,
+  openUiStream,
   serveSession,
   SESSION_ID,
   summary,
@@ -368,6 +369,143 @@ describe('Session page (integration)', () => {
 
     expect(await screen.findByText('You line up well. Go is the main gap.')).toBeInTheDocument()
     expect(turns).toEqual([{}, {}])
+  })
+})
+
+describe('Stopping a turn (integration)', () => {
+  const TURNS_URL = apiUrl(`/api/sessions/${SESSION_ID}/turns`)
+  // The reply has started reading the job post when it is stopped.
+  const runningChunks = () => fitTurnChunks().slice(0, 3)
+
+  it('stops a running turn, leaves the composer usable and retries the same message', async () => {
+    signInAs()
+    let session = freshSession()
+    const turns: unknown[] = []
+    const stops: unknown[] = []
+    server.use(
+      http.get(apiUrl(`/api/sessions/${SESSION_ID}`), () => HttpResponse.json(session)),
+      http.post(TURNS_URL, async ({ request }) => {
+        turns.push(await request.json())
+        if (turns.length === 1) return openUiStream(runningChunks())
+        session = detail()
+        return uiStream(fitTurnChunks())
+      }),
+      http.post(`${TURNS_URL}/stop`, async ({ request }) => {
+        stops.push(await request.json())
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+    renderRoute(SESSION_PATH)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Stop' }))
+
+    expect(await screen.findByText('You stopped this reply.')).toBeInTheDocument()
+    // Names the message the stopped turn answers.
+    expect(stops).toEqual([{ messageId: 'msg-1' }])
+    // The step list stops where the reply was cut off.
+    await userEvent.click(screen.getByRole('button', { name: '1 step' }))
+    expect(screen.getByText("Didn't finish")).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Stop' })).not.toBeInTheDocument()
+    await userEvent.type(screen.getByRole('textbox', { name: 'Message' }), 'Hello')
+    expect(screen.getByRole('button', { name: 'Send' })).toBeEnabled()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+
+    expect(await screen.findByText('You line up well. Go is the main gap.')).toBeInTheDocument()
+    expect(turns).toEqual([{}, {}])
+    expect(screen.queryByText('You stopped this reply.')).not.toBeInTheDocument()
+  })
+
+  it('drops the stopped reply when a new message is sent instead', async () => {
+    signInAs()
+    // The server stores each sent message, and a reply only when the turn isn't stopped.
+    let session = freshSession()
+    const turns: unknown[] = []
+    server.use(
+      http.get(apiUrl(`/api/sessions/${SESSION_ID}`), () => HttpResponse.json(session)),
+      http.post(TURNS_URL, async ({ request }) => {
+        const body = (await request.json()) as { message?: { id: string; text: string } }
+        turns.push(body)
+        const sent = body.message ? [userMessage(body.message.id, body.message.text)] : []
+        session = { ...session, messages: [...session.messages, ...sent] }
+        if (turns.length === 1) return openUiStream(runningChunks())
+        session = detail({ messages: session.messages })
+        return uiStream(fitTurnChunks())
+      }),
+      http.post(`${TURNS_URL}/stop`, () => new HttpResponse(null, { status: 204 })),
+    )
+    renderRoute(SESSION_PATH)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Stop' }))
+    await screen.findByText('You stopped this reply.')
+    await userEvent.type(screen.getByRole('textbox', { name: 'Message' }), 'Keep it to one page{Enter}')
+
+    expect(await screen.findByText('You line up well. Go is the main gap.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '1 step' })).not.toBeInTheDocument()
+    expect(screen.queryByText('You stopped this reply.')).not.toBeInTheDocument()
+    expect(turns).toEqual([{}, { message: { id: expect.any(String), text: 'Keep it to one page' } }])
+  })
+
+  it('keeps a reply that was saved before the stop reached the server', async () => {
+    signInAs()
+    let session = freshSession()
+    server.use(
+      http.get(apiUrl(`/api/sessions/${SESSION_ID}`), () => HttpResponse.json(session)),
+      http.post(TURNS_URL, () => openUiStream(runningChunks())),
+      http.post(`${TURNS_URL}/stop`, () => {
+        session = detail()
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+    renderRoute(SESSION_PATH)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Stop' }))
+
+    expect(await screen.findByText('You line up well. Go is the main gap.')).toBeInTheDocument()
+    expect(screen.queryByText('You stopped this reply.')).not.toBeInTheDocument()
+  })
+
+  it('offers a retry when the stop ended the turn but its answer was lost', async () => {
+    signInAs()
+    serveSession(freshSession(), runningChunks())
+    server.use(
+      http.post(TURNS_URL, () => openUiStream(runningChunks())),
+      http.post(`${TURNS_URL}/stop`, () => HttpResponse.error()),
+    )
+    renderRoute(SESSION_PATH)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Stop' }))
+
+    expect(await screen.findByText('You stopped this reply.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+  })
+
+  it('waits for the reply when the server could not stop the turn', async () => {
+    signInAs()
+    let session = freshSession()
+    let reads = 0
+    server.use(
+      http.get(apiUrl(`/api/sessions/${SESSION_ID}`), () => {
+        reads += 1
+        return HttpResponse.json(session)
+      }),
+      http.post(TURNS_URL, () => openUiStream(runningChunks())),
+      http.post(`${TURNS_URL}/stop`, () => {
+        // The turn runs on and lands a moment later.
+        session = { ...session, status: 'drafting' }
+        setTimeout(() => {
+          session = detail()
+        }, 500)
+        return HttpResponse.json({ message: 'Internal server error' }, { status: 500 })
+      }),
+    )
+    renderRoute(SESSION_PATH)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Stop' }))
+
+    expect(await screen.findByText('You line up well. Go is the main gap.', {}, { timeout: 5000 })).toBeInTheDocument()
+    expect(screen.queryByText('You stopped this reply.')).not.toBeInTheDocument()
+    expect(reads).toBeGreaterThan(1)
   })
 })
 

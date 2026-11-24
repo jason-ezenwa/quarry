@@ -5,7 +5,7 @@ import { GaugeIcon } from '@phosphor-icons/react/dist/csr/Gauge'
 import { GearIcon } from '@phosphor-icons/react/dist/csr/Gear'
 import { GlobeIcon } from '@phosphor-icons/react/dist/csr/Globe'
 import { PencilSimpleIcon } from '@phosphor-icons/react/dist/csr/PencilSimple'
-import type { BadgeVariant, IconComponent, TurnErrorCode } from './sessions.types'
+import type { BadgeVariant, ChatErrorCode, IconComponent, TurnErrorCode } from './sessions.types'
 
 // The only icon list the web app keeps, one per icon a tool may name. A stored
 // part naming an icon not listed here falls back to the gear.
@@ -75,7 +75,11 @@ export const CHAT_ERRORS = {
   'not-sent': "Your message wasn't sent. Try sending it again.",
   'resume-not-ready': "Your resume is being read or couldn't be read. Check it on the Resume page, then send your message again.",
   failed: 'Something went wrong. Try again.',
+  stopped: 'You stopped this reply.',
 } as const
+
+// Errors the chat offers a Retry for.
+export const RETRYABLE_CHAT_ERRORS: ReadonlySet<ChatErrorCode> = new Set<ChatErrorCode>(['failed', 'stopped'])
 
 export const SESSION_QUERY_KEYS = {
   lists: ['sessions', 'list'] as const,

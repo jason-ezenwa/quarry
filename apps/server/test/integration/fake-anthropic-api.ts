@@ -85,12 +85,16 @@ const JSON_TOOL = 'json';
 export class FakeAnthropicApi {
   readonly requests: MessagesRequest[] = [];
   readonly betas: string[][] = [];
+  // Indexes into `requests` of those the app cancelled.
+  readonly cancelled = new Set<number>();
   private replies: AnthropicReply[] = [];
 
   readonly handler = http.post(ANTHROPIC_MESSAGES_URL, async ({ request }) => {
     const body = (await request.json()) as MessagesRequest;
     this.requests.push(body);
     this.betas.push(request.headers.get('anthropic-beta')?.split(',') ?? []);
+    const index = this.requests.length - 1;
+    request.signal.addEventListener('abort', () => this.cancelled.add(index));
 
     const reply = this.replies.shift();
     if (!reply) return delay('infinite') as Promise<never>;
@@ -105,6 +109,7 @@ export class FakeAnthropicApi {
   reset(): void {
     this.requests.length = 0;
     this.betas.length = 0;
+    this.cancelled.clear();
     this.replies = [];
   }
 
