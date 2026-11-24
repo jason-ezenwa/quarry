@@ -31,8 +31,8 @@ export const EXPORT_STYLE = {
 // PDF's built-in Helvetica drops letters such as Ọ and Ẹ).
 export const PDF_FONT = {
   family: 'Ezenwa Grotesk',
-  regular: join(__dirname, 'fonts', 'EzenwaGrotesk-Regular.woff2'),
-  bold: join(__dirname, 'fonts', 'EzenwaGrotesk-Bold.woff2'),
+  regular: join(__dirname, 'fonts', 'EzenwaGrotesk-Regular.ttf'),
+  bold: join(__dirname, 'fonts', 'EzenwaGrotesk-Bold.ttf'),
 } as const;
 
 // Word substitutes its closest match where Helvetica isn't installed.

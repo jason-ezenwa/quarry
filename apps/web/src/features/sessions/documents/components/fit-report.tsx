@@ -1,8 +1,8 @@
-import { FIT_DIMENSION_KEYS, FIT_DIMENSIONS, type FitScoreDocumentResponse, type SessionJob } from '@quarry/contracts'
+import { FIT_DIMENSION_KEYS, FIT_DIMENSIONS, FIT_LABEL_TEXT, type FitScoreDocumentResponse, type SessionJob } from '@quarry/contracts'
 import { Meter } from '@/components/ui/meter'
 import { cn } from '@/lib/utils'
 import { jobLine, sourceLabel } from '../../session-format'
-import { FIT_DIMENSION_NAMES, FIT_LABEL_TEXT } from '../documents.constants'
+import { FIT_DIMENSION_NAMES } from '../documents.constants'
 
 function Points({ title, items, tone }: { title: string; items: string[]; tone: 'success' | 'warning' }) {
   return (

@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { cleanup, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -26,6 +26,9 @@ import {
 } from './session-fixtures'
 
 const SESSION_PATH = `/applications/${SESSION_ID}`
+
+// Opens a session just started from Home, which answers its first message itself.
+const openStartedSession = () => renderRoute(SESSION_PATH, { startTurn: true })
 
 // A session right after creation: the first message, not answered yet.
 function freshSession(text = `Score my fit for this job: ${JOB_URL}`) {
@@ -210,6 +213,26 @@ describe('Session page (integration)', () => {
     expect(screen.getByText('LinkedIn blocks us')).toBeInTheDocument()
     expect(screen.getAllByText('Worked')).toHaveLength(2)
     expect(screen.queryByText('Did')).not.toBeInTheDocument()
+  })
+
+  it('shows a lone tool step as it is, in its done text, without a step count to open', async () => {
+    signInAs()
+
+    const reply = {
+      id: 'msg-reply',
+      role: 'assistant' as const,
+      parts: [
+        { type: 'tool-get_job_description', toolCallId: 'a', state: 'output-available', input: {}, output: { note: 'Ashby' }, toolMetadata: { icon: 'globe', active: 'Reading the job post', done: 'Read the job post', failed: "Couldn't read the job post" } },
+        { type: 'text', text: 'Done.' },
+      ],
+    }
+
+    serveSession(detail({ messages: [userMessage('msg-1', 'Hi'), reply] }))
+    renderRoute(SESSION_PATH)
+
+    expect(await screen.findByText('Read the job post')).toBeInTheDocument()
+    expect(screen.getByText('Ashby')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '1 step' })).not.toBeInTheDocument()
   })
 
   it('keeps the panel on its tab when a new output arrives, and a card opens its own document', async () => {
@@ -528,6 +551,123 @@ describe('Session page (integration)', () => {
     expect(screen.queryByText('Lead with the agent work', { selector: 'p' })).not.toBeInTheDocument()
   })
 
+  it('shows Retry instead of rerunning an unanswered message when the page is reopened', async () => {
+    signInAs()
+    const recorded = serveSession(freshSession())
+
+    renderRoute(SESSION_PATH)
+
+    expect(await screen.findByText("This message hasn't been answered.")).toBeInTheDocument()
+    expect(recorded.turns).toEqual([])
+
+    await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+
+    expect(await screen.findByText('You line up well. Go is the main gap.')).toBeInTheDocument()
+    expect(recorded.turns).toEqual([{}])
+  })
+
+  it('answers a just-started session once, and not again on reload', async () => {
+    signInAs()
+    const recorded = serveSession(freshSession(), fitTurnChunks().slice(0, 3))
+    const router = openStartedSession()
+
+    await waitFor(() => expect(recorded.turns).toEqual([{}]))
+    await waitFor(() => expect(router.state.location.state).toBeNull())
+
+    // A reload opens the page again with the state it was left with.
+    cleanup()
+    const reads = recorded.sessionReads
+    renderRoute(SESSION_PATH, router.state.location.state ?? undefined)
+
+    await waitFor(() => expect(recorded.sessionReads).toBeGreaterThan(reads))
+    expect(await screen.findByRole('textbox')).toBeInTheDocument()
+    expect(recorded.turns).toEqual([{}])
+  })
+
+  it('shows a reply that came back empty as a failed turn with Retry, not as a blank reply', async () => {
+    signInAs()
+    let session = freshSession()
+    const turns: unknown[] = []
+
+    server.use(
+      http.get(apiUrl(`/api/sessions/${SESSION_ID}`), () => HttpResponse.json(session)),
+      http.post(apiUrl(`/api/sessions/${SESSION_ID}/turns`), async ({ request }) => {
+        turns.push(await request.json())
+
+        if (turns.length === 1) {
+          return uiStream([
+            { type: 'start', messageId: 'msg-empty' },
+            { type: 'start-step' },
+            { type: 'finish-step' },
+            { type: 'finish' },
+            { type: 'error', errorText: 'Something went wrong writing this reply. Try again.' },
+          ])
+        }
+
+        session = detail()
+        return uiStream(fitTurnChunks())
+      }),
+    )
+
+    openStartedSession()
+
+    expect(await screen.findByText('Something went wrong. Try again.')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+
+    expect(await screen.findByText('You line up well. Go is the main gap.')).toBeInTheDocument()
+    expect(turns).toEqual([{}, {}])
+  })
+
+  it('puts a message the agent declined back in the composer and says so', async () => {
+    signInAs()
+    serveSession(detail())
+
+    server.use(
+      http.post(apiUrl(`/api/sessions/${SESSION_ID}/turns`), () =>
+        uiStream([
+          { type: 'start', messageId: 'msg-declined-reply' },
+          { type: 'start-step' },
+          { type: 'finish-step' },
+          { type: 'finish' },
+          { type: 'error', errorText: 'reply-declined' },
+        ]),
+      ),
+    )
+
+    renderRoute(SESSION_PATH)
+
+    await userEvent.type(await screen.findByRole('textbox', { name: 'Message' }), 'Something it declines{Enter}')
+
+    expect(await screen.findByText("Wren couldn't answer that message, so it's back in the box. Try rewording it.")).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: 'Message' })).toHaveValue('Something it declines')
+    expect(screen.queryByText('Something it declines', { selector: 'p' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument()
+  })
+
+  it('tells the user to start over when the first message of a session is declined', async () => {
+    signInAs()
+    serveSession(freshSession())
+
+    server.use(
+      http.post(apiUrl(`/api/sessions/${SESSION_ID}/turns`), () =>
+        uiStream([
+          { type: 'start', messageId: 'msg-declined-reply' },
+          { type: 'start-step' },
+          { type: 'finish-step' },
+          { type: 'finish' },
+          { type: 'error', errorText: 'first-message-declined' },
+        ]),
+      ),
+    )
+
+    openStartedSession()
+
+    expect(
+      await screen.findByText("Wren couldn't work on this job. Start a new application and word it differently."),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument()
+  })
+
   it('offers a retry after a failed turn, which reruns it without resending the message', async () => {
     signInAs()
     let session = freshSession()
@@ -543,7 +683,7 @@ describe('Session page (integration)', () => {
       }),
     )
 
-    renderRoute(SESSION_PATH)
+    openStartedSession()
 
     await userEvent.click(await screen.findByRole('button', { name: 'Retry' }))
 
@@ -577,16 +717,16 @@ describe('Stopping a turn (integration)', () => {
       }),
     )
 
-    renderRoute(SESSION_PATH)
+    openStartedSession()
 
     await userEvent.click(await screen.findByRole('button', { name: 'Stop' }))
 
     expect(await screen.findByText('You stopped this reply.')).toBeInTheDocument()
     // Names the message the stopped turn answers.
     expect(stops).toEqual([{ messageId: 'msg-1' }])
-    // The step list stops where the reply was cut off.
-    await userEvent.click(screen.getByRole('button', { name: '1 step' }))
+    // A lone step shows as it is, marked where the reply was cut off.
     expect(screen.getByText("Didn't finish")).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '1 step' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Stop' })).not.toBeInTheDocument()
     await userEvent.type(screen.getByRole('textbox', { name: 'Message' }), 'Hello')
     expect(screen.getByRole('button', { name: 'Send' })).toBeEnabled()
@@ -618,14 +758,14 @@ describe('Stopping a turn (integration)', () => {
       http.post(`${TURNS_URL}/stop`, () => new HttpResponse(null, { status: 204 })),
     )
 
-    renderRoute(SESSION_PATH)
+    openStartedSession()
 
     await userEvent.click(await screen.findByRole('button', { name: 'Stop' }))
     await screen.findByText('You stopped this reply.')
     await userEvent.type(screen.getByRole('textbox', { name: 'Message' }), 'Keep it to one page{Enter}')
 
     expect(await screen.findByText('You line up well. Go is the main gap.')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: '1 step' })).not.toBeInTheDocument()
+    expect(screen.queryByText("Didn't finish")).not.toBeInTheDocument()
     expect(screen.queryByText('You stopped this reply.')).not.toBeInTheDocument()
     expect(turns).toEqual([{}, { message: { id: expect.any(String), text: 'Keep it to one page' } }])
   })
@@ -643,7 +783,7 @@ describe('Stopping a turn (integration)', () => {
       }),
     )
 
-    renderRoute(SESSION_PATH)
+    openStartedSession()
 
     await userEvent.click(await screen.findByRole('button', { name: 'Stop' }))
 
@@ -660,7 +800,7 @@ describe('Stopping a turn (integration)', () => {
       http.post(`${TURNS_URL}/stop`, () => HttpResponse.error()),
     )
 
-    renderRoute(SESSION_PATH)
+    openStartedSession()
 
     await userEvent.click(await screen.findByRole('button', { name: 'Stop' }))
 
@@ -691,7 +831,7 @@ describe('Stopping a turn (integration)', () => {
       }),
     )
 
-    renderRoute(SESSION_PATH)
+    openStartedSession()
 
     await userEvent.click(await screen.findByRole('button', { name: 'Stop' }))
 

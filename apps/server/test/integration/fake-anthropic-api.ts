@@ -23,7 +23,8 @@ export type AnthropicReply =
   | {
       kind: 'stream';
       blocks: StreamedBlock[];
-      stopReason?: 'end_turn' | 'tool_use';
+      // `refusal` with no blocks: declined by a safety check before any output.
+      stopReason?: 'end_turn' | 'tool_use' | 'refusal';
       usage?: StreamedUsage;
       // Holds the stream open after the first block until it settles.
       pauseAfterFirstBlock?: Promise<void>;

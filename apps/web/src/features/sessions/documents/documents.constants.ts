@@ -1,4 +1,4 @@
-import type { DocumentKind, FitDimension, FitLabel } from '@quarry/contracts'
+import type { DocumentKind, FitDimension } from '@quarry/contracts'
 import { EnvelopeSimpleIcon } from '@phosphor-icons/react/dist/csr/EnvelopeSimple'
 import { FileTextIcon } from '@phosphor-icons/react/dist/csr/FileText'
 import { GaugeIcon } from '@phosphor-icons/react/dist/csr/Gauge'
@@ -10,12 +10,6 @@ export const DOCUMENT_KIND_DISPLAY: Record<DocumentKind, { label: string; icon: 
   'fit-score': { label: 'Fit report', icon: GaugeIcon },
   resume: { label: 'Resume', icon: FileTextIcon },
   'cover-letter': { label: 'Cover letter', icon: EnvelopeSimpleIcon },
-}
-
-export const FIT_LABEL_TEXT: Record<FitLabel, string> = {
-  'strong-fit': 'Strong fit',
-  'good-fit': 'Good fit',
-  'weak-fit': 'Weak fit',
 }
 
 export const FIT_DIMENSION_NAMES: Record<FitDimension, string> = {

@@ -82,6 +82,11 @@ function ToolStepList({ className, children, ...props }: ComponentProps<'ul'>) {
   )
 }
 
+// A lone step, shown as it is rather than in a folding list.
+function ToolStepSingle({ className, ...props }: ComponentProps<'ul'>) {
+  return <ul data-slot="tool-step-single" className={cn('flex flex-col', className)} {...props} />
+}
+
 // unfinished: errored, or cut off when its reply stopped.
 function ToolStep({
   running,
@@ -124,4 +129,4 @@ function ToolStepNote({ className, ...props }: ComponentProps<'span'>) {
   )
 }
 
-export { ToolSteps, ToolStepsWorking, ToolStepsToggle, ToolStepList, ToolStep, ToolStepIcon, ToolStepLabel, ToolStepNote }
+export { ToolSteps, ToolStepsWorking, ToolStepsToggle, ToolStepList, ToolStepSingle, ToolStep, ToolStepIcon, ToolStepLabel, ToolStepNote }

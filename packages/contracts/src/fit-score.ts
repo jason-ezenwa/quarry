@@ -17,6 +17,13 @@ export const FIT_DIMENSION_KEYS = Object.keys(FIT_DIMENSIONS) as FitDimension[];
 export const FIT_LABELS = ["strong-fit", "good-fit", "weak-fit"] as const;
 export type FitLabel = (typeof FIT_LABELS)[number];
 
+// Each label as people read it, on screen and in the agent's replies.
+export const FIT_LABEL_TEXT: Record<FitLabel, string> = {
+  "strong-fit": "Strong fit",
+  "good-fit": "Good fit",
+  "weak-fit": "Weak fit",
+};
+
 // Lowest rounded overall for each label, strongest first.
 export const FIT_LABEL_BANDS: readonly { min: number; label: FitLabel }[] = [
   { min: 80, label: "strong-fit" },

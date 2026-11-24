@@ -15,7 +15,10 @@ export const CHAT_ERRORS = {
   'resume-not-ready': "Your resume is being read or couldn't be read. Check it on the Resume page, then send your message again.",
   failed: 'Something went wrong. Try again.',
   stopped: 'You stopped this reply.',
+  unanswered: "This message hasn't been answered.",
+  declined: "Wren couldn't answer that message, so it's back in the box. Try rewording it.",
+  'declined-first': "Wren couldn't work on this job. Start a new application and word it differently.",
 } as const
 
 // Errors the chat offers a Retry for.
-export const RETRYABLE_CHAT_ERRORS: ReadonlySet<ChatErrorCode> = new Set<ChatErrorCode>(['failed', 'stopped'])
+export const RETRYABLE_CHAT_ERRORS: ReadonlySet<ChatErrorCode> = new Set<ChatErrorCode>(['failed', 'stopped', 'unanswered'])

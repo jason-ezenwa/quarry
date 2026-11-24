@@ -19,3 +19,9 @@ export type PageHeaderProps = {
   crumbs?: Crumb[]
   actions?: ReactNode
 }
+
+// `sidebarOpen`: the sidebar shows beside the page from md up. Phones open it as a sheet instead.
+export type AppFrameContextValue = {
+  state: { sidebarOpen: boolean }
+  actions: { setSidebarOpen: (open: boolean) => void }
+}

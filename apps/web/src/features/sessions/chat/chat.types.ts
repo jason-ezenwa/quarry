@@ -8,8 +8,11 @@ export type TurnErrorCode = SessionErrorCode | 'failed'
 
 export type ChatErrorCode = keyof typeof CHAT_ERRORS
 
-// A message the server refused, put back in the composer.
-export type UnsentDraft = { text: string; key: string }
+// A message the server refused, put back in the composer. `declined`: the agent declined to answer it.
+export type UnsentDraft = { text: string; key: string; declined?: boolean }
+
+// Router state for a session page. `startTurn`: the session was just started, so the page answers its first message.
+export type SessionPageState = { startTurn?: boolean }
 
 // The composer's state, with why it is closed: archived, or at the message limit.
 export type ApplicationComposerState = Exclude<ComposerStatus, 'closed'> | 'archived' | 'limit'

@@ -16,9 +16,16 @@ export function sourceLabel(source: SessionSummary['source']): string | null {
   return source ? JOB_SOURCE_LABELS[source] : null
 }
 
-// Company, location and source on one line, leaving out whatever isn't known yet.
+// Company, location and source on one line, leaving out whatever isn't known yet and any repeat,
+// such as the Ashby board for a job at Ashby.
 export function jobLine(parts: Array<string | null | undefined>): string {
-  return parts.filter((part): part is string => Boolean(part)).join('  ·  ')
+  const shown: string[] = []
+
+  for (const part of parts) {
+    if (part && !shown.some((earlier) => earlier.toLowerCase() === part.toLowerCase())) shown.push(part)
+  }
+
+  return shown.join('  ·  ')
 }
 
 // The download name the server gives an export: `attachment; filename="ada-obi-resume.pdf"`.

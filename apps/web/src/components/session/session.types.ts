@@ -19,3 +19,8 @@ export type ToolStepsContextValue = {
 }
 
 export type ToolStepContextValue = { running: boolean; unfinished: boolean }
+
+export type SessionThreadContextValue = {
+  state: { following: boolean }
+  actions: { jumpToBottom: (behavior?: ScrollBehavior) => void }
+}

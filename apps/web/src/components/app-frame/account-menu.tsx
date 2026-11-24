@@ -40,7 +40,7 @@ export function AccountMenu() {
             <GearIcon aria-hidden="true" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent side="top" align="end">
+        <DropdownMenuContent side="top" align="end" className="max-w-64">
           {user ? (
             <>
               <DropdownMenuLabel>
