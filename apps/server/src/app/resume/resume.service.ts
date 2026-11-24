@@ -6,20 +6,33 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import type {
+  CreateTailoredResumeInput,
+  DocumentHeader,
+  EditTailoredResumeInput,
   PrimaryResumeResponse,
   Resume as ResumeContent,
+  TailoredResumeContent,
+  TailoredResumeDocumentResponse,
   UploadedFileRef,
 } from '@quarry/contracts';
 import { ClientSession, Model, type QueryFilter, Types } from 'mongoose';
+import type { SessionContext } from '../common/common.types';
+import {
+  documentNotFound,
+  ownedDocumentFilter,
+} from '../common/owned-document';
 import { StorageService } from '../storage/storage.service';
 import type { StoredFile } from '../storage/storage.types';
 import { ResumeParserService } from './parser/parser.service';
 import { Resume, ResumeDocument, ResumeFile } from './resume.schema';
 import type { CreatePrimaryResumeInput } from './resume.types';
 import {
+  replaceSections,
   toPrimaryResumeResponse,
   toResumeContent,
   toResumeContentUpdate,
+  toTailoredResumeContent,
+  toTailoredResumeResponse,
 } from './resume.utils';
 
 @Injectable()
@@ -80,6 +93,58 @@ export class ResumeService {
     );
 
     return resume ? toResumeContent(resume) : null;
+  }
+
+  // The header of every tailored resume and letter, read on each use. A
+  // re-upload clears the review but keeps the last parse, so that's used.
+  async findHeader(userId: string): Promise<DocumentHeader> {
+    const resume = await this.resumeModel.findOne(
+      this.primaryFilter(userId, { parsedAt: { $ne: null } }),
+    );
+
+    // Unreachable once a session exists, since starting one needs a parse.
+    if (!resume) throw new ConflictException('Primary resume not parsed');
+
+    const { name, contact } = toResumeContent(resume);
+
+    return { name, contact };
+  }
+
+  async createTailored(
+    owner: SessionContext,
+    { name, resume }: CreateTailoredResumeInput,
+  ): Promise<ResumeDocument> {
+    return this.saveTailored(owner, name, resume);
+  }
+
+  // Saves an edited copy; the source is never changed. Null when the source
+  // isn't a tailored resume in this session.
+  async editTailored(
+    owner: SessionContext,
+    { sourceResumeId, name, sections }: EditTailoredResumeInput,
+  ): Promise<ResumeDocument | null> {
+    const source = await this.findTailored(owner, sourceResumeId);
+    if (!source) return null;
+
+    return this.saveTailored(
+      owner,
+      name,
+      replaceSections(toTailoredResumeContent(source), sections),
+      source._id,
+    );
+  }
+
+  async getTailored(
+    owner: SessionContext,
+    resumeId: string,
+  ): Promise<TailoredResumeDocumentResponse> {
+    const resume = await this.findTailored(owner, resumeId);
+    if (!resume) throw documentNotFound();
+
+    return toTailoredResumeResponse(
+      resume,
+      await this.findHeader(owner.userId),
+    );
   }
 
   async getPrimary(userId: string): Promise<PrimaryResumeResponse> {
@@ -193,6 +258,48 @@ export class ResumeService {
     }
 
     return resume;
+  }
+
+  private async findTailored(
+    owner: SessionContext,
+    resumeId: string,
+  ): Promise<ResumeDocument | null> {
+    const owned = ownedDocumentFilter(owner, resumeId);
+
+    return owned
+      ? this.resumeModel.findOne({ ...owned, kind: 'tailored' })
+      : null;
+  }
+
+  private async saveTailored(
+    { userId, sessionId }: SessionContext,
+    title: string,
+    content: TailoredResumeContent,
+    sourceResume?: Types.ObjectId,
+  ): Promise<ResumeDocument> {
+    const resume = new Resume();
+    resume.user = new Types.ObjectId(userId);
+    resume.kind = 'tailored';
+    resume.session = new Types.ObjectId(sessionId);
+    resume.title = title;
+    resume.sourceResume = sourceResume;
+    resume.summary = content.summary;
+    resume.experience = content.experience;
+    resume.education = content.education;
+    resume.skills = content.skills;
+    resume.projects = content.projects;
+    resume.certifications = content.certifications;
+
+    const saved = await new this.resumeModel(resume).save();
+
+    this.logger.log('Tailored resume saved', {
+      userId,
+      sessionId,
+      documentId: saved.id,
+      edited: Boolean(sourceResume),
+    });
+
+    return saved;
   }
 
   // Moves parseStartedAt to now in the same write, so no one else claims it.

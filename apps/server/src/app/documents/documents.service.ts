@@ -1,14 +1,32 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import {
   computeFitOverall,
+  type CoverLetterDocumentResponse,
+  type CoverLetterInput,
+  type CreateTailoredResumeInput,
+  type DocumentKind,
+  type DocumentResponse,
+  type EditTailoredResumeInput,
   type FitScoreDocumentResponse,
   type FitScoreInput,
+  type SavedDocumentRef,
 } from '@quarry/contracts';
 import { Model, Types } from 'mongoose';
-import { parseObjectId } from '../common/object-id';
+import {
+  documentNotFound,
+  ownedDocumentFilter,
+} from '../common/owned-document';
 import type { SessionContext } from '../common/common.types';
-import { toFitScoreResponse } from './documents.utils';
+import { ResumeService } from '../resume/resume.service';
+import { CoverLetter, CoverLetterDocument } from './cover-letter.schema';
+import type { ExportableDocument, ExportableKind } from './documents.types';
+import {
+  toCoverLetterRef,
+  toCoverLetterResponse,
+  toFitScoreResponse,
+  toTailoredResumeRef,
+} from './documents.utils';
 import {
   FitScore,
   FitScoreDimension,
@@ -23,7 +41,90 @@ export class DocumentsService {
   constructor(
     @InjectModel(FitScore.name)
     private readonly fitScoreModel: Model<FitScoreDocument>,
+    @InjectModel(CoverLetter.name)
+    private readonly coverLetterModel: Model<CoverLetterDocument>,
+    private readonly resumeService: ResumeService,
   ) {}
+
+  // Any kind, as the user sees it. 404 unless it's in this session.
+  async getDocument(
+    owner: SessionContext,
+    kind: DocumentKind,
+    documentId: string,
+  ): Promise<DocumentResponse> {
+    return kind === 'fit-score'
+      ? this.getFitScore(owner, documentId)
+      : this.getExportable(owner, kind, documentId);
+  }
+
+  async getExportable(
+    owner: SessionContext,
+    kind: ExportableKind,
+    documentId: string,
+  ): Promise<ExportableDocument> {
+    return kind === 'resume'
+      ? this.resumeService.getTailored(owner, documentId)
+      : this.getCoverLetter(owner, documentId);
+  }
+
+  // Tailored resumes live with the resume module, so they go through it.
+  async createTailoredResume(
+    owner: SessionContext,
+    input: CreateTailoredResumeInput,
+  ): Promise<SavedDocumentRef> {
+    return toTailoredResumeRef(
+      await this.resumeService.createTailored(owner, input),
+    );
+  }
+
+  // Null when the source isn't a tailored resume in this session.
+  async editTailoredResume(
+    owner: SessionContext,
+    input: EditTailoredResumeInput,
+  ): Promise<SavedDocumentRef | null> {
+    const edited = await this.resumeService.editTailored(owner, input);
+
+    return edited ? toTailoredResumeRef(edited) : null;
+  }
+
+  // Every save is a new letter.
+  async createCoverLetter(
+    { userId, sessionId }: SessionContext,
+    input: CoverLetterInput,
+  ): Promise<SavedDocumentRef> {
+    const coverLetter = new CoverLetter();
+    coverLetter.user = new Types.ObjectId(userId);
+    coverLetter.session = new Types.ObjectId(sessionId);
+    coverLetter.title = input.name;
+    coverLetter.greeting = input.greeting;
+    coverLetter.paragraphs = input.paragraphs;
+    coverLetter.signOff = input.signOff;
+
+    const saved = await new this.coverLetterModel(coverLetter).save();
+
+    this.logger.log('Cover letter saved', {
+      userId,
+      sessionId,
+      documentId: saved.id,
+    });
+
+    return toCoverLetterRef(saved);
+  }
+
+  private async getCoverLetter(
+    owner: SessionContext,
+    documentId: string,
+  ): Promise<CoverLetterDocumentResponse> {
+    const owned = ownedDocumentFilter(owner, documentId);
+    const coverLetter = owned && (await this.coverLetterModel.findOne(owned));
+
+    if (!coverLetter) throw documentNotFound();
+
+    return toCoverLetterResponse(
+      coverLetter,
+      await this.resumeService.findHeader(owner.userId),
+    );
+  }
 
   // The overall is computed here; the model never gives it.
   async createFitScore(
@@ -54,22 +155,13 @@ export class DocumentsService {
   }
 
   async getFitScore(
-    { userId, sessionId }: SessionContext,
+    owner: SessionContext,
     documentId: string,
   ): Promise<FitScoreDocumentResponse> {
-    const id = parseObjectId(documentId);
-    const session = parseObjectId(sessionId);
+    const owned = ownedDocumentFilter(owner, documentId);
+    const fitScore = owned && (await this.fitScoreModel.findOne(owned));
 
-    const fitScore =
-      id && session
-        ? await this.fitScoreModel.findOne({
-            _id: id,
-            user: new Types.ObjectId(userId),
-            session,
-          })
-        : null;
-
-    if (!fitScore) throw new NotFoundException('Document not found');
+    if (!fitScore) throw documentNotFound();
 
     return toFitScoreResponse(fitScore);
   }

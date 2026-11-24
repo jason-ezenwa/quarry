@@ -1,10 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
+  coverLetterInputSchema,
+  createTailoredResumeInputSchema,
+  editTailoredResumeInputSchema,
   fitScoreInputSchema,
   type ToolDisplayMetadata,
 } from '@quarry/contracts';
 import { tool, type ToolSet } from 'ai';
 import { z } from 'zod';
+import { DocumentsService } from '../../documents/documents.service';
 import { SessionsService } from '../sessions.service';
 import type { SessionContext } from '../../common/common.types';
 
@@ -24,6 +28,13 @@ const TOOL_FAILURE = {
     'That step failed on our side. Tell the user and suggest trying again.',
 } as const;
 
+const SOURCE_NOT_FOUND = {
+  ok: false,
+  reason: 'source-not-found',
+  message:
+    'No tailored resume in this application has that id. Use the id of a resume saved in this conversation, or write a new one with create_tailored_resume.',
+} as const;
+
 const display = (metadata: ToolDisplayMetadata) => metadata;
 
 // The ids come from the signed-in request and are captured here, never
@@ -32,7 +43,10 @@ const display = (metadata: ToolDisplayMetadata) => metadata;
 export class AgentToolsFactory {
   private readonly logger = new Logger(AgentToolsFactory.name);
 
-  constructor(private readonly sessionsService: SessionsService) {}
+  constructor(
+    private readonly sessionsService: SessionsService,
+    private readonly documentsService: DocumentsService,
+  ) {}
 
   build(context: SessionContext): ToolSet {
     return {
@@ -93,6 +107,79 @@ export class AgentToolsFactory {
               document,
               meta: document.kind === 'fit-score' ? `${document.score}%` : null,
             };
+          }),
+      }),
+
+      create_tailored_resume: tool({
+        description:
+          "Saves a new resume tailored to this job, written whole from the user's primary resume. Leave out the name and contact details: the primary resume's are added for you. Use it for the first tailored resume; revise it later with edit_tailored_resume.",
+        inputSchema: createTailoredResumeInputSchema,
+        metadata: display({
+          icon: 'file-text',
+          active: 'Tailoring your resume',
+          done: 'Tailored your resume',
+        }),
+        execute: (input) =>
+          this.guarded(context, 'create_tailored_resume', async () => {
+            const document = await this.documentsService.createTailoredResume(
+              context,
+              input,
+            );
+
+            this.logToolCall(context, 'create_tailored_resume', true);
+
+            return { document };
+          }),
+      }),
+
+      edit_tailored_resume: tool({
+        description:
+          'Revises a tailored resume from this application. Give only the sections that change, each whole; the rest is copied from the source. Saves the result as a new resume and leaves the source as it was. Put every change for one request in one call.',
+        inputSchema: editTailoredResumeInputSchema,
+        metadata: display({
+          icon: 'pencil',
+          active: 'Editing your resume',
+          done: 'Edited your resume',
+        }),
+        execute: (input) =>
+          this.guarded(context, 'edit_tailored_resume', async () => {
+            const document = await this.documentsService.editTailoredResume(
+              context,
+              input,
+            );
+
+            this.logToolCall(
+              context,
+              'edit_tailored_resume',
+              Boolean(document),
+              {
+                ...(!document && { reason: SOURCE_NOT_FOUND.reason }),
+              },
+            );
+
+            return document ? { document } : SOURCE_NOT_FOUND;
+          }),
+      }),
+
+      save_cover_letter: tool({
+        description:
+          "Saves a cover letter for this job: a greeting, 3 to 5 paragraphs and a sign-off. The user's name and contact details are added above it and below the sign-off for you, so leave them out. Every save is a new letter.",
+        inputSchema: coverLetterInputSchema,
+        metadata: display({
+          icon: 'envelope',
+          active: 'Writing your cover letter',
+          done: 'Wrote your cover letter',
+        }),
+        execute: (input) =>
+          this.guarded(context, 'save_cover_letter', async () => {
+            const document = await this.documentsService.createCoverLetter(
+              context,
+              input,
+            );
+
+            this.logToolCall(context, 'save_cover_letter', true);
+
+            return { document };
           }),
       }),
     };

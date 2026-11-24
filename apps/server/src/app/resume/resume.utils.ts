@@ -1,6 +1,10 @@
 import type {
+  DocumentHeader,
   PrimaryResumeResponse,
   Resume as ResumeContent,
+  ResumeSections,
+  TailoredResumeContent,
+  TailoredResumeDocumentResponse,
 } from '@quarry/contracts';
 import type { UpdateQuery } from 'mongoose';
 import type { Resume, ResumeDocument } from './resume.schema';
@@ -62,5 +66,49 @@ export function toPrimaryResumeResponse(
     },
     // parsedAt stays set through a re-parse, so the last good content shows.
     resume: resume.parsedAt ? toResumeContent(resume) : null,
+  };
+}
+
+// A copy of `source` with each given section replaced whole.
+export function replaceSections(
+  source: TailoredResumeContent,
+  sections: ResumeSections,
+): TailoredResumeContent {
+  const given = Object.fromEntries(
+    Object.entries(sections).filter(([, value]) => value !== undefined),
+  );
+
+  return structuredClone({ ...source, ...given });
+}
+
+// The body only: a tailored resume's header is always the primary's.
+export function toTailoredResumeContent(
+  resume: ResumeDocument,
+): TailoredResumeContent {
+  const { name: _name, contact: _contact, ...body } = toResumeContent(resume);
+
+  return body;
+}
+
+// A tailored resume's name, which every save sets.
+export function tailoredTitleOf(resume: ResumeDocument): string {
+  if (resume.kind !== 'tailored' || !resume.title) {
+    throw new Error('Not a tailored resume');
+  }
+
+  return resume.title;
+}
+
+export function toTailoredResumeResponse(
+  resume: ResumeDocument,
+  header: DocumentHeader,
+): TailoredResumeDocumentResponse {
+  return {
+    id: resume._id.toHexString(),
+    kind: 'resume',
+    name: tailoredTitleOf(resume),
+    resume: { ...header, ...toTailoredResumeContent(resume) },
+    sourceResumeId: resume.sourceResume?.toHexString() ?? null,
+    createdAt: resume.createdAt.toISOString(),
   };
 }
