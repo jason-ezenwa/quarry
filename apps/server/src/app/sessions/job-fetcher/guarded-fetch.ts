@@ -181,8 +181,8 @@ async function resolvePublicAddresses(
   return addresses;
 }
 
-// Connects only to the addresses already checked, so a second DNS answer
-// cannot point the request somewhere else.
+// Connects only to the addresses already checked, so DNS can't swap in a
+// private address between the check and the connection (DNS rebinding).
 function pinnedLookup(addresses: HostAddress[]): LookupFunction {
   return ((_hostname, options, callback) => {
     if (options.all) {
