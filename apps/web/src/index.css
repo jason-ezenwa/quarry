@@ -299,6 +299,34 @@
   font-weight: 400;
 }
 
+@utility text-small-strong {
+  font-size: 0.8125rem;
+  line-height: 1.125rem;
+  font-weight: 500;
+}
+
+/* Secondary lines under a small label, such as a fit dimension's detail. */
+@utility text-caption {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+}
+
+/* Tab triggers. */
+@utility text-tab {
+  font-size: 0.78125rem;
+  line-height: 1.125rem;
+  font-weight: 400;
+}
+
+/* A number on a small tile, such as the fit score on an output card. */
+@utility text-tile {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
 @utility text-label {
   font-family: var(--font-mono);
   font-size: 0.71875rem;
@@ -346,6 +374,14 @@
   }
 }
 
+/* The overall score at the top of a fit report. */
+@utility text-score {
+  font-size: 1.875rem;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+
 /* A short headline inside a card, such as the roles on the welcome card. */
 @utility text-headline {
   font-size: 1.25rem;
@@ -376,6 +412,29 @@
 @utility texture-plaster {
   background-image: url("./assets/textures/plaster.png");
   background-size: 320px 320px;
+}
+
+/* Text that shimmers while work runs, such as a running tool step. */
+@utility text-shimmer {
+  background-image: linear-gradient(90deg, currentColor 35%, var(--paper) 50%, currentColor 65%);
+  background-size: 250% 100%;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 1.8s linear infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    -webkit-text-fill-color: currentColor;
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
 }
 
 /* Surface variables Sonner reads for its toasts. */

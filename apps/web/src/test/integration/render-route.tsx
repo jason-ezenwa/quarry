@@ -95,6 +95,11 @@ export function signInAs({
         : HttpResponse.json({ message: 'Profile not found', statusCode: 404 }, { status: 404 }),
     ),
     http.get(apiUrl('/api/resumes/primary'), () => HttpResponse.json(resume)),
+    // No applications yet; tests that need some override these.
+    http.get(apiUrl('/api/sessions'), () => HttpResponse.json({ items: [], nextCursor: null })),
+    http.get(apiUrl('/api/usage'), () =>
+      HttpResponse.json({ sessions: { used: 0, limit: 10, resetsAt: '2026-12-01T00:00:00.000Z' } }),
+    ),
   )
 }
 

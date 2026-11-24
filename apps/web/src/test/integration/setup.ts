@@ -2,6 +2,7 @@ import { cleanup } from '@testing-library/react'
 import { afterAll, afterEach, beforeAll } from 'vitest'
 import { queryClient } from '../../lib/query-client'
 import { server } from './server'
+import { resetViewport } from './viewport'
 
 const unhandledRequests: string[] = []
 
@@ -20,6 +21,7 @@ afterEach(() => {
   cleanup()
   server.resetHandlers()
   queryClient.clear()
+  resetViewport()
 
   const requests = unhandledRequests.splice(0)
   if (requests.length > 0) {
