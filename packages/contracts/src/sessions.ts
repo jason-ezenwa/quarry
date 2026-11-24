@@ -26,6 +26,8 @@ export const SESSION_LIMITS = {
   jobDescriptionMaxLength: 30_000,
   turnMessageMaxLength: 30_000,
   messageIdMaxLength: 100,
+  sessionsPageSize: 20,
+  sessionsPageMaxSize: 50,
 } as const;
 
 export const SESSION_ERROR_CODES = [
@@ -62,6 +64,19 @@ export type SessionSummary = {
   status: SessionStatus;
   archivedAt: string | null;
   createdAt: string;
+};
+
+// GET /sessions, newest first. `cursor` is the last id of the previous page.
+export type ListSessionsQuery = {
+  archived?: boolean;
+  cursor?: string;
+  limit?: number;
+};
+
+export type SessionPage = {
+  items: SessionSummary[];
+  // Null on the last page.
+  nextCursor: string | null;
 };
 
 export type SessionJob = {

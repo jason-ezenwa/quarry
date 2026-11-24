@@ -284,7 +284,8 @@ describe('Sessions (integration)', () => {
 
       const active = await api('get', '/sessions', cookie);
 
-      expect(active.body).toEqual([
+      expect(active.body.nextCursor).toBeNull();
+      expect(active.body.items).toEqual([
         {
           id: second.body.id,
           title: 'New application',
@@ -311,18 +312,86 @@ describe('Sessions (integration)', () => {
       const activeAfter = await api('get', '/sessions?archived=false', cookie);
       const archivedList = await api('get', '/sessions?archived=true', cookie);
 
-      expect(activeAfter.body.map(({ id }: { id: string }) => id)).toEqual([
-        second.body.id,
-      ]);
-      expect(archivedList.body.map(({ id }: { id: string }) => id)).toEqual([
-        first.body.id,
-      ]);
+      expect(
+        activeAfter.body.items.map(({ id }: { id: string }) => id),
+      ).toEqual([second.body.id]);
+      expect(
+        archivedList.body.items.map(({ id }: { id: string }) => id),
+      ).toEqual([first.body.id]);
 
       await api('patch', `/sessions/${first.body.id}`, cookie).send({
         archived: false,
       });
 
-      expect((await api('get', '/sessions', cookie)).body).toHaveLength(2);
+      expect((await api('get', '/sessions', cookie)).body.items).toHaveLength(
+        2,
+      );
+    });
+
+    it('pages through sessions newest first with a cursor', async () => {
+      const { cookie, userId } = await onboardedUser();
+      const createdAt = new Date('2026-11-10T12:00:00Z');
+      // Five sessions, two sharing a timestamp, so ties are paged by id.
+      await seedSessions(userId, [
+        new Date('2026-11-01T00:00:00Z'),
+        createdAt,
+        createdAt,
+        new Date('2026-11-15T00:00:00Z'),
+        new Date('2026-11-20T00:00:00Z'),
+      ]);
+
+      const pages: string[][] = [];
+      let cursor: string | null = null;
+
+      do {
+        const query: string = cursor ? `&cursor=${cursor}` : '';
+        const page = await api('get', `/sessions?limit=2${query}`, cookie);
+
+        expect(page.status).toBe(200);
+        pages.push(page.body.items.map(({ id }: { id: string }) => id));
+        cursor = page.body.nextCursor;
+      } while (cursor);
+
+      const all = await api('get', '/sessions', cookie);
+      const ids = all.body.items.map(({ id }: { id: string }) => id);
+
+      expect(all.body.nextCursor).toBeNull();
+      expect(ids).toHaveLength(5);
+      expect(pages.map((page) => page.length)).toEqual([2, 2, 1]);
+      expect(pages.flat()).toEqual(ids);
+      expect(
+        all.body.items.map(({ createdAt }: { createdAt: string }) => createdAt),
+      ).toEqual([
+        '2026-11-20T00:00:00.000Z',
+        '2026-11-15T00:00:00.000Z',
+        '2026-11-10T12:00:00.000Z',
+        '2026-11-10T12:00:00.000Z',
+        '2026-11-01T00:00:00.000Z',
+      ]);
+    });
+
+    it("refuses a cursor that isn't one of the user's sessions", async () => {
+      const owner = await onboardedUser();
+      const other = await onboardedUser('bola@example.com');
+      const created = await api('post', '/sessions', owner.cookie).send({
+        jobUrl: JOB_URL,
+      });
+
+      const foreign = await api(
+        'get',
+        `/sessions?cursor=${created.body.id}`,
+        other.cookie,
+      );
+      const malformed = await api(
+        'get',
+        '/sessions?cursor=not-an-id',
+        owner.cookie,
+      );
+      const tooMany = await api('get', '/sessions?limit=51', owner.cookie);
+
+      expect([foreign.status, malformed.status, tooMany.status]).toEqual([
+        400, 400, 400,
+      ]);
     });
 
     it("returns 404 for another user's session", async () => {
@@ -695,7 +764,7 @@ describe('Sessions (integration)', () => {
       expect(second.body.code).toBe('turn-running');
 
       const listed = await api('get', '/sessions', cookie);
-      expect(listed.body[0].status).toBe('drafting');
+      expect(listed.body.items[0].status).toBe('drafting');
 
       gate.resolve();
 
@@ -904,7 +973,7 @@ describe('Sessions (integration)', () => {
       });
 
       const listed = await api('get', '/sessions', cookie);
-      expect(listed.body[0]).toMatchObject({
+      expect(listed.body.items[0]).toMatchObject({
         fitScore: 86,
         fitLabel: 'strong-fit',
       });

@@ -1,5 +1,13 @@
-import { Transform } from 'class-transformer';
-import { IsBoolean, IsOptional } from 'class-validator';
+import { SESSION_LIMITS } from '@quarry/contracts';
+import { Transform, Type } from 'class-transformer';
+import {
+  IsBoolean,
+  IsInt,
+  IsMongoId,
+  IsOptional,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class ListSessionsDto {
   @IsOptional()
@@ -8,4 +16,15 @@ export class ListSessionsDto {
   )
   @IsBoolean()
   archived?: boolean;
+
+  @IsOptional()
+  @IsMongoId()
+  cursor?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(SESSION_LIMITS.sessionsPageMaxSize)
+  limit?: number;
 }

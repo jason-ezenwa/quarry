@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   HttpException,
   HttpStatus,
   Injectable,
@@ -14,6 +15,7 @@ import {
   type SavedDocumentRef,
   type SessionDetail,
   type SessionErrorCode,
+  type SessionPage,
   type SessionSummary,
   type UsageResponse,
 } from '@quarry/contracts';
@@ -25,6 +27,7 @@ import { DocumentsService } from '../documents/documents.service';
 import { toFitScoreRef } from '../documents/documents.utils';
 import { ResumeService } from '../resume/resume.service';
 import type { CreateSessionDto } from './dto/create-session.dto';
+import type { ListSessionsDto } from './dto/list-sessions.dto';
 import type { TurnMessageDto } from './dto/run-turn.dto';
 import { JobFetcherService } from './job-fetcher/job-fetcher.service';
 import type { JobFetchOutcome } from './job-fetcher/job-fetcher.types';
@@ -131,21 +134,45 @@ export class SessionsService {
     return { id: created.id };
   }
 
-  async list(userId: string, archived: boolean): Promise<SessionSummary[]> {
+  // Newest first; ties on createdAt fall back to the id, so pages never
+  // skip or repeat a session.
+  async list(userId: string, query: ListSessionsDto): Promise<SessionPage> {
+    const limit = query.limit ?? SESSION_LIMITS.sessionsPageSize;
     const sessions = await this.sessionModel
       .find({
         ...this.ownedBy(userId),
-        archivedAt: archived ? { $ne: null } : null,
+        archivedAt: query.archived ? { $ne: null } : null,
+        ...(query.cursor ? await this.afterCursor(userId, query.cursor) : {}),
       })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(limit + 1);
 
+    const page = sessions.slice(0, limit);
     const overalls = await this.documentsService.latestFitOveralls(
-      sessions.map((session) => session._id),
+      page.map((session) => session._id),
     );
 
-    return sessions.map((session) =>
-      toSessionSummary(session, overalls.get(session.id) ?? null),
-    );
+    return {
+      items: page.map((session) =>
+        toSessionSummary(session, overalls.get(session.id) ?? null),
+      ),
+      nextCursor: sessions.length > limit ? page[page.length - 1].id : null,
+    };
+  }
+
+  private async afterCursor(userId: string, cursor: string) {
+    const last = await this.sessionModel
+      .findOne({ _id: cursor, ...this.ownedBy(userId) })
+      .select('createdAt');
+
+    if (!last) throw new BadRequestException('Unknown cursor');
+
+    return {
+      $or: [
+        { createdAt: { $lt: last.createdAt } },
+        { createdAt: last.createdAt, _id: { $lt: last._id } },
+      ],
+    };
   }
 
   async get(userId: string, sessionId: string): Promise<SessionDetail> {

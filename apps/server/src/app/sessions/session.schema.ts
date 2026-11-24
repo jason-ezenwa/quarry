@@ -24,7 +24,7 @@ export class SessionJob {
 }
 
 // `sessions` is Better Auth's, so application sessions have their own name.
-@Schema({ timestamps: true, collection: 'application-sessions' })
+@Schema({ timestamps: true, collection: 'agent-sessions' })
 export class ApplicationSession {
   @Prop({ required: true, type: Types.ObjectId, ref: 'User' })
   user: Types.ObjectId;

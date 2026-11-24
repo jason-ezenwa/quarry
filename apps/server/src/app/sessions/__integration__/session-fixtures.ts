@@ -86,7 +86,7 @@ export async function seedSessions(
   extra: Record<string, unknown> = {},
 ): Promise<void> {
   await getTestDatabase()
-    .collection('application-sessions')
+    .collection('agent-sessions')
     .insertMany(
       createdAt.map((date) => ({
         user: new Types.ObjectId(userId),
@@ -103,7 +103,7 @@ export async function seedSessions(
 
 export function findSession(sessionId: string) {
   return getTestDatabase()
-    .collection('application-sessions')
+    .collection('agent-sessions')
     .findOne({ _id: new Types.ObjectId(sessionId) });
 }
 
@@ -117,7 +117,7 @@ export function findMessages(sessionId: string) {
 
 export function setSession(sessionId: string, fields: Record<string, unknown>) {
   return getTestDatabase()
-    .collection('application-sessions')
+    .collection('agent-sessions')
     .updateOne({ _id: new Types.ObjectId(sessionId) }, { $set: fields });
 }
 

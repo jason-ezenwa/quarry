@@ -21,8 +21,3 @@ export const RESUME_UPLOAD_THROTTLE = {
 export const RESUME_PARSE_THROTTLE = {
   default: { ttl: HOUR_MS, limit: 5 },
 } satisfies Record<string, ThrottlerOptions>;
-
-// Each turn is a paid AI call of up to ten steps.
-export const SESSION_TURN_THROTTLE = {
-  default: { ttl: HOUR_MS, limit: 60 },
-} satisfies Record<string, ThrottlerOptions>;

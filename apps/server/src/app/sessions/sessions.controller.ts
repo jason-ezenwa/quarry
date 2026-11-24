@@ -12,14 +12,13 @@ import {
 import type {
   CreateSessionResponse,
   SessionDetail,
+  SessionPage,
   SessionSummary,
 } from '@quarry/contracts';
 import type { Response } from 'express';
 import type { SessionUser } from '../common/common.types';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequireProfileGuard } from '../profile/require-profile.guard';
-import { SESSION_TURN_THROTTLE } from '../throttle/throttle.constants';
-import { ThrottlePerUser } from '../throttle/throttle-per-user.decorator';
 import { AgentService } from './agent/agent.service';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { ListSessionsDto } from './dto/list-sessions.dto';
@@ -49,8 +48,8 @@ export class SessionsController {
   async list(
     @CurrentUser() user: SessionUser,
     @Query() query: ListSessionsDto,
-  ): Promise<SessionSummary[]> {
-    return this.sessionsService.list(user.id, query.archived ?? false);
+  ): Promise<SessionPage> {
+    return this.sessionsService.list(user.id, query);
   }
 
   @Get(':id')
@@ -72,7 +71,6 @@ export class SessionsController {
 
   // Refusals are thrown before anything is written to the response.
   @Post(':id/turns')
-  @ThrottlePerUser(SESSION_TURN_THROTTLE)
   async runTurn(
     @CurrentUser() user: SessionUser,
     @Param('id') id: string,
