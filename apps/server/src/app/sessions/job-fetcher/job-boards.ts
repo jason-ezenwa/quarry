@@ -1,32 +1,13 @@
 import { BLOCKED_JOB_SITES, type BlockedJobSite } from '@quarry/contracts';
 import { JSDOM } from 'jsdom';
-import type { FetchedJobSource } from './job-fetcher.types';
-
-export type JobBoardSource = Exclude<FetchedJobSource, 'web'>;
-
-type JobBoardAdapter = {
-  source: JobBoardSource;
-  // The board's API address for a job link, or undefined when the link is not
-  // a job on this board.
-  toApiUrl(link: URL): string | undefined;
-  // The job's fields from the API response, or undefined when it holds no job.
-  toJob(data: unknown, link: URL): BoardJob | undefined;
-};
-
-export type BoardJob = {
-  title?: string;
-  company?: string;
-  location?: string;
-  descriptionHtml: string;
-};
-
-export type JobBoardMatch = {
-  source: JobBoardSource;
-  apiUrl: string;
-  toJob(data: unknown): BoardJob | undefined;
-};
-
-type Json = Record<string, unknown>;
+import {
+  LINKEDIN_SHORT_HOST,
+  NUMERIC_ID,
+  SAFE_SEGMENT,
+  UUID,
+  WORKDAY_LOCALE,
+} from './job-boards.constants';
+import type { JobBoardAdapter, JobBoardMatch, Json } from './job-boards.types';
 
 const isObject = (value: unknown): value is Json =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -49,12 +30,6 @@ function joinUnique(values: unknown[]): string | undefined {
 
 // Greenhouse escapes the description's HTML, so it is unescaped before use.
 const unescapeHtml = (value: string) => JSDOM.fragment(value).textContent ?? '';
-
-// Decoded path segments copied into an API address must not change its path.
-const SAFE_SEGMENT = /^[\w .-]+$/;
-const NUMERIC_ID = /^\d+$/;
-const UUID = /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i;
-const WORKDAY_LOCALE = /^[a-z]{2}(?:-[A-Z]{2})?$/;
 
 function decodeSegment(segment: string): string | undefined {
   try {
@@ -286,9 +261,6 @@ const BLOCKED_HOSTS = BLOCKED_JOB_SITES.map((site) => ({
   site,
   pattern: blockedHostPattern(site),
 }));
-
-// LinkedIn's link shortener.
-const LINKEDIN_SHORT_HOST = 'lnkd.in';
 
 export function findBlockedSite(link: URL): BlockedJobSite | undefined {
   const host = link.hostname.toLowerCase();

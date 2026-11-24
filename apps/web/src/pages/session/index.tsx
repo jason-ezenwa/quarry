@@ -25,12 +25,12 @@ import { StatusBadge } from '@/features/sessions/components/status-badge'
 import { useOpenDocuments } from '@/features/sessions/hooks/use-open-documents'
 import { useSessionChat } from '@/features/sessions/hooks/use-session-chat'
 import { useSession } from '@/features/sessions/hooks/use-sessions'
+import { CRUMBS } from '@/features/sessions/sessions.constants'
 import type { ApplicationComposerState, DocumentAnnouncement } from '@/features/sessions/sessions.types'
-import { WIDE_SCREEN_QUERY, useMediaQuery } from '@/hooks/use-media-query'
+import { useMediaQuery } from '@/hooks/use-media-query'
+import { WIDE_SCREEN_QUERY } from '@/hooks/use-media-query.constants'
 import { ApiError } from '@/lib/api/api-fetch'
 import { PATHS } from '@/lib/auth/auth.constants'
-
-const CRUMBS = [{ label: 'Applications', to: PATHS.applications }]
 
 function composerState(session: SessionDetail, chat: ReturnType<typeof useSessionChat>): ApplicationComposerState {
   if (session.archivedAt) return 'archived'

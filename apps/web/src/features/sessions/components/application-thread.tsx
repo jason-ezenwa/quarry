@@ -7,14 +7,9 @@ import { Button } from '@/components/ui/button'
 import { Callout, CalloutActions, CalloutContent, CalloutTitle } from '@/components/ui/callout'
 import { messageBlocks, messageDocuments, messageText } from '../session-parts'
 import { CHAT_ERRORS, RETRYABLE_CHAT_ERRORS } from '../sessions.constants'
-import type { ChatErrorCode, DocumentAnnouncement } from '../sessions.types'
+import type { ChatErrorCode, DocumentCardProps } from '../sessions.types'
 import { AgentSteps } from './agent-steps'
 import { DocumentCard } from './document-card'
-
-type DocumentCardProps = {
-  activeDocumentId: string | null
-  onOpenDocument: (document: DocumentAnnouncement) => void
-}
 
 function AgentReply({ message, live, activeDocumentId, onOpenDocument }: DocumentCardProps & { message: UIMessage; live: boolean }) {
   const documents = messageDocuments(message)

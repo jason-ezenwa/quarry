@@ -1,4 +1,4 @@
-import type { DocumentKind, FitDimension, FitLabel, SessionStatus, ToolIcon } from '@quarry/contracts'
+import { SESSION_LIMITS, type DocumentKind, type FitDimension, type FitLabel, type SessionStatus, type ToolIcon } from '@quarry/contracts'
 import { EnvelopeSimpleIcon } from '@phosphor-icons/react/dist/csr/EnvelopeSimple'
 import { FileTextIcon } from '@phosphor-icons/react/dist/csr/FileText'
 import { GaugeIcon } from '@phosphor-icons/react/dist/csr/Gauge'
@@ -6,6 +6,7 @@ import { GearIcon } from '@phosphor-icons/react/dist/csr/Gear'
 import { GlobeIcon } from '@phosphor-icons/react/dist/csr/Globe'
 import { PencilSimpleIcon } from '@phosphor-icons/react/dist/csr/PencilSimple'
 import type { IconComponent } from '@/components/session/session.types'
+import { PATHS } from '@/lib/auth/auth.constants'
 import type { BadgeVariant, ChatErrorCode, TurnErrorCode } from './sessions.types'
 
 // The only icon list the web app keeps, one per icon a tool may name. A stored
@@ -93,3 +94,20 @@ export const SESSION_QUERY_KEYS = {
     ['documents', sessionId, kind, documentId] as const,
   usage: ['usage'] as const,
 }
+
+export const RUNNING_STATES: ReadonlySet<string> = new Set(['input-streaming', 'input-available'])
+
+export const FORM_ERRORS = {
+  link: 'Paste a job link that starts with http:// or https://',
+  paste: 'Paste the job description',
+  tooLong: `Keep the description under ${SESSION_LIMITS.jobDescriptionMaxLength.toLocaleString('en')} characters`,
+  failed: "We couldn't start this application. Try again.",
+} as const
+
+export const DOT_TONE: Record<FitLabel, string> = {
+  'strong-fit': 'bg-success',
+  'good-fit': 'bg-warning',
+  'weak-fit': 'bg-destructive',
+}
+
+export const CRUMBS = [{ label: 'Applications', to: PATHS.applications }]

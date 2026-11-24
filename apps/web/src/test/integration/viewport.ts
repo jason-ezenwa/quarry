@@ -1,6 +1,4 @@
-const WIDTHS = { phone: 390, desktop: 1440 } as const
-
-const MIN_WIDTH = /\(min-width:\s*([\d.]+)(px|rem)\)/
+import { MIN_WIDTH, WIDTHS } from './viewport.constants'
 
 // jsdom has no layout, so `matchMedia` answers width queries for the chosen size. Reset after each test.
 export function setViewport(size: keyof typeof WIDTHS) {

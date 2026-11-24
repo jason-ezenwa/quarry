@@ -1,4 +1,5 @@
 import type { DocumentKind, SavedDocumentRef, SessionErrorCode } from '@quarry/contracts'
+import type { UIMessage } from 'ai'
 import type { VariantProps } from 'class-variance-authority'
 import type { badgeVariants } from '@/components/ui/badge'
 import type { ComposerStatus, IconComponent } from '@/components/session/session.types'
@@ -36,3 +37,15 @@ export type UnsentDraft = { text: string; key: string }
 
 // The composer's state, with why it is closed: archived, or at the message limit.
 export type ApplicationComposerState = Exclude<ComposerStatus, 'closed'> | 'archived' | 'limit'
+
+export type Part = UIMessage['parts'][number]
+export type ToolPart = Extract<Part, { toolCallId: string }>
+
+export type Mode = 'link' | 'paste'
+
+export type DocumentCardProps = {
+  activeDocumentId: string | null
+  onOpenDocument: (document: DocumentAnnouncement) => void
+}
+
+export type ListTab = 'active' | 'archived'

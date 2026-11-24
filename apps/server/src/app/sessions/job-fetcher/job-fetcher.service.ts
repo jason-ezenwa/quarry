@@ -1,36 +1,29 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { BlockedJobSite } from '@quarry/contracts';
 import { errorName } from '../../common/error-name';
-import {
-  GuardedFetchError,
-  guardedFetch,
-  type GuardedResponse,
-  type HostLookup,
-} from './guarded-fetch';
-import {
-  findBlockedSite,
-  findJobBoard,
-  type JobBoardMatch,
-} from './job-boards';
+import { GuardedFetchError, guardedFetch } from './guarded-fetch';
+import type { GuardedResponse, HostLookup } from './guarded-fetch.types';
+import { findBlockedSite, findJobBoard } from './job-boards';
+import type { JobBoardMatch } from './job-boards.types';
 import {
   blockedSiteMessage,
+  HTML_ACCEPT,
   JOB_FETCH_FAILURE_MESSAGES,
   JOB_FETCH_HOST_LOOKUP,
   JOB_FETCH_LIMITS,
-  type JobFetchLimits,
+  JSON_ACCEPT,
   MAX_DESCRIPTION_CHARS,
   MIN_PAGE_TEXT_CHARS,
+  NOT_FOUND_STATUSES,
 } from './job-fetcher.constants';
 import type {
+  FetchAttempt,
   FetchFailureReason,
   JobFetchFailure,
+  JobFetchLimits,
   JobFetchOutcome,
 } from './job-fetcher.types';
 import { extractMainText, htmlToText } from './job-fetcher.utils';
-
-const JSON_ACCEPT = 'application/json';
-const HTML_ACCEPT = 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.1';
-const NOT_FOUND_STATUSES = new Set([404, 410]);
 
 @Injectable()
 export class JobFetcherService {
@@ -192,14 +185,6 @@ export class JobFetcherService {
     return { response };
   }
 }
-
-// What was logged about a fetch besides its outcome.
-type FetchAttempt = {
-  outcome: JobFetchOutcome;
-  httpStatus?: number;
-  // Why a fetch failed, when the outcome's reason is too broad to tell.
-  detail?: string;
-};
 
 function fromFetchError(error: GuardedFetchError): FetchAttempt {
   switch (error.reason) {

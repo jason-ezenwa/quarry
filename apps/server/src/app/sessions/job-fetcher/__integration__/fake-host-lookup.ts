@@ -1,4 +1,4 @@
-import type { HostAddress, HostLookup } from '../guarded-fetch';
+import type { HostAddress, HostLookup } from '../guarded-fetch.types';
 
 // A public address, so the address check lets a mocked host through.
 export const PUBLIC_ADDRESS = '104.18.32.7';

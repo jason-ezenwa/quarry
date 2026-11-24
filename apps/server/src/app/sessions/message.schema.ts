@@ -1,9 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import type { UIMessage } from 'ai';
 import { HydratedDocument, Schema as MongooseSchema, Types } from 'mongoose';
-
-export const MESSAGE_ROLES = ['user', 'assistant'] as const;
-export type MessageRole = (typeof MESSAGE_ROLES)[number];
+import { MESSAGE_ROLES } from './sessions.constants';
+import type { MessageRole } from './sessions.types';
 
 @Schema({ _id: false })
 export class MessageUsage {

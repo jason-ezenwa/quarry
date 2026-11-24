@@ -1,12 +1,7 @@
 import { FIT_LABELS, isDocumentKind, isOneOf, TOOL_ICONS, type DocumentKind, type SavedDocumentRef, type SessionMessage } from '@quarry/contracts'
 import { isTextUIPart, isToolUIPart, type UIMessage } from 'ai'
-import { FALLBACK_TOOL_STEP, TOOL_ICON_COMPONENTS, UNFINISHED_STEP_NOTE } from './sessions.constants'
-import type { DocumentAnnouncement, MessageBlock, ToolStep } from './sessions.types'
-
-type Part = UIMessage['parts'][number]
-type ToolPart = Extract<Part, { toolCallId: string }>
-
-const RUNNING_STATES: ReadonlySet<string> = new Set(['input-streaming', 'input-available'])
+import { FALLBACK_TOOL_STEP, RUNNING_STATES, TOOL_ICON_COMPONENTS, UNFINISHED_STEP_NOTE } from './sessions.constants'
+import type { DocumentAnnouncement, MessageBlock, Part, ToolPart, ToolStep } from './sessions.types'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)

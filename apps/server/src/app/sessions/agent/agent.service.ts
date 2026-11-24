@@ -31,20 +31,12 @@ import {
   AGENT_MAX_STEPS,
   AGENT_MODEL,
   AGENT_SYSTEM_PROMPT,
+  CACHED,
   COMPACTION_INSTRUCTIONS,
   COMPACTION_TRIGGER_TOKENS,
 } from './agent.constants';
+import type { RunningTurn } from './agent.types';
 import { profileSystemMessage } from './agent.utils';
-
-const CACHED = { anthropic: { cacheControl: { type: 'ephemeral' } } } as const;
-
-// A running turn: aborting it cancels the call to Claude; `done` settles
-// once the turn has released its lock.
-type RunningTurn = {
-  messageId: string;
-  stop: AbortController;
-  done: Promise<void>;
-};
 
 const generateMessageId = createIdGenerator({ prefix: 'msg', size: 16 });
 

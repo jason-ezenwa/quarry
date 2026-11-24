@@ -6,9 +6,8 @@ import { Spinner } from '@/components/ui/spinner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ApplicationRow } from '@/features/sessions/components/application-row'
 import { useSessionList } from '@/features/sessions/hooks/use-sessions'
+import type { ListTab } from '@/features/sessions/sessions.types'
 import { PATHS } from '@/lib/auth/auth.constants'
-
-type ListTab = 'active' | 'archived'
 
 // One tab's list, a page at a time.
 function ApplicationList({ tab }: { tab: ListTab }) {

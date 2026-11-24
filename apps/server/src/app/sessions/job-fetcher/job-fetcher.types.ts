@@ -29,3 +29,22 @@ export type JobFetchFailure =
   | { ok: false; reason: FetchFailureReason; message: string };
 
 export type JobFetchOutcome = { ok: true; job: FetchedJob } | JobFetchFailure;
+
+export type JobFetchLimits = {
+  // For the whole fetch, redirects included.
+  timeoutMs: number;
+  maxRedirects: number;
+  // Web pages go through jsdom and Readability, which block the event loop
+  // for longer the bigger the page, so they get the smaller cap.
+  maxPageBytes: number;
+  // Board APIs can list a whole board (Ashby), and JSON is cheap to parse.
+  maxApiBytes: number;
+};
+
+// What was logged about a fetch besides its outcome.
+export type FetchAttempt = {
+  outcome: JobFetchOutcome;
+  httpStatus?: number;
+  // Why a fetch failed, when the outcome's reason is too broad to tell.
+  detail?: string;
+};

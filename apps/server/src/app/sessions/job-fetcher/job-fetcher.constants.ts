@@ -1,21 +1,10 @@
 import type { BlockedJobSite } from '@quarry/contracts';
-import type { FetchFailureReason } from './job-fetcher.types';
+import type { FetchFailureReason, JobFetchLimits } from './job-fetcher.types';
 
 // Resolves hostnames for the address check; tests point hosts at chosen addresses.
 export const JOB_FETCH_HOST_LOOKUP = Symbol('JOB_FETCH_HOST_LOOKUP');
 
 export const JOB_FETCH_LIMITS = Symbol('JOB_FETCH_LIMITS');
-
-export type JobFetchLimits = {
-  // For the whole fetch, redirects included.
-  timeoutMs: number;
-  maxRedirects: number;
-  // Web pages go through jsdom and Readability, which block the event loop
-  // for longer the bigger the page, so they get the smaller cap.
-  maxPageBytes: number;
-  // Board APIs can list a whole board (Ashby), and JSON is cheap to parse.
-  maxApiBytes: number;
-};
 
 const MB = 1024 * 1024;
 
@@ -65,3 +54,48 @@ export const blockedSiteNote = (site: BlockedJobSite) =>
 
 export const blockedSiteMessage = (site: BlockedJobSite) =>
   `${BLOCKED_SITE_NAMES[site]} blocks automated access, so paste the description from the ${BLOCKED_SITE_NAMES[site]} page.`;
+
+export const JSON_ACCEPT = 'application/json';
+export const HTML_ACCEPT = 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.1';
+export const NOT_FOUND_STATUSES = new Set([404, 410]);
+
+export const SKIPPED_TAGS = new Set([
+  'SCRIPT',
+  'STYLE',
+  'NOSCRIPT',
+  'TEMPLATE',
+  'SVG',
+  'IFRAME',
+  'OBJECT',
+]);
+
+// Blocks set off by a blank line.
+export const PARAGRAPH_TAGS = new Set([
+  'P',
+  'H1',
+  'H2',
+  'H3',
+  'H4',
+  'H5',
+  'H6',
+  'UL',
+  'OL',
+  'DL',
+  'TABLE',
+  'BLOCKQUOTE',
+  'PRE',
+  'SECTION',
+  'ARTICLE',
+  'HEADER',
+  'FOOTER',
+]);
+
+// Blocks that start a new line.
+export const LINE_TAGS = new Set(['DIV', 'TR', 'DT', 'DD']);
+
+export const HTML_TYPES = new Set(['text/html', 'application/xhtml+xml']);
+
+export const DEFAULT_CONTENT_TYPE = 'text/html';
+
+// Blocks Readability throws away anyway, removed before jsdom has to build them.
+export const DISCARDED_BLOCK_START = '<(script|style|noscript|svg)\\b';

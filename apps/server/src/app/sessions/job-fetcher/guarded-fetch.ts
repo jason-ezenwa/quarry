@@ -4,45 +4,17 @@ import { lookup as dnsLookup } from 'node:dns/promises';
 import { isIP, type LookupFunction } from 'node:net';
 import { HTTP_PROTOCOLS } from '../../common/common.constants';
 import { isPublicAddress } from './address.utils';
-
-export type HostAddress = { address: string; family: 4 | 6 };
-
-// Resolves a hostname to every address it points at.
-export type HostLookup = (hostname: string) => Promise<HostAddress[]>;
+import { REDIRECT_STATUSES, USER_AGENT } from './guarded-fetch.constants';
+import type {
+  GuardedFetchErrorReason,
+  GuardedFetchOptions,
+  GuardedResponse,
+  HostAddress,
+  HostLookup,
+} from './guarded-fetch.types';
 
 export const lookupHost: HostLookup = async (hostname) =>
   (await dnsLookup(hostname, { all: true, verbatim: true })) as HostAddress[];
-
-export type GuardedFetchLimits = {
-  // For the whole fetch, redirects included.
-  timeoutMs: number;
-  maxBytes: number;
-  maxRedirects: number;
-};
-
-export type GuardedFetchOptions = GuardedFetchLimits & {
-  lookup: HostLookup;
-  accept: string;
-  // Checked on the link and on every redirect before it is requested.
-  refuseUrl?: (url: URL) => boolean;
-};
-
-export type GuardedResponse = {
-  status: number;
-  // Where the response came from, after redirects.
-  url: URL;
-  contentType: string | undefined;
-  body: Buffer;
-};
-
-export type GuardedFetchErrorReason =
-  | 'invalid-url'
-  | 'refused-address'
-  | 'refused-url'
-  | 'too-many-redirects'
-  | 'too-large'
-  | 'timeout'
-  | 'network-error';
 
 export class GuardedFetchError extends Error {
   constructor(
@@ -54,10 +26,6 @@ export class GuardedFetchError extends Error {
     this.name = 'GuardedFetchError';
   }
 }
-
-const USER_AGENT = 'Mozilla/5.0 (compatible; QuarryJobFetcher/1.0)';
-
-const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 
 // The one way the job fetcher reaches the network. Redirects are followed
 // here, one hop at a time, so every address is checked before it is used.

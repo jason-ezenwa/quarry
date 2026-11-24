@@ -1,11 +1,6 @@
 import type { FitLabel } from '@quarry/contracts'
 import { cn } from '@/lib/utils'
-
-const DOT_TONE: Record<FitLabel, string> = {
-  'strong-fit': 'bg-success',
-  'good-fit': 'bg-warning',
-  'weak-fit': 'bg-destructive',
-}
+import { DOT_TONE } from '../sessions.constants'
 
 // The fit band at a glance, in lists and the sidebar.
 export function FitDot({ label, className }: { label: FitLabel | null; className?: string }) {

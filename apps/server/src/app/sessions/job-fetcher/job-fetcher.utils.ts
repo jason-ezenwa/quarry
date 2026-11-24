@@ -1,39 +1,13 @@
 import { Readability } from '@mozilla/readability';
 import { JSDOM, VirtualConsole } from 'jsdom';
-
-const SKIPPED_TAGS = new Set([
-  'SCRIPT',
-  'STYLE',
-  'NOSCRIPT',
-  'TEMPLATE',
-  'SVG',
-  'IFRAME',
-  'OBJECT',
-]);
-
-// Blocks set off by a blank line.
-const PARAGRAPH_TAGS = new Set([
-  'P',
-  'H1',
-  'H2',
-  'H3',
-  'H4',
-  'H5',
-  'H6',
-  'UL',
-  'OL',
-  'DL',
-  'TABLE',
-  'BLOCKQUOTE',
-  'PRE',
-  'SECTION',
-  'ARTICLE',
-  'HEADER',
-  'FOOTER',
-]);
-
-// Blocks that start a new line.
-const LINE_TAGS = new Set(['DIV', 'TR', 'DT', 'DD']);
+import {
+  DEFAULT_CONTENT_TYPE,
+  DISCARDED_BLOCK_START,
+  HTML_TYPES,
+  LINE_TAGS,
+  PARAGRAPH_TAGS,
+  SKIPPED_TAGS,
+} from './job-fetcher.constants';
 
 // HTML is parsed without running scripts or loading anything.
 export function htmlToText(html: string): string {
@@ -81,13 +55,6 @@ export function htmlToText(html: string): string {
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
-
-const HTML_TYPES = new Set(['text/html', 'application/xhtml+xml']);
-
-const DEFAULT_CONTENT_TYPE = 'text/html';
-
-// Blocks Readability throws away anyway, removed before jsdom has to build them.
-const DISCARDED_BLOCK_START = '<(script|style|noscript|svg)\\b';
 
 // One pass over the page: a block with no closing tag ends the stripping, so
 // a hostile page cannot make this quadratic.
