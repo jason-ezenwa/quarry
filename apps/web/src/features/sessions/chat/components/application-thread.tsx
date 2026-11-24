@@ -43,7 +43,7 @@ function AgentReply({ message, live, activeDocumentId, onOpenDocument }: Documen
 
 function TurnError({ error, onRetry }: { error: ChatErrorCode; onRetry: () => void }) {
   return (
-    <Callout tone={error === 'stopped' ? 'review' : 'danger'}>
+    <Callout tone={error === 'stopped' || error === 'unanswered' ? 'review' : 'danger'}>
       <CalloutContent>
         <CalloutTitle>{CHAT_ERRORS[error]}</CalloutTitle>
       </CalloutContent>

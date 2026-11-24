@@ -13,6 +13,7 @@ import { PATHS, sessionPath } from '@/lib/auth/auth.constants'
 import { useCreateSession } from '../hooks/use-sessions'
 import { formatResetDate } from '../session-format'
 import { FORM_ERRORS } from '../sessions.constants'
+import type { SessionPageState } from '../chat/chat.types'
 import type { Mode } from '../sessions.types'
 
 function isHttpUrl(value: string): boolean {
@@ -92,7 +93,7 @@ export function NewApplicationForm({ usageLabel }: { usageLabel?: string }) {
     }
 
     setInvalid(null)
-    createSession.mutate(request, { onSuccess: ({ id }) => navigate(sessionPath(id)) })
+    createSession.mutate(request, { onSuccess: ({ id }) => navigate(sessionPath(id), { state: { startTurn: true } satisfies SessionPageState }) })
   }
 
   const errorId = useId()

@@ -663,6 +663,9 @@ describe('Sessions (integration)', () => {
       ]);
 
       expect(fakeAnthropicApi.betas[0]).toContain('compact-2026-01-12');
+      expect(fakeAnthropicApi.betas[0]).toContain(
+        'server-side-fallback-2026-07-01',
+      );
     });
 
     it('works from an unreviewed primary resume and tells the agent so', async () => {
@@ -916,6 +919,82 @@ describe('Sessions (integration)', () => {
       const response = await turn(cookie, id);
 
       expect(response.text).toContain('Something went wrong');
+      expect(await findMessages(id)).toHaveLength(1);
+      expect((await findSession(id))?.turnStartedAt).toBeNull();
+    });
+
+    const declined: AnthropicReply = {
+      kind: 'stream',
+      blocks: [],
+      stopReason: 'refusal',
+      usage: { input_tokens: 3000, output_tokens: 0 },
+    };
+
+    it('stores nothing from an empty reply and fails the turn so it can be retried', async () => {
+      const { cookie } = await onboardedUser();
+      const id = await startPasted(cookie);
+      fakeAnthropicApi.reply({ kind: 'stream', blocks: [] });
+
+      const response = await turn(cookie, id);
+
+      expect(response.status).toBe(200);
+      expect(response.text).toContain('"type":"error"');
+      expect(response.text).toContain('Something went wrong');
+      expect(await findMessages(id)).toHaveLength(1);
+      expect((await findSession(id))?.turnStartedAt).toBeNull();
+
+      fakeAnthropicApi.reply(textReply('Here is your fit.'));
+      const retried = await turn(cookie, id);
+
+      expect(retried.text).toContain('Here is your fit.');
+      expect(await findMessages(id)).toHaveLength(2);
+    });
+
+    it('takes back a declined message so the next one is answered', async () => {
+      const { cookie } = await onboardedUser();
+      const id = await startPasted(cookie);
+      fakeAnthropicApi.reply(textReply('Hello.'));
+      await turn(cookie, id);
+
+      fakeAnthropicApi.reply(declined);
+      const response = await turn(cookie, id, {
+        message: { id: 'msg-declined', text: 'Something declined' },
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.text).toContain('"errorText":"reply-declined"');
+      expect((await findMessages(id)).map(({ uiId }) => uiId)).not.toContain(
+        'msg-declined',
+      );
+      expect(await findMessages(id)).toHaveLength(2);
+      expect(await findSession(id)).toMatchObject({
+        userMessageCount: 1,
+        turnStartedAt: null,
+      });
+
+      fakeAnthropicApi.reply(textReply('Sure.'));
+      const next = await turn(cookie, id, {
+        message: { id: 'msg-next', text: 'Thanks' },
+      });
+
+      expect(next.text).toContain('Sure.');
+
+      const sent = fakeAnthropicApi.requests.at(-1);
+
+      expect(JSON.stringify(sent?.messages)).not.toContain(
+        'Something declined',
+      );
+    });
+
+    it('keeps a declined first message, since the session was started with it', async () => {
+      const { cookie } = await onboardedUser();
+      const id = await startPasted(cookie);
+      fakeAnthropicApi.reply(declined);
+
+      const response = await turn(cookie, id);
+
+      expect(response.text).toContain('Something went wrong');
+      expect(response.text).not.toContain('reply-declined');
       expect(await findMessages(id)).toHaveLength(1);
       expect((await findSession(id))?.turnStartedAt).toBeNull();
     });

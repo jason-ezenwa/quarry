@@ -49,6 +49,8 @@ export const SESSION_ERROR_CODES = [
   "session-archived",
   "session-message-limit",
   "nothing-to-answer",
+  // Sent as a turn stream's error: the message was declined and taken back.
+  "reply-declined",
 ] as const;
 
 export type SessionErrorCode = (typeof SESSION_ERROR_CODES)[number];

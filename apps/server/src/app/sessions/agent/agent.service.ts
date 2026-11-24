@@ -3,10 +3,12 @@ import type {
   AnthropicProvider,
 } from '@ai-sdk/anthropic';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import type { SessionErrorCode } from '@quarry/contracts';
 import {
   convertToModelMessages,
   createIdGenerator,
   isStepCount,
+  isToolUIPart,
   pipeUIMessageStreamToResponse,
   readUIMessageStream,
   streamText,
@@ -32,21 +34,42 @@ import {
   AGENT_MODEL,
   AGENT_SYSTEM_PROMPT,
   CACHED,
+  REPLY_FAILED_TEXT,
   COMPACTION_INSTRUCTIONS,
   COMPACTION_TRIGGER_TOKENS,
 } from './agent.constants';
-import type { RunningTurn } from './agent.types';
+import type { RunningTurn, TurnFailure } from './agent.types';
 import { profileSystemMessage } from './agent.utils';
 
 const generateMessageId = createIdGenerator({ prefix: 'msg', size: 16 });
 
-// Holds the end of a stream until `done` settles.
-function closeAfter<T>(done: Promise<unknown>): TransformStream<T, T> {
-  return new TransformStream<T, T>({
-    async flush() {
-      await done.catch(() => undefined);
+// Holds the end of the client's stream until the reply is saved or dropped.
+// A drop the stream doesn't already show ends it with an error, so the client
+// shows the turn as failed rather than as a blank reply.
+function closeAfter(
+  settled: Promise<TurnFailure | null>,
+): TransformStream<UIMessageChunk, UIMessageChunk> {
+  return new TransformStream<UIMessageChunk, UIMessageChunk>({
+    async flush(controller) {
+      const failure = await settled.catch(() => 'empty-reply' as const);
+
+      if (failure === 'declined-withdrawn') {
+        const errorText: SessionErrorCode = 'reply-declined';
+        controller.enqueue({ type: 'error', errorText });
+      } else if (failure === 'declined' || failure === 'empty-reply') {
+        controller.enqueue({ type: 'error', errorText: REPLY_FAILED_TEXT });
+      }
     },
   });
+}
+
+// Something the user sees: text other than a compaction summary, or a tool step.
+function isAnswerPart(part: UIMessage['parts'][number]): boolean {
+  if (isToolUIPart(part)) return true;
+
+  return (
+    part.type === 'text' && !isCompactionPart(part) && part.text.trim() !== ''
+  );
 }
 
 // Logs carry ids, counts and durations only: never profile, resume, job or
@@ -71,7 +94,7 @@ export class AgentService {
     const context = { userId: turn.userId, sessionId: turn.sessionId };
     const startedAt = Date.now();
     // Once the reply is being saved, that path releases the lock itself.
-    let settled: Promise<void> | undefined;
+    let settled: Promise<TurnFailure | null> | undefined;
     const stop = new AbortController();
     let markDone!: () => void;
 
@@ -100,6 +123,9 @@ export class AgentService {
           anthropic: {
             effort: AGENT_EFFORT,
             sendReasoning: true,
+            // A request Claude's safety checks decline is answered by the
+            // recommended fallback model instead.
+            fallbacks: 'default',
             contextManagement: {
               edits: [
                 {
@@ -131,7 +157,7 @@ export class AgentService {
             error: errorName(error),
           });
 
-          return 'Something went wrong writing this reply. Try again.';
+          return REPLY_FAILED_TEXT;
         },
       }).tee();
 
@@ -144,7 +170,7 @@ export class AgentService {
       // A client that disconnects only stops its own copy of the stream.
       await pipeUIMessageStreamToResponse({
         response,
-        stream: toClient.pipeThrough(closeAfter<UIMessageChunk>(settled)),
+        stream: toClient.pipeThrough(closeAfter(settled)),
       }).catch(() => undefined);
 
       await settled;
@@ -184,6 +210,9 @@ export class AgentService {
     await running.done;
   }
 
+  // Saves the reply, or drops it and says why. A failed or empty reply is
+  // dropped whole: it may hold unsigned thinking that breaks later requests,
+  // and a blank reply reads as a reply. Documents its tools saved stay.
   private async saveReply(
     turn: ClaimedTurn,
     result: {
@@ -192,9 +221,10 @@ export class AgentService {
     },
     stream: ReadableStream<UIMessageChunk>,
     startedAt: number,
-  ): Promise<void> {
+  ): Promise<TurnFailure | null> {
     const context = { userId: turn.userId, sessionId: turn.sessionId };
-    let failed: 'stream-error' | 'stopped' | null = null;
+    let failed: TurnFailure | null = null;
+    let finishReason: string | undefined;
 
     const reply = await this.readReply(
       stream.pipeThrough(
@@ -203,22 +233,24 @@ export class AgentService {
             // A stop counts like an error: none of the reply is kept.
             if (chunk.type === 'error') failed = 'stream-error';
             if (chunk.type === 'abort') failed = 'stopped';
+            if (chunk.type === 'finish') finishReason = chunk.finishReason;
             controller.enqueue(chunk);
           },
         }),
       ),
     );
 
-    // A failed reply may hold unsigned thinking that breaks later requests,
-    // so it is dropped. Documents its tools saved stay, unannounced.
+    failed ??= await this.unanswered(turn, reply, finishReason);
+
     if (failed || !reply) {
       this.logger.warn('Agent turn not saved', {
         ...context,
-        reason: failed ?? 'empty-reply',
+        reason: failed,
+        finishReason,
         durationMs: Date.now() - startedAt,
       });
 
-      return;
+      return failed;
     }
 
     const usage = this.toUsage(await result.totalUsage);
@@ -237,6 +269,25 @@ export class AgentService {
       cacheWriteTokens: usage.cacheWriteTokens,
       durationMs: Date.now() - startedAt,
     });
+
+    return null;
+  }
+
+  // Why a finished reply can't be kept, if it can't. A declined message is
+  // taken back, since every later request would carry it and be declined
+  // too; the first message, stored with the session, can't be.
+  private async unanswered(
+    turn: ClaimedTurn,
+    reply: UIMessage | null,
+    finishReason: string | undefined,
+  ): Promise<TurnFailure | null> {
+    if (finishReason === 'content-filter') {
+      return (await this.sessionsService.withdrawUserMessage(turn))
+        ? 'declined-withdrawn'
+        : 'declined';
+    }
+
+    return reply?.parts.some(isAnswerPart) ? null : 'empty-reply';
   }
 
   // The static prompt, then the profile; each with its own cache marker.
@@ -270,7 +321,7 @@ export class AgentService {
       reply = message;
     }
 
-    return reply && reply.parts.length > 0 ? reply : null;
+    return reply;
   }
 
   private toUsage(total: LanguageModelUsage): MessageUsage {

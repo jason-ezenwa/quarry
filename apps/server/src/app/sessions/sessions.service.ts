@@ -326,6 +326,40 @@ export class SessionsService {
     await new this.messageModel(stored).save();
   }
 
+  // Takes back the message a turn answers, uncounting it, unless it is the
+  // session's first message. Only while the turn holds the lock and nothing
+  // answers the message. True when it was taken back.
+  async withdrawUserMessage({
+    sessionId,
+    messageId,
+  }: ClaimedTurn): Promise<boolean> {
+    const session = new Types.ObjectId(sessionId);
+
+    const first = await this.messageModel
+      .findOne({ session })
+      .sort({ createdAt: 1, _id: 1 })
+      .select('uiId');
+
+    if (!first || first.uiId === messageId) return false;
+
+    return this.connection.transaction(async (transaction) => {
+      const { deletedCount } = await this.messageModel.deleteOne(
+        { session, uiId: messageId, role: 'user' },
+        { session: transaction },
+      );
+
+      if (deletedCount === 0) return false;
+
+      await this.sessionModel.updateOne(
+        { _id: session },
+        { $inc: { userMessageCount: -1 } },
+        { session: transaction },
+      );
+
+      return true;
+    });
+  }
+
   // Saves the job on the session, so later turns and mock interviews have it.
   async fetchJob(
     { userId, sessionId }: SessionContext,
