@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Callout, CalloutActions, CalloutContent, CalloutTitle } from '@/components/ui/callout'
 import { messageBlocks, messageDocuments, messageText } from '../session-parts'
-import { CHAT_ERRORS } from '../sessions.constants'
+import { CHAT_ERRORS, RETRYABLE_CHAT_ERRORS } from '../sessions.constants'
 import type { ChatErrorCode, DocumentAnnouncement, UnsentDraft } from '../sessions.types'
 import { Composer, type ComposerState } from './composer'
 import { Message } from './message'
@@ -22,6 +22,7 @@ type SessionChatProps = {
   activeDocumentId: string | null
   onOpenDocument: (document: DocumentAnnouncement) => void
   onSend: (text: string) => void
+  onStop: () => void
   onRetry: () => void
 }
 
@@ -71,6 +72,7 @@ export function SessionChat({
   activeDocumentId,
   onOpenDocument,
   onSend,
+  onStop,
   onRetry,
 }: SessionChatProps) {
   const end = useRef<HTMLDivElement>(null)
@@ -101,11 +103,11 @@ export function SessionChat({
           )}
           {waitingForReply ? <ToolSteps steps={[]} working /> : null}
           {error ? (
-            <Callout tone="danger">
+            <Callout tone={error === 'stopped' ? 'review' : 'danger'}>
               <CalloutContent>
                 <CalloutTitle>{CHAT_ERRORS[error]}</CalloutTitle>
               </CalloutContent>
-              {error === 'failed' ? (
+              {RETRYABLE_CHAT_ERRORS.has(error) ? (
                 <CalloutActions>
                   <Button size="sm" onClick={onRetry}>
                     Retry
@@ -119,7 +121,7 @@ export function SessionChat({
       </div>
       <div className="flex justify-center px-3 pt-2 pb-4 md:px-7 md:pt-3 md:pb-5">
         <div className="w-full max-w-145">
-          <Composer key={unsent?.key} state={composer} messageLimit={messageLimit} draft={unsent?.text} onSend={onSend} />
+          <Composer key={unsent?.key} state={composer} messageLimit={messageLimit} draft={unsent?.text} onSend={onSend} onStop={onStop} />
         </div>
       </div>
     </section>

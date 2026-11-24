@@ -61,37 +61,43 @@ export class AgentToolsFactory {
           done: 'Read the job post',
           failed: "Couldn't read the job post",
         } satisfies ToolDisplayMetadata,
-        execute: (input) =>
-          this.guarded(context, 'get_job_description', async () => {
-            const outcome = await this.sessionsService.fetchJob(
-              context,
-              input.url,
-            );
+        execute: (input, { abortSignal }) =>
+          this.guarded(
+            context,
+            abortSignal,
+            'get_job_description',
+            async () => {
+              const outcome = await this.sessionsService.fetchJob(
+                context,
+                input.url,
+                abortSignal,
+              );
 
-            this.logToolCall(context, 'get_job_description', outcome.ok, {
-              ...(!outcome.ok && { reason: outcome.reason }),
-            });
+              this.logToolCall(context, 'get_job_description', outcome.ok, {
+                ...(!outcome.ok && { reason: outcome.reason }),
+              });
 
-            if (!outcome.ok) {
+              if (!outcome.ok) {
+                return {
+                  ...outcome,
+                  askForPaste: true,
+                  note:
+                    outcome.reason === 'blocked-site'
+                      ? blockedSiteNote(outcome.site)
+                      : JOB_FETCH_FAILURE_NOTES[outcome.reason],
+                };
+              }
+
+              const { url: _link, source, ...job } = outcome.job;
+
               return {
-                ...outcome,
-                askForPaste: true,
-                note:
-                  outcome.reason === 'blocked-site'
-                    ? blockedSiteNote(outcome.site)
-                    : JOB_FETCH_FAILURE_NOTES[outcome.reason],
+                ok: true,
+                source,
+                ...job,
+                note: JOB_SOURCE_LABELS[source],
               };
-            }
-
-            const { url: _link, source, ...job } = outcome.job;
-
-            return {
-              ok: true,
-              source,
-              ...job,
-              note: JOB_SOURCE_LABELS[source],
-            };
-          }),
+            },
+          ),
       }),
 
       save_fit_score: tool({
@@ -104,8 +110,8 @@ export class AgentToolsFactory {
           done: 'Scored your fit',
           failed: "Couldn't score your fit",
         } satisfies ToolDisplayMetadata,
-        execute: (input) =>
-          this.guarded(context, 'save_fit_score', async () => {
+        execute: (input, { abortSignal }) =>
+          this.guarded(context, abortSignal, 'save_fit_score', async () => {
             const document = await this.documentsService.createFitScore(
               context,
               input,
@@ -128,17 +134,22 @@ export class AgentToolsFactory {
           done: 'Tailored your resume',
           failed: "Couldn't tailor your resume",
         } satisfies ToolDisplayMetadata,
-        execute: (input) =>
-          this.guarded(context, 'create_tailored_resume', async () => {
-            const document = await this.documentsService.createTailoredResume(
-              context,
-              input,
-            );
+        execute: (input, { abortSignal }) =>
+          this.guarded(
+            context,
+            abortSignal,
+            'create_tailored_resume',
+            async () => {
+              const document = await this.documentsService.createTailoredResume(
+                context,
+                input,
+              );
 
-            this.logToolCall(context, 'create_tailored_resume', true);
+              this.logToolCall(context, 'create_tailored_resume', true);
 
-            return { document };
-          }),
+              return { document };
+            },
+          ),
       }),
 
       edit_tailored_resume: tool({
@@ -151,24 +162,29 @@ export class AgentToolsFactory {
           done: 'Edited your resume',
           failed: "Couldn't edit your resume",
         } satisfies ToolDisplayMetadata,
-        execute: (input) =>
-          this.guarded(context, 'edit_tailored_resume', async () => {
-            const document = await this.documentsService.editTailoredResume(
-              context,
-              input,
-            );
+        execute: (input, { abortSignal }) =>
+          this.guarded(
+            context,
+            abortSignal,
+            'edit_tailored_resume',
+            async () => {
+              const document = await this.documentsService.editTailoredResume(
+                context,
+                input,
+              );
 
-            this.logToolCall(
-              context,
-              'edit_tailored_resume',
-              Boolean(document),
-              {
-                ...(!document && { reason: SOURCE_NOT_FOUND.reason }),
-              },
-            );
+              this.logToolCall(
+                context,
+                'edit_tailored_resume',
+                Boolean(document),
+                {
+                  ...(!document && { reason: SOURCE_NOT_FOUND.reason }),
+                },
+              );
 
-            return document ? { document } : SOURCE_NOT_FOUND;
-          }),
+              return document ? { document } : SOURCE_NOT_FOUND;
+            },
+          ),
       }),
 
       save_cover_letter: tool({
@@ -180,8 +196,8 @@ export class AgentToolsFactory {
           done: 'Wrote your cover letter',
           failed: "Couldn't write your cover letter",
         } satisfies ToolDisplayMetadata,
-        execute: (input) =>
-          this.guarded(context, 'save_cover_letter', async () => {
+        execute: (input, { abortSignal }) =>
+          this.guarded(context, abortSignal, 'save_cover_letter', async () => {
             const document = await this.documentsService.createCoverLetter(
               context,
               input,
@@ -195,13 +211,19 @@ export class AgentToolsFactory {
     };
   }
 
-  // A tool that throws answers with a fixed failure instead, so no internal
-  // error text reaches the model, the stored history or the browser.
+  // A throwing tool answers with a fixed failure, so no internal error text
+  // reaches the model, history or browser. After a stop it does nothing.
   private async guarded<T>(
     context: SessionContext,
+    abortSignal: AbortSignal | undefined,
     toolName: string,
     run: () => Promise<T>,
   ): Promise<T | typeof TOOL_FAILURE> {
+    if (abortSignal?.aborted) {
+      this.logToolCall(context, toolName, false, { reason: 'turn-stopped' });
+      return TOOL_FAILURE;
+    }
+
     try {
       return await run();
     } catch (error) {

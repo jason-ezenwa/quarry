@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { APICallError, DefaultChatTransport, type UIMessage } from 'ai'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { asUIMessages, hasUnansweredMessage, messageText } from '../session-parts'
-import { sessionQueryOptions, turnsUrl } from '../sessions-api'
+import { sessionQueryOptions, stopTurn, turnsUrl } from '../sessions-api'
 import { REFUSED_TURN_CODES, SESSION_QUERY_KEYS } from '../sessions.constants'
 import type { ChatErrorCode, TurnErrorCode, UnsentDraft } from '../sessions.types'
 import { useRefreshSessionLists } from './use-sessions'
@@ -49,6 +49,8 @@ export function useSessionChat(session: SessionDetail, fresh: boolean) {
   const queryClient = useQueryClient()
   const refreshLists = useRefreshSessionLists()
   const [unsent, setUnsent] = useState<UnsentDraft | null>(null)
+  // Set while the server drops a stopped reply, then until the next send or retry.
+  const [stopState, setStopState] = useState<'stopping' | 'stopped' | null>(null)
   const stored = useMemo(() => new Set(session.messages.map((message) => message.id)), [session.messages])
   // Asks the server, since the chat keeps its handlers from the first render and the cache may lag.
   const isStored = async (messageId: string) => {
@@ -85,7 +87,7 @@ export function useSessionChat(session: SessionDetail, fresh: boolean) {
   })
   const chat = useChat<UIMessage>({ chat: instance })
 
-  const idle = chat.status === 'ready' || chat.status === 'error'
+  const idle = (chat.status === 'ready' || chat.status === 'error') && stopState !== 'stopping'
   const { messages, regenerate, setMessages, clearError } = chat
   const canStart = session.status === 'ready' && !session.archivedAt
 
@@ -119,7 +121,11 @@ export function useSessionChat(session: SessionDetail, fresh: boolean) {
   const last = messages.at(-1)
   const stalled =
     autoStartId !== undefined && idle && canStart && last?.role === 'user' && last.id !== autoStartId && stored.has(last.id)
-  const error = visibleError(code, session.status === 'drafting') ?? (stalled ? 'failed' : null)
+  // A reply that landed before the stop reached the server isn't a stopped one.
+  const stopped = stopState === 'stopped' && session.messages.at(-1)?.role !== 'assistant'
+  const error: ChatErrorCode | null = stopped
+    ? 'stopped'
+    : (visibleError(code, session.status === 'drafting') ?? (stalled ? 'failed' : null))
 
   return {
     messages,
@@ -131,9 +137,38 @@ export function useSessionChat(session: SessionDetail, fresh: boolean) {
     unsent,
     send: (text: string) => {
       setUnsent(null)
+      setStopState(null)
+      // The server kept none of a stopped reply, so the chat drops it too.
+      if (stopped && messages.at(-1)?.role === 'assistant') setMessages(messages.slice(0, -1))
       void chat.sendMessage({ text })
     },
     // Reruns the stored unanswered message without resending it.
-    retry: () => regenerate(),
+    retry: () => {
+      setStopState(null)
+      void regenerate()
+    },
+    // Only once the reply streams: by then the server has stored the message and can stop its turn.
+    canStop: chat.status === 'streaming' && stopState === null,
+    stopping: stopState === 'stopping',
+    // Ends the stream here and the turn on the server, which keeps none of the reply.
+    // If the server can't stop it, the turn runs on and the page waits for its reply.
+    stop: async () => {
+      const messageId = messages.findLast((message) => message.role === 'user')?.id
+      if (!messageId) return
+      setStopState('stopping')
+      void chat.stop()
+      const confirmed = await stopTurn(session.id, messageId).then(
+        () => true,
+        () => false,
+      )
+      const askedAt = Date.now()
+      await queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEYS.detail(session.id) })
+      void refreshLists()
+      // A stop whose answer was lost may still have ended the turn: a fresh read with nothing running and no reply means stopped.
+      const read = queryClient.getQueryState(sessionQueryOptions(session.id).queryKey)
+      const current = read && read.dataUpdatedAt >= askedAt ? read.data : undefined
+      const ended = current?.status === 'ready' && current.messages.at(-1)?.role === 'user'
+      setStopState(confirmed || ended ? 'stopped' : null)
+    },
   }
 }

@@ -38,6 +38,14 @@ import { profileSystemMessage } from './agent.utils';
 
 const CACHED = { anthropic: { cacheControl: { type: 'ephemeral' } } } as const;
 
+// A running turn: aborting it cancels the call to Claude; `done` settles
+// once the turn has released its lock.
+type RunningTurn = {
+  messageId: string;
+  stop: AbortController;
+  done: Promise<void>;
+};
+
 const generateMessageId = createIdGenerator({ prefix: 'msg', size: 16 });
 
 // Holds the end of a stream until `done` settles.
@@ -54,6 +62,8 @@ function closeAfter<T>(done: Promise<unknown>): TransformStream<T, T> {
 @Injectable()
 export class AgentService {
   private readonly logger = new Logger(AgentService.name);
+  // Keyed by session id. In memory, as the turn lock assumes one instance.
+  private readonly running = new Map<string, RunningTurn>();
 
   constructor(
     @Inject(ANTHROPIC) private readonly anthropic: AnthropicProvider,
@@ -70,6 +80,13 @@ export class AgentService {
     const startedAt = Date.now();
     // Once the reply is being saved, that path releases the lock itself.
     let settled: Promise<void> | undefined;
+    const stop = new AbortController();
+    let markDone!: () => void;
+    const done = new Promise<void>((resolve) => {
+      markDone = resolve;
+    });
+    const running: RunningTurn = { messageId: turn.messageId, stop, done };
+    this.running.set(turn.sessionId, running);
 
     try {
       this.logger.log('Agent turn started', context);
@@ -84,6 +101,7 @@ export class AgentService {
         tools,
         toolChoice: 'auto',
         stopWhen: isStepCount(AGENT_MAX_STEPS),
+        abortSignal: stop.signal,
         providerOptions: {
           anthropic: {
             effort: AGENT_EFFORT,
@@ -146,7 +164,28 @@ export class AgentService {
       if (!response.headersSent) response.writeHead(500).end();
     } finally {
       if (!settled) await this.sessionsService.releaseTurn(turn);
+      if (this.running.get(turn.sessionId) === running) {
+        this.running.delete(turn.sessionId);
+      }
+      markDone();
     }
+  }
+
+  // Stops the turn answering `messageId`, if it is running, and waits until
+  // its lock is released. Unlike a disconnect, a stop saves none of the reply.
+  async stopTurn(
+    userId: string,
+    sessionId: string,
+    messageId: string,
+  ): Promise<void> {
+    await this.sessionsService.assertOwned(userId, sessionId);
+
+    const running = this.running.get(sessionId);
+    if (running?.messageId !== messageId) return;
+
+    this.logger.log('Agent turn stop requested', { userId, sessionId });
+    running.stop.abort();
+    await running.done;
   }
 
   private async saveReply(
@@ -159,13 +198,15 @@ export class AgentService {
     startedAt: number,
   ): Promise<void> {
     const context = { userId: turn.userId, sessionId: turn.sessionId };
-    let failed = false;
+    let failed: 'stream-error' | 'stopped' | null = null;
 
     const reply = await this.readReply(
       stream.pipeThrough(
         new TransformStream<UIMessageChunk, UIMessageChunk>({
           transform(chunk, controller) {
-            if (chunk.type === 'error') failed = true;
+            // A stop counts like an error: none of the reply is kept.
+            if (chunk.type === 'error') failed = 'stream-error';
+            if (chunk.type === 'abort') failed = 'stopped';
             controller.enqueue(chunk);
           },
         }),
@@ -177,7 +218,7 @@ export class AgentService {
     if (failed || !reply) {
       this.logger.warn('Agent turn not saved', {
         ...context,
-        reason: failed ? 'stream-error' : 'empty-reply',
+        reason: failed ?? 'empty-reply',
         durationMs: Date.now() - startedAt,
       });
 

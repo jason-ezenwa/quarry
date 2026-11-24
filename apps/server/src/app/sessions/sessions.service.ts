@@ -172,6 +172,11 @@ export class SessionsService {
     return toSessionDetail(session, await this.history(session._id));
   }
 
+  // 404 unless the session is the user's.
+  async assertOwned(userId: string, sessionId: string): Promise<void> {
+    await this.findOwned(userId, sessionId);
+  }
+
   // Archiving never gives back a slot in the monthly cap.
   async setArchived(
     userId: string,
@@ -260,22 +265,29 @@ export class SessionsService {
       return this.throwTurnRefusal(userId, sessionId, Boolean(message));
     }
 
-    const turn: ClaimedTurn = { userId, sessionId: claimed.id, startedAt };
-
-    if (!message) {
-      try {
-        await this.assertUnanswered(claimed._id);
-      } catch (error) {
-        await this.releaseTurn(turn);
-        throw error;
-      }
+    if (message) {
+      return {
+        userId,
+        sessionId: claimed.id,
+        startedAt,
+        messageId: message.id,
+      };
     }
 
-    return turn;
+    try {
+      const messageId = await this.unansweredMessageId(claimed._id);
+      return { userId, sessionId: claimed.id, startedAt, messageId };
+    } catch (error) {
+      await this.releaseTurn({ sessionId: claimed.id, startedAt });
+      throw error;
+    }
   }
 
   // Only this turn's own stamp is cleared, never a later turn's.
-  async releaseTurn({ sessionId, startedAt }: ClaimedTurn): Promise<void> {
+  async releaseTurn({
+    sessionId,
+    startedAt,
+  }: Pick<ClaimedTurn, 'sessionId' | 'startedAt'>): Promise<void> {
     await this.sessionModel.updateOne(
       { _id: new Types.ObjectId(sessionId), turnStartedAt: startedAt },
       { $set: { turnStartedAt: null } },
@@ -316,9 +328,11 @@ export class SessionsService {
   async fetchJob(
     { userId, sessionId }: SessionContext,
     url: string,
+    abortSignal?: AbortSignal,
   ): Promise<JobFetchOutcome> {
     const outcome = await this.jobFetcherService.fetch(url);
-    if (!outcome.ok) return outcome;
+    // A turn stopped mid-fetch keeps nothing from it.
+    if (!outcome.ok || abortSignal?.aborted) return outcome;
 
     const { job } = outcome;
 
@@ -442,7 +456,10 @@ export class SessionsService {
     );
   }
 
-  private async assertUnanswered(sessionId: Types.ObjectId): Promise<void> {
+  // The uiId of the last message, which must be the user's.
+  private async unansweredMessageId(
+    sessionId: Types.ObjectId,
+  ): Promise<string> {
     const last = await this.messageModel
       .findOne({ session: sessionId })
       .sort({ createdAt: -1, _id: -1 });
@@ -454,6 +471,8 @@ export class SessionsService {
         'Send a message to run a turn',
       );
     }
+
+    return last.uiId;
   }
 
   private async insertUserMessage(

@@ -22,10 +22,12 @@ import { PATHS } from '@/lib/auth/auth.constants'
 
 const CRUMBS = [{ label: 'Applications', to: PATHS.applications }]
 
-function composerState(session: SessionDetail, busy: boolean): ComposerState {
+function composerState(session: SessionDetail, chat: ReturnType<typeof useSessionChat>): ComposerState {
   if (session.archivedAt) return 'archived'
   if (session.userMessageCount >= session.messageLimit) return 'limit'
-  return busy ? 'busy' : 'open'
+  if (chat.stopping) return 'stopping'
+  if (chat.canStop) return 'stoppable'
+  return chat.busy || chat.waiting ? 'busy' : 'open'
 }
 
 function SessionView({ session, fresh }: { session: SessionDetail; fresh: boolean }) {
@@ -95,12 +97,13 @@ function SessionView({ session, fresh }: { session: SessionDetail; fresh: boolea
           messages={chat.messages}
           working={working}
           error={chat.error}
-          composer={composerState(session, working)}
+          composer={composerState(session, chat)}
           messageLimit={session.messageLimit}
           unsent={chat.unsent}
           activeDocumentId={showing ? (documents[tab]?.id ?? null) : null}
           onOpenDocument={openDocument}
           onSend={chat.send}
+          onStop={chat.stop}
           onRetry={chat.retry}
         />
         {wide && panelOpen ? (
