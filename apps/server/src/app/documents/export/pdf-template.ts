@@ -1,6 +1,7 @@
 import {
   Document,
   Font,
+  Link,
   Page,
   StyleSheet,
   Text,
@@ -9,16 +10,17 @@ import {
   type DocumentProps,
   type TextProps,
 } from '@react-pdf/renderer';
-import type {
-  CoverLetterDocumentResponse,
-  DocumentHeader,
-  Resume,
+import {
+  RESUME_SEPARATOR,
+  type CoverLetterDocumentResponse,
+  type DocumentHeader,
+  type Resume,
 } from '@quarry/contracts';
 import { createElement as h, type ReactElement, type ReactNode } from 'react';
 import type { ExportableDocument } from '../documents.types';
 import { EXPORT_STYLE, PDF_FONT } from './export.constants';
-import { contactLine, resumeSections } from './export.utils';
-import type { ExportEntry, ExportSection } from './export.types';
+import { contactParts, resumeSections } from './export.utils';
+import type { ContactPart, ExportEntry, ExportSection } from './export.types';
 
 Font.register({
   family: PDF_FONT.family,
@@ -33,6 +35,7 @@ Font.register({
 Font.registerHyphenationCallback((word) => [word]);
 
 const { colors, fontSize, margin, gap } = EXPORT_STYLE;
+const SEPARATOR = RESUME_SEPARATOR.trim();
 const color = (hex: string) => `#${hex}`;
 
 const styles = StyleSheet.create({
@@ -45,7 +48,16 @@ const styles = StyleSheet.create({
     color: color(colors.text),
   },
   name: { fontSize: fontSize.name, fontWeight: 'bold' },
-  contact: { marginTop: 4, color: color(colors.muted) },
+  contact: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: gap.contact,
+    color: color(colors.muted),
+  },
+  contactPart: { flexDirection: 'row' },
+  // The web sheet's "  ·  ": a Text drops the spaces around it.
+  separator: { marginHorizontal: 5 },
+  link: { color: color(colors.muted), textDecoration: 'underline' },
   header: {
     paddingBottom: gap.section,
     marginBottom: gap.section,
@@ -74,14 +86,34 @@ const styles = StyleSheet.create({
 const text = (style: TextProps['style'], content: ReactNode) =>
   h(Text, { style } satisfies TextProps, content);
 
+// Email, phone and links are clickable, as they are on the web sheet. Each
+// part keeps to one line with the separator after it, so a line never breaks
+// inside a link or starts with a separator.
+function contactLine(parts: ContactPart[]): ReactElement {
+  return h(
+    View,
+    { style: styles.contact },
+    ...parts.map(({ text: part, href }, index) =>
+      h(
+        View,
+        { key: index, style: styles.contactPart, wrap: false },
+        href
+          ? h(Link, { src: href, style: styles.link }, part)
+          : text(undefined, part),
+        index < parts.length - 1 ? text(styles.separator, SEPARATOR) : null,
+      ),
+    ),
+  );
+}
+
 function header({ name, contact }: DocumentHeader): ReactElement {
-  const line = contactLine(contact);
+  const parts = contactParts(contact);
 
   return h(
     View,
     { style: styles.header },
     text(styles.name, name),
-    line ? text(styles.contact, line) : null,
+    parts.length > 0 ? contactLine(parts) : null,
   );
 }
 

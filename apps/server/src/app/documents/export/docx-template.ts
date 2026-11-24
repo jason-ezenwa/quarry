@@ -1,11 +1,13 @@
-import type {
-  CoverLetterDocumentResponse,
-  DocumentHeader,
-  Resume,
+import {
+  RESUME_SEPARATOR,
+  type CoverLetterDocumentResponse,
+  type DocumentHeader,
+  type Resume,
 } from '@quarry/contracts';
 import {
   BorderStyle,
   Document,
+  ExternalHyperlink,
   Packer,
   Paragraph,
   TabStopType,
@@ -13,7 +15,7 @@ import {
 } from 'docx';
 import type { ExportableDocument } from '../documents.types';
 import { DOCX_FONT, EXPORT_STYLE } from './export.constants';
-import { contactLine, resumeSections } from './export.utils';
+import { contactParts, resumeSections } from './export.utils';
 import type { ExportEntry, ExportSection } from './export.types';
 
 const { colors, fontSize, margin, gap } = EXPORT_STYLE;
@@ -25,8 +27,27 @@ const twips = (points: number) => Math.round(points * 20);
 // Dates sit flush with the right margin.
 const RIGHT_TAB = twips(EXPORT_STYLE.pageWidth - margin.horizontal * 2);
 
+// Email, phone and links are clickable, as they are on the web sheet.
+function contactRuns(contact: DocumentHeader['contact']) {
+  return contactParts(contact).flatMap(({ text, href }, index) => {
+    const separator =
+      index > 0
+        ? [new TextRun({ text: RESUME_SEPARATOR, color: colors.muted })]
+        : [];
+
+    const run = href
+      ? new ExternalHyperlink({
+          link: href,
+          children: [new TextRun({ text, color: colors.muted, underline: {} })],
+        })
+      : new TextRun({ text, color: colors.muted });
+
+    return [...separator, run];
+  });
+}
+
 function header({ name, contact }: DocumentHeader): Paragraph[] {
-  const line = contactLine(contact);
+  const runs = contactRuns(contact);
 
   return [
     new Paragraph({
@@ -38,13 +59,7 @@ function header({ name, contact }: DocumentHeader): Paragraph[] {
         }),
       ],
     }),
-    ...(line
-      ? [
-          new Paragraph({
-            children: [new TextRun({ text: line, color: colors.muted })],
-          }),
-        ]
-      : []),
+    ...(runs.length > 0 ? [new Paragraph({ children: runs })] : []),
     new Paragraph({
       border: {
         bottom: {

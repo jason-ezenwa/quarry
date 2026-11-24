@@ -1,5 +1,4 @@
 import {
-  contactDetails,
   formatDateRange,
   linkText,
   RESUME_SEPARATOR,
@@ -8,15 +7,36 @@ import {
 } from '@quarry/contracts';
 import type { ExportableDocument } from '../documents.types';
 import { EXPORT_FALLBACK_FILE_NAME, RESUME_HEADINGS } from './export.constants';
-import type { ExportSection } from './export.types';
+import type { ContactPart, ExportSection } from './export.types';
+
+// A phone number a dialler can take: "+234 (0) 800-000" becomes "+2340800000".
+// Null when there are no digits to dial.
+function telHref(phone: string): string | null {
+  const digits = phone.replace(/[^\d+]/g, '');
+  return /\d/.test(digits) ? `tel:${digits}` : null;
+}
 
 // The contact line as the web sheet shows it: location, email, phone, then
-// links without the scheme.
-export function contactLine(contact: Resume['contact']): string {
+// links without the scheme. Email, phone and links carry where they point.
+export function contactParts(contact: Resume['contact']): ContactPart[] {
+  const parts: ContactPart[] = [];
+
+  if (contact.location?.trim()) {
+    parts.push({ text: contact.location, href: null });
+  }
+
+  if (contact.email?.trim()) {
+    parts.push({ text: contact.email, href: `mailto:${contact.email.trim()}` });
+  }
+
+  if (contact.phone?.trim()) {
+    parts.push({ text: contact.phone, href: telHref(contact.phone) });
+  }
+
   return [
-    ...contactDetails(contact),
-    ...contact.links.map(({ url }) => linkText(url)),
-  ].join(RESUME_SEPARATOR);
+    ...parts,
+    ...contact.links.map(({ url }) => ({ text: linkText(url), href: url })),
+  ];
 }
 
 function joinPresent(parts: (string | undefined)[], separator = ', '): string {

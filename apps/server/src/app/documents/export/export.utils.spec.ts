@@ -1,17 +1,39 @@
 import type { CoverLetterDocumentResponse } from '@quarry/contracts';
 import { describe, expect, it } from 'vitest';
-import { contactLine, exportFileName } from './export.utils';
+import { contactParts, exportFileName } from './export.utils';
 
-describe('contactLine', () => {
+describe('contactParts', () => {
   it('puts location, email and phone first, leaves out blanks and drops the scheme from links', () => {
     expect(
-      contactLine({
+      contactParts({
         email: 'ada@example.com',
         location: 'Lagos, Nigeria',
         phone: ' ',
         links: [{ label: 'GitHub', url: 'https://github.com/ada' }],
-      }),
-    ).toBe('Lagos, Nigeria  ·  ada@example.com  ·  github.com/ada');
+      }).map(({ text }) => text),
+    ).toEqual(['Lagos, Nigeria', 'ada@example.com', 'github.com/ada']);
+  });
+
+  it('links the email, the phone and each link, but not the location', () => {
+    expect(
+      contactParts({
+        email: 'ada@example.com',
+        location: 'Lagos, Nigeria',
+        phone: '+234 (0) 800-000-0000',
+        links: [{ label: 'Site', url: 'http://ada.dev' }],
+      }).map(({ href }) => href),
+    ).toEqual([
+      null,
+      'mailto:ada@example.com',
+      'tel:+23408000000000',
+      'http://ada.dev',
+    ]);
+  });
+
+  it('leaves a phone with no digits to dial unlinked', () => {
+    expect(
+      contactParts({ phone: 'on request', links: [] }).map(({ href }) => href),
+    ).toEqual([null]);
   });
 });
 

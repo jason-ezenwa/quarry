@@ -1,3 +1,9 @@
+// One piece of the contact line, and where it links to when it is clickable.
+export type ContactPart = {
+  text: string;
+  href: string | null;
+};
+
 // A role, school, project or certification as the template shows it.
 export type ExportEntry = {
   title: string;

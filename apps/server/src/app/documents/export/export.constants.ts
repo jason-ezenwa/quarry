@@ -24,7 +24,9 @@ export const EXPORT_STYLE = {
   margin: { vertical: 40, horizontal: 48 },
   pageWidth: 595.28,
   lineHeight: 1.4,
-  gap: { paragraph: 10, entry: 8, section: 12 },
+  // contact: above the contact line in the PDF. Word sets the name on a taller
+  // line, which gives the DOCX about the same gap without it.
+  gap: { paragraph: 10, entry: 8, section: 12, contact: 10 },
 } as const;
 
 // The Quarry typeface, bundled so names in any Latin script render (the

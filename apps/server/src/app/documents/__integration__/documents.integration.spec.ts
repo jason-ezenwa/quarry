@@ -3,7 +3,7 @@ import type { CoverLetterInput, Resume } from '@quarry/contracts';
 import mammoth from 'mammoth';
 import { Types } from 'mongoose';
 import request from 'supertest';
-import { extractText } from 'unpdf';
+import { extractText, getDocumentProxy } from 'unpdf';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createTestApp } from '../../../../test/integration/create-test-app';
 import { getTestDatabase } from '../../../../test/integration/database';
@@ -30,6 +30,7 @@ const tailoredResume: Resume = {
   name: primaryResume.name,
   contact: {
     ...primaryResume.contact,
+    phone: '+234 800 000 0000',
     links: [{ label: 'Portfolio', url: 'https://ada.dev' }],
   },
   summary: 'Payments engineer who ships settlement systems.',
@@ -611,6 +612,39 @@ describe('Documents (integration)', () => {
 
     const docxText = async (file: Buffer) =>
       (await mammoth.extractRawText({ buffer: file })).value;
+
+    const pdfLinks = async (file: Buffer) => {
+      const pdf = await getDocumentProxy(new Uint8Array(file));
+      const annotations = await (await pdf.getPage(1)).getAnnotations();
+
+      // The link as written; pdf.js normalises `url` ("https://ada.dev/").
+      return annotations.map(
+        ({ unsafeUrl }: { unsafeUrl?: string }) => unsafeUrl,
+      );
+    };
+
+    const docxLinks = async (file: Buffer) => {
+      const { value: html } = await mammoth.convertToHtml({ buffer: file });
+
+      return [...html.matchAll(/<a href="([^"]+)"/g)].map(([, href]) => href);
+    };
+
+    it('makes the email, phone and links in the header clickable in both formats', async () => {
+      const { cookie, resumePath, coverLetterPath } = await exported();
+      const contactLinks = [
+        'mailto:ada@example.com',
+        'tel:+2348000000000',
+        'https://ada.dev',
+      ];
+
+      for (const path of [resumePath, coverLetterPath]) {
+        const pdf = await download(`${path}?format=pdf`, cookie);
+        const docx = await download(`${path}?format=docx`, cookie);
+
+        expect(await pdfLinks(pdf.body)).toEqual(contactLinks);
+        expect(await docxLinks(docx.body)).toEqual(contactLinks);
+      }
+    });
 
     it('downloads a resume as a PDF and a DOCX with its content', async () => {
       const { cookie, resumePath } = await exported();
