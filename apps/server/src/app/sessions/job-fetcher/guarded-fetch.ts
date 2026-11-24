@@ -199,7 +199,6 @@ function send(
   accept: string,
   signal: AbortSignal,
 ): Promise<IncomingMessage> {
-  // Looked up at call time, so the network mock in tests can intercept it.
   const request = url.protocol === 'https:' ? https.request : http.request;
 
   return new Promise((resolve, reject) => {

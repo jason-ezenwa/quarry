@@ -36,8 +36,6 @@ const SOURCE_NOT_FOUND = {
   note: 'Source resume not found',
 } as const;
 
-const display = (metadata: ToolDisplayMetadata) => metadata;
-
 // The ids come from the signed-in request and are captured here, never
 // taken from the model's input. Each tool only calls a service method.
 @Injectable()
@@ -57,12 +55,12 @@ export class AgentToolsFactory {
         inputSchema: z.object({
           url: z.string().describe('The job post link the user gave'),
         }),
-        metadata: display({
+        metadata: {
           icon: 'globe',
           active: 'Reading the job post',
           done: 'Read the job post',
           failed: "Couldn't read the job post",
-        }),
+        } satisfies ToolDisplayMetadata,
         execute: (input) =>
           this.guarded(context, 'get_job_description', async () => {
             const outcome = await this.sessionsService.fetchJob(
@@ -100,12 +98,12 @@ export class AgentToolsFactory {
         description:
           'Saves a fit report for this job. Score each dimension from 0 to 10: requirements (the stated must-haves), skills, seniority and domain. The overall score and label are computed for you.',
         inputSchema: fitScoreInputSchema,
-        metadata: display({
+        metadata: {
           icon: 'gauge',
           active: 'Scoring your fit',
           done: 'Scored your fit',
           failed: "Couldn't score your fit",
-        }),
+        } satisfies ToolDisplayMetadata,
         execute: (input) =>
           this.guarded(context, 'save_fit_score', async () => {
             const document = await this.documentsService.createFitScore(
@@ -124,12 +122,12 @@ export class AgentToolsFactory {
         description:
           "Saves a new resume tailored to this job, written whole from the user's primary resume. Use it for the first tailored resume; revise it later with edit_tailored_resume.",
         inputSchema: createTailoredResumeInputSchema,
-        metadata: display({
+        metadata: {
           icon: 'file-text',
           active: 'Tailoring your resume',
           done: 'Tailored your resume',
           failed: "Couldn't tailor your resume",
-        }),
+        } satisfies ToolDisplayMetadata,
         execute: (input) =>
           this.guarded(context, 'create_tailored_resume', async () => {
             const document = await this.documentsService.createTailoredResume(
@@ -147,12 +145,12 @@ export class AgentToolsFactory {
         description:
           'Revises a tailored resume from this application. Give only the sections that change, each whole, the name and contact details included; the rest is copied from the source. Saves the result as a new resume and leaves the source as it was. Put every change for one request in one call.',
         inputSchema: editTailoredResumeInputSchema,
-        metadata: display({
+        metadata: {
           icon: 'pencil',
           active: 'Editing your resume',
           done: 'Edited your resume',
           failed: "Couldn't edit your resume",
-        }),
+        } satisfies ToolDisplayMetadata,
         execute: (input) =>
           this.guarded(context, 'edit_tailored_resume', async () => {
             const document = await this.documentsService.editTailoredResume(
@@ -176,12 +174,12 @@ export class AgentToolsFactory {
       save_cover_letter: tool({
         description: `Saves a cover letter for this job: a greeting, 3 to 5 paragraphs and a sign-off. The name and contact details go above it and below the sign-off for you; give a header only when the user wants different ones on this letter. ${COVER_LETTER_HEADER_DEFAULT} Every save is a new letter.`,
         inputSchema: coverLetterInputSchema,
-        metadata: display({
+        metadata: {
           icon: 'envelope',
           active: 'Writing your cover letter',
           done: 'Wrote your cover letter',
           failed: "Couldn't write your cover letter",
-        }),
+        } satisfies ToolDisplayMetadata,
         execute: (input) =>
           this.guarded(context, 'save_cover_letter', async () => {
             const document = await this.documentsService.createCoverLetter(
