@@ -1,4 +1,4 @@
-import type { FetchedJobSource } from './job-fetcher.types';
+import type { FetchedJobSource } from '../job-fetcher.types';
 
 export type JobBoardSource = Exclude<FetchedJobSource, 'web'>;
 

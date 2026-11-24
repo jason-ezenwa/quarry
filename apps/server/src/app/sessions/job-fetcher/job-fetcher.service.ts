@@ -1,10 +1,13 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { BlockedJobSite } from '@quarry/contracts';
 import { errorName } from '../../common/error-name';
-import { GuardedFetchError, guardedFetch } from './guarded-fetch';
-import type { GuardedResponse, HostLookup } from './guarded-fetch.types';
-import { findBlockedSite, findJobBoard } from './job-boards';
-import type { JobBoardMatch } from './job-boards.types';
+import { GuardedFetchError, guardedFetch } from './guarded-fetch/guarded-fetch';
+import type {
+  GuardedResponse,
+  HostLookup,
+} from './guarded-fetch/guarded-fetch.types';
+import { findBlockedSite, findJobBoard } from './job-boards/job-boards';
+import type { JobBoardMatch } from './job-boards/job-boards.types';
 import {
   blockedSiteMessage,
   HTML_ACCEPT,

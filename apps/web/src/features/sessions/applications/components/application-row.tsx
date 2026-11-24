@@ -1,9 +1,9 @@
 import type { SessionSummary } from '@quarry/contracts'
 import { Link } from 'react-router'
 import { sessionPath } from '@/lib/auth/auth.constants'
-import { formatShortDate, sourceLabel } from '../session-format'
-import { FitDot } from './fit-dot'
-import { StatusBadge } from './status-badge'
+import { formatShortDate, sourceLabel } from '../../session-format'
+import { FitDot } from '../../components/fit-dot'
+import { StatusBadge } from '../../components/status-badge'
 
 // One application in a list. Phones stack the role over the company and keep the fit and status on the right.
 export function ApplicationRow({ session }: { session: SessionSummary }) {

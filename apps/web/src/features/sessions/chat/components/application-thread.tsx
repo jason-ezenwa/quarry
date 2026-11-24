@@ -5,11 +5,11 @@ import { OutputCardList } from '@/components/session/output-card'
 import { SessionThread, SessionThreadEnd } from '@/components/session/session-chat'
 import { Button } from '@/components/ui/button'
 import { Callout, CalloutActions, CalloutContent, CalloutTitle } from '@/components/ui/callout'
-import { messageBlocks, messageDocuments, messageText } from '../session-parts'
-import { CHAT_ERRORS, RETRYABLE_CHAT_ERRORS } from '../sessions.constants'
-import type { ChatErrorCode, DocumentCardProps } from '../sessions.types'
+import { messageBlocks, messageDocuments, messageText } from '../../session-parts'
+import { CHAT_ERRORS, RETRYABLE_CHAT_ERRORS } from '../chat.constants'
+import type { ChatErrorCode, DocumentCardProps } from '../chat.types'
 import { AgentSteps } from './agent-steps'
-import { DocumentCard } from './document-card'
+import { DocumentCard } from '../../documents/components/document-card'
 
 function AgentReply({ message, live, activeDocumentId, onOpenDocument }: DocumentCardProps & { message: UIMessage; live: boolean }) {
   const documents = messageDocuments(message)

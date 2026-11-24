@@ -1,5 +1,5 @@
 import type { Provider } from '@nestjs/common';
-import { lookupHost } from './guarded-fetch';
+import { lookupHost } from './guarded-fetch/guarded-fetch';
 import {
   DEFAULT_JOB_FETCH_LIMITS,
   JOB_FETCH_HOST_LOOKUP,

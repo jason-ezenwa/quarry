@@ -1,9 +1,9 @@
 import { useId } from 'react'
 import { NavLink } from 'react-router'
 import { sessionPath } from '@/lib/auth/auth.constants'
-import { useSessionList } from '../hooks/use-sessions'
-import { RECENT_SESSIONS_LIMIT } from '../sessions.constants'
-import { FitDot } from './fit-dot'
+import { useSessionList } from '../../hooks/use-sessions'
+import { RECENT_SESSIONS_LIMIT } from '../applications.constants'
+import { FitDot } from '../../components/fit-dot'
 
 // The sidebar's latest active applications, by company, with the fit band and score.
 export function RecentSessions() {

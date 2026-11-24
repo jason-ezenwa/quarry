@@ -1,7 +1,7 @@
 import { Link } from 'react-router'
 import { PATHS } from '@/lib/auth/auth.constants'
-import { useSessionList } from '../hooks/use-sessions'
-import { HOME_RECENT_SESSIONS_LIMIT } from '../sessions.constants'
+import { useSessionList } from '../../hooks/use-sessions'
+import { HOME_RECENT_SESSIONS_LIMIT } from '../applications.constants'
 import { ApplicationRow } from './application-row'
 
 // Home's list of the latest active applications, with the month's count beside the heading.

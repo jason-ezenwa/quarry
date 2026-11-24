@@ -3,11 +3,12 @@ import { isOneOf, SESSION_ERROR_CODES, type SessionDetail } from '@quarry/contra
 import { useQueryClient } from '@tanstack/react-query'
 import { APICallError, DefaultChatTransport, type UIMessage } from 'ai'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { asUIMessages, hasUnansweredMessage, messageText } from '../session-parts'
-import { sessionQueryOptions, stopTurn, turnsUrl } from '../sessions-api'
-import { REFUSED_TURN_CODES, SESSION_QUERY_KEYS } from '../sessions.constants'
-import type { ChatErrorCode, TurnErrorCode, UnsentDraft } from '../sessions.types'
-import { useRefreshSessionLists } from './use-sessions'
+import { asUIMessages, hasUnansweredMessage, messageText } from '../../session-parts'
+import { sessionQueryOptions, stopTurn, turnsUrl } from '../../sessions-api'
+import { SESSION_QUERY_KEYS } from '../../sessions.constants'
+import { REFUSED_TURN_CODES } from '../chat.constants'
+import type { ChatErrorCode, TurnErrorCode, UnsentDraft } from '../chat.types'
+import { useRefreshSessionLists } from '../../hooks/use-sessions'
 
 function errorCode(error: Error | undefined): TurnErrorCode | null {
   if (!error) return null

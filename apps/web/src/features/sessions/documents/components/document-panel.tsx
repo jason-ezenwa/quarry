@@ -21,9 +21,9 @@ import {
   OutputPanelTabs,
   OutputPanelToolbar,
 } from '@/components/session/output-panel'
-import { documentQueryOptions } from '../sessions-api'
-import { DOCUMENT_KIND_DISPLAY, EMPTY_TAB_COPY } from '../sessions.constants'
-import type { OpenDocument } from '../sessions.types'
+import { documentQueryOptions } from '../../sessions-api'
+import { DOCUMENT_KIND_DISPLAY, EMPTY_TAB_COPY } from '../documents.constants'
+import type { OpenDocument } from '../documents.types'
 import { CoverLetter } from './cover-letter'
 import { ExportButtons } from './export-buttons'
 import { FitReport } from './fit-report'

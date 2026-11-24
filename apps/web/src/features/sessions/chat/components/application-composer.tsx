@@ -2,7 +2,7 @@ import { SESSION_LIMITS } from '@quarry/contracts'
 import { Link } from 'react-router'
 import { Composer, ComposerForm, ComposerInput, ComposerNotice, ComposerSubmit } from '@/components/session/composer'
 import { PATHS } from '@/lib/auth/auth.constants'
-import type { ApplicationComposerState } from '../sessions.types'
+import type { ApplicationComposerState } from '../chat.types'
 
 // Stop replaces Send while a reply is written. Closed when archived or at the message limit, saying why.
 export function ApplicationComposer({

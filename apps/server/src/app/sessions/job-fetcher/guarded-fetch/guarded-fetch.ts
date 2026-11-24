@@ -2,7 +2,7 @@ import http, { type IncomingMessage } from 'node:http';
 import https from 'node:https';
 import { lookup as dnsLookup } from 'node:dns/promises';
 import { isIP, type LookupFunction } from 'node:net';
-import { HTTP_PROTOCOLS } from '../../common/common.constants';
+import { HTTP_PROTOCOLS } from '../../../common/common.constants';
 import { isPublicAddress } from './address.utils';
 import { REDIRECT_STATUSES, USER_AGENT } from './guarded-fetch.constants';
 import type {
