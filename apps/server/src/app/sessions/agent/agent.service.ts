@@ -114,6 +114,8 @@ export class AgentService {
       const history = await this.sessionsService.turnHistory(turn);
       const tools = this.agentToolsFactory.build(context);
 
+      let stopReason: string | undefined;
+
       const result = streamText({
         model: this.anthropic(AGENT_MODEL),
         instructions: await this.systemMessages(turn.userId),
@@ -122,6 +124,9 @@ export class AgentService {
         toolChoice: 'auto',
         stopWhen: isStepCount(AGENT_MAX_STEPS),
         abortSignal: stop.signal,
+        onStepEnd: (step) => {
+          stopReason = step.rawFinishReason;
+        },
         providerOptions: {
           anthropic: {
             effort: AGENT_EFFORT,
@@ -166,9 +171,13 @@ export class AgentService {
 
       // Saved and unlocked before the response ends, so the client's next
       // message never finds this turn still running.
-      settled = this.saveReply(turn, result, toServer, startedAt).finally(() =>
-        this.sessionsService.releaseTurn(turn),
-      );
+      settled = this.saveReply(
+        turn,
+        result,
+        () => stopReason,
+        toServer,
+        startedAt,
+      ).finally(() => this.sessionsService.releaseTurn(turn));
 
       // A client that disconnects only stops its own copy of the stream.
       await pipeUIMessageStreamToResponse({
@@ -221,6 +230,8 @@ export class AgentService {
       totalUsage: PromiseLike<LanguageModelUsage>;
       steps: PromiseLike<unknown[]>;
     },
+    // The provider's own reason the last step ended, such as Anthropic's `refusal`.
+    stopReason: () => string | undefined,
     stream: ReadableStream<UIMessageChunk>,
     startedAt: number,
   ): Promise<TurnFailure | null> {
@@ -243,12 +254,14 @@ export class AgentService {
     );
 
     failed ??= await this.unanswered(turn, reply, finishReason);
+    const providerStopReason = stopReason();
 
     if (failed) {
       this.logger.warn('Agent turn not saved', {
         ...context,
         reason: failed,
         finishReason,
+        stopReason: providerStopReason,
         durationMs: Date.now() - startedAt,
       });
 
@@ -266,6 +279,8 @@ export class AgentService {
 
     this.logger.log('Agent turn finished', {
       ...context,
+      finishReason,
+      stopReason: providerStopReason,
       steps: (await result.steps).length,
       inputTokens: usage.inputTokens,
       outputTokens: usage.outputTokens,
