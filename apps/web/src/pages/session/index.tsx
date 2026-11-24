@@ -1,28 +1,38 @@
 import { SidebarSimpleIcon } from '@phosphor-icons/react/dist/csr/SidebarSimple'
-import { XIcon } from '@phosphor-icons/react/dist/csr/X'
-import { DOCUMENT_KINDS, type DocumentKind, type SessionDetail } from '@quarry/contracts'
+import type { SessionDetail } from '@quarry/contracts'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { PageHeader } from '@/components/app-frame/page-header'
+import { OutputPanelClose } from '@/components/session/output-panel'
+import { SessionChat, SessionChatFooter } from '@/components/session/session-chat'
+import {
+  OutputSheet,
+  OutputSheetClose,
+  OutputSheetHeader,
+  OutputSheetSpacer,
+  OutputSheetTitle,
+  SessionAside,
+  SessionBody,
+  SessionFrame,
+} from '@/components/session/session-layout'
 import { Button } from '@/components/ui/button'
-import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Spinner } from '@/components/ui/spinner'
-import type { ComposerState } from '@/features/sessions/components/composer'
-import { OutputPanel } from '@/features/sessions/components/output-panel'
-import { SessionChat } from '@/features/sessions/components/session-chat'
+import { ApplicationComposer } from '@/features/sessions/components/application-composer'
+import { ApplicationThread } from '@/features/sessions/components/application-thread'
+import { DocumentPanel, DocumentTabs, DocumentTabsFullWidth } from '@/features/sessions/components/document-panel'
 import { SessionMenu } from '@/features/sessions/components/session-menu'
 import { StatusBadge } from '@/features/sessions/components/status-badge'
+import { useOpenDocuments } from '@/features/sessions/hooks/use-open-documents'
 import { useSessionChat } from '@/features/sessions/hooks/use-session-chat'
 import { useSession } from '@/features/sessions/hooks/use-sessions'
-import { latestDocuments } from '@/features/sessions/session-parts'
-import type { DocumentAnnouncement, OpenDocument } from '@/features/sessions/sessions.types'
+import type { ApplicationComposerState, DocumentAnnouncement } from '@/features/sessions/sessions.types'
 import { WIDE_SCREEN_QUERY, useMediaQuery } from '@/hooks/use-media-query'
 import { ApiError } from '@/lib/api/api-fetch'
 import { PATHS } from '@/lib/auth/auth.constants'
 
 const CRUMBS = [{ label: 'Applications', to: PATHS.applications }]
 
-function composerState(session: SessionDetail, chat: ReturnType<typeof useSessionChat>): ComposerState {
+function composerState(session: SessionDetail, chat: ReturnType<typeof useSessionChat>): ApplicationComposerState {
   if (session.archivedAt) return 'archived'
   if (session.userMessageCount >= session.messageLimit) return 'limit'
   if (chat.stopping) return 'stopping'
@@ -33,49 +43,29 @@ function composerState(session: SessionDetail, chat: ReturnType<typeof useSessio
 function SessionView({ session, fresh }: { session: SessionDetail; fresh: boolean }) {
   const chat = useSessionChat(session, fresh)
   const wide = useMediaQuery(WIDE_SCREEN_QUERY)
+  const outputs = useOpenDocuments(chat.messages)
   // Open by default beside the chat on wide screens; elsewhere a card opens it over the page.
   const [panelOpen, setPanelOpen] = useState(true)
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [tab, setTab] = useState<DocumentKind>('fit-score')
-  // A document opened from a card, until a newer one of its kind arrives. Otherwise each tab shows the newest of its kind.
-  const [pinned, setPinned] = useState<{ document: OpenDocument; newestWhenOpened: string | undefined } | null>(null)
-
-  const latest = latestDocuments(chat.messages)
-  const documents: Partial<Record<DocumentKind, OpenDocument>> = Object.fromEntries(
-    DOCUMENT_KINDS.map((kind) => {
-      const keepPinned = pinned?.document.kind === kind && latest[kind]?.id === pinned.newestWhenOpened
-      return [kind, keepPinned ? pinned.document : latest[kind]]
-    }),
-  )
   const showing = wide ? panelOpen : sheetOpen
 
-  function openDocument({ kind, id, name }: DocumentAnnouncement) {
-    setPinned({ document: { kind, id, name }, newestWhenOpened: latest[kind]?.id })
-    setTab(kind)
+  function openDocument(document: DocumentAnnouncement) {
+    outputs.open(document)
     if (wide) setPanelOpen(true)
     else setSheetOpen(true)
   }
 
-  function changeTab(next: DocumentKind) {
-    setTab(next)
-    setPinned(null)
+  const working = chat.busy || chat.waiting
+  const panelProps = {
+    sessionId: session.id,
+    job: session.job,
+    tab: outputs.tab,
+    documents: outputs.documents,
+    onTabChange: outputs.changeTab,
   }
 
-  const working = chat.busy || chat.waiting
-  const panel = (fill: boolean) => (
-    <OutputPanel
-      sessionId={session.id}
-      job={session.job}
-      tab={tab}
-      documents={documents}
-      onTabChange={changeTab}
-      onClose={() => setPanelOpen(false)}
-      fill={fill}
-    />
-  )
-
   return (
-    <div className="flex h-svh flex-col md:h-[calc(100svh-1rem)]">
+    <SessionFrame>
       <PageHeader
         title={session.title}
         sub={session.company ?? undefined}
@@ -92,39 +82,47 @@ function SessionView({ session, fresh }: { session: SessionDetail; fresh: boolea
           </>
         }
       />
-      <div className="flex min-h-0 flex-1">
-        <SessionChat
-          messages={chat.messages}
-          working={working}
-          error={chat.error}
-          composer={composerState(session, chat)}
-          messageLimit={session.messageLimit}
-          unsent={chat.unsent}
-          activeDocumentId={showing ? (documents[tab]?.id ?? null) : null}
-          onOpenDocument={openDocument}
-          onSend={chat.send}
-          onStop={chat.stop}
-          onRetry={chat.retry}
-        />
+      <SessionBody>
+        <SessionChat aria-label="Session">
+          <ApplicationThread
+            messages={chat.messages}
+            working={working}
+            error={chat.error}
+            activeDocumentId={showing ? (outputs.documents[outputs.tab]?.id ?? null) : null}
+            onOpenDocument={openDocument}
+            onRetry={chat.retry}
+          />
+          <SessionChatFooter>
+            <ApplicationComposer
+              key={chat.unsent?.key}
+              state={composerState(session, chat)}
+              messageLimit={session.messageLimit}
+              draft={chat.unsent?.text}
+              onSend={chat.send}
+              onStop={chat.stop}
+            />
+          </SessionChatFooter>
+        </SessionChat>
         {wide && panelOpen ? (
-          <aside aria-label="Output" className="flex w-125 shrink-0 flex-col border-l border-border-soft bg-background texture-plaster 2xl:w-140">
-            {panel(false)}
-          </aside>
+          <SessionAside aria-label="Output">
+            <DocumentPanel {...panelProps}>
+              <DocumentTabs />
+              <OutputPanelClose onClick={() => setPanelOpen(false)} />
+            </DocumentPanel>
+          </SessionAside>
         ) : null}
-      </div>
-      <Sheet open={!wide && sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent side="right" size="document" aria-describedby={undefined} className="bg-background texture-plaster">
-          <header className="flex h-14 shrink-0 items-center gap-1 px-1.5">
-            <Button variant="ghost" size="icon-touch" aria-label="Close" onClick={() => setSheetOpen(false)}>
-              <XIcon aria-hidden="true" />
-            </Button>
-            <SheetTitle className="flex-1 truncate text-center">{session.company ?? session.title}</SheetTitle>
-            <span className="size-11 shrink-0" />
-          </header>
-          {panel(true)}
-        </SheetContent>
-      </Sheet>
-    </div>
+      </SessionBody>
+      <OutputSheet open={!wide && sheetOpen} onOpenChange={setSheetOpen}>
+        <OutputSheetHeader>
+          <OutputSheetClose onClick={() => setSheetOpen(false)} />
+          <OutputSheetTitle>{session.company ?? session.title}</OutputSheetTitle>
+          <OutputSheetSpacer />
+        </OutputSheetHeader>
+        <DocumentPanel {...panelProps}>
+          <DocumentTabsFullWidth />
+        </DocumentPanel>
+      </OutputSheet>
+    </SessionFrame>
   )
 }
 
