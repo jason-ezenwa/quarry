@@ -1,8 +1,7 @@
 import type { UIMessage } from 'ai'
-import { useEffect, useRef } from 'react'
 import { AgentMessage, AgentTurn, MessageMarkdown, UserMessage } from '@/components/session/message'
 import { OutputCardList } from '@/components/session/output-card'
-import { SessionThread, SessionThreadEnd } from '@/components/session/session-chat'
+import { SessionThread, SessionThreadFollow } from '@/components/session/session-chat'
 import { Button } from '@/components/ui/button'
 import { Callout, CalloutActions, CalloutContent, CalloutTitle } from '@/components/ui/callout'
 import { messageBlocks, messageDocuments, messageText } from '../../session-parts'
@@ -59,6 +58,7 @@ function TurnError({ error, onRetry }: { error: ChatErrorCode; onRetry: () => vo
 }
 
 // The conversation. Each reply shows its tool steps, its text and a card for every document it saved.
+// Sending a message takes the reader back to the bottom.
 export function ApplicationThread({
   messages,
   working,
@@ -73,12 +73,8 @@ export function ApplicationThread({
   error: ChatErrorCode | null
   onRetry: () => void
 }) {
-  const end = useRef<HTMLDivElement>(null)
   const waitingForReply = working && messages.at(-1)?.role !== 'assistant'
-
-  useEffect(() => {
-    end.current?.scrollIntoView({ block: 'end' })
-  }, [messages, waitingForReply])
+  const sentCount = messages.filter((message) => message.role === 'user').length
 
   return (
     <SessionThread>
@@ -97,7 +93,7 @@ export function ApplicationThread({
       )}
       {waitingForReply ? <AgentSteps steps={[]} working /> : null}
       {error ? <TurnError error={error} onRetry={onRetry} /> : null}
-      <SessionThreadEnd ref={end} />
+      <SessionThreadFollow value={sentCount} />
     </SessionThread>
   )
 }

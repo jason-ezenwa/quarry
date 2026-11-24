@@ -326,9 +326,8 @@ export class SessionsService {
     await new this.messageModel(stored).save();
   }
 
-  // Takes back the message a turn answers, uncounting it, unless it is the
-  // session's first message. Only while the turn holds the lock and nothing
-  // answers the message. True when it was taken back.
+  // Takes back and uncounts the message a turn holding the lock answers,
+  // unless it is the session's first. True when it was taken back.
   async withdrawUserMessage({
     sessionId,
     messageId,

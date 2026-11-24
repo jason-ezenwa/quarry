@@ -106,7 +106,7 @@ export function signInAs({
 // Renders the app's real route tree at `path`, loaders included.
 // `state`: router state the page opens with, as a navigation inside the app would pass it.
 export function renderRoute(path: string, state?: unknown) {
-  const router = createMemoryRouter(routes, { initialEntries: [{ pathname: path, state }] })
+  const router = createMemoryRouter(routes, { initialEntries: [state === undefined ? path : { pathname: path, state }] })
 
   render(
     <QueryClientProvider client={queryClient}>

@@ -43,9 +43,8 @@ import { profileSystemMessage } from './agent.utils';
 
 const generateMessageId = createIdGenerator({ prefix: 'msg', size: 16 });
 
-// Holds the end of the client's stream until the reply is saved or dropped.
-// A drop the stream doesn't already show ends it with an error, so the client
-// shows the turn as failed rather than as a blank reply.
+// Holds the end of the client's stream until the reply is saved or dropped. A
+// drop the stream doesn't already show ends it with an error, not a blank reply.
 function closeAfter(
   settled: Promise<TurnFailure | null>,
 ): TransformStream<UIMessageChunk, UIMessageChunk> {
@@ -210,9 +209,8 @@ export class AgentService {
     await running.done;
   }
 
-  // Saves the reply, or drops it and says why. A failed or empty reply is
-  // dropped whole: it may hold unsigned thinking that breaks later requests,
-  // and a blank reply reads as a reply. Documents its tools saved stay.
+  // Saves the reply, or drops it whole and says why: a failed one may hold
+  // unsigned thinking that breaks later requests. Saved documents stay.
   private async saveReply(
     turn: ClaimedTurn,
     result: {
@@ -273,9 +271,8 @@ export class AgentService {
     return null;
   }
 
-  // Why a finished reply can't be kept, if it can't. A declined message is
-  // taken back, since every later request would carry it and be declined
-  // too; the first message, stored with the session, can't be.
+  // Why a finished reply can't be kept, if so. A declined message is taken
+  // back (but never the first), or every later request would be declined too.
   private async unanswered(
     turn: ClaimedTurn,
     reply: UIMessage | null,

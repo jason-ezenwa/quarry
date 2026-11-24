@@ -16,6 +16,7 @@ globalThis.ResizeObserver ??= class {
 }
 
 Element.prototype.scrollIntoView ??= function () {}
+Element.prototype.scrollTo ??= function () {}
 
 // jsdom logs "not implemented" for scrolling, which ScrollRestoration does.
 window.scrollTo = () => {}

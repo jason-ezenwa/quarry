@@ -10,13 +10,15 @@ import { UsageMeter } from '@/features/sessions/components/usage-meter'
 import { PATHS } from '@/lib/auth/auth.constants'
 import { AccountMenu } from './account-menu'
 import { NavItem } from './nav-item'
+import { SidebarToggle } from './sidebar-toggle'
 
-// The sidebar on larger screens, and the menu sheet on phones.
-export function AppSidebar() {
+// The sidebar on larger screens, and the menu sheet on phones. `inSheet`: shown as the phone menu, which has no hide button.
+export function AppSidebar({ inSheet = false }: { inSheet?: boolean }) {
   return (
     <div className="flex h-full flex-col gap-4.5 px-2.5 py-3.5">
-      <div className="flex h-8 items-center px-1.5">
+      <div className="flex h-8 items-center justify-between pl-1.5">
         <Wordmark />
+        {inSheet ? null : <SidebarToggle />}
       </div>
       <Button asChild align="start" className="w-full">
         <Link to={PATHS.home}>
