@@ -1,4 +1,13 @@
-import type { Resume } from '@quarry/contracts'
+import {
+  contactDetails,
+  formatDateRange,
+  formatPartialDate,
+  linkText,
+  RESUME_SEPARATOR,
+  type DocumentHeader,
+  type Resume,
+} from '@quarry/contracts'
+import type { ComponentProps, ReactNode } from 'react'
 import {
   ResumeBullet,
   ResumeBullets,
@@ -15,10 +24,10 @@ import {
   ResumeSkill,
   ResumeSkillList,
   ResumeSummary,
-} from '@/components/resume/resume'
-import { formatDateRange, formatPartialDate } from '../resume-format'
+} from './resume'
+import type { ResumeVariant } from './resume.types'
 
-function EntryTop({ heading, meta }: { heading: React.ReactNode; meta?: string }) {
+function EntryTop({ heading, meta }: { heading: ReactNode; meta?: string }) {
   return (
     <div className="flex items-baseline justify-between gap-2">
       <ResumeEntryHeading>{heading}</ResumeEntryHeading>
@@ -39,29 +48,41 @@ function Bullets({ items }: { items: string[] }) {
   )
 }
 
-// The read variant: the primary resume as a document sheet. Empty sections are left out.
-export function PrimaryResume({ resume }: { resume: Resume }) {
-  const { contact } = resume
-  const contactParts = [contact.location, contact.email, contact.phone].filter(Boolean)
+// The name and contact line at the top of a resume, and of a cover letter, as its downloads print it.
+export function ResumeDocumentHeader({ header }: { header: DocumentHeader }) {
+  const { name, contact } = header
+  const contactParts = contactDetails(contact)
 
   return (
-    <ResumeRoot variant="sheet" aria-label="Your resume">
-      <ResumeHeader>
-        <ResumeName>{resume.name}</ResumeName>
-        {contactParts.length > 0 || contact.links.length > 0 ? (
-          <ResumeContact>
-            {contactParts.map((part, index) => (
-              <span key={index}>{part}</span>
-            ))}
-            {contact.links.map((link, index) => (
-              <a key={index} href={link.url} target="_blank" rel="noreferrer" className="underline underline-offset-3">
-                {link.label}
-              </a>
-            ))}
-          </ResumeContact>
-        ) : null}
-      </ResumeHeader>
-      {resume.summary ? <ResumeSummary>{resume.summary}</ResumeSummary> : null}
+    <ResumeHeader>
+      <ResumeName>{name}</ResumeName>
+      {contactParts.length > 0 || contact.links.length > 0 ? (
+        <ResumeContact>
+          {contactParts.map((part, index) => (
+            <span key={index}>{part}</span>
+          ))}
+          {contact.links.map((link, index) => (
+            <a key={index} href={link.url} target="_blank" rel="noreferrer" className="underline underline-offset-3">
+              {linkText(link.url)}
+            </a>
+          ))}
+        </ResumeContact>
+      ) : null}
+    </ResumeHeader>
+  )
+}
+
+type ResumeDocumentProps = Omit<ComponentProps<typeof ResumeRoot>, 'variant' | 'children'> & {
+  resume: Resume
+  variant?: Exclude<ResumeVariant, 'editor'>
+}
+
+// A resume to read, as a page of its own or set inside another sheet. Empty sections are left out.
+export function ResumeDocument({ resume, variant = 'sheet', ...props }: ResumeDocumentProps) {
+  return (
+    <ResumeRoot variant={variant} {...props}>
+      <ResumeDocumentHeader header={resume} />
+      {resume.summary?.trim() ? <ResumeSummary>{resume.summary}</ResumeSummary> : null}
       {resume.experience.length > 0 ? (
         <ResumeSection>
           <ResumeSectionTitle>Experience</ResumeSectionTitle>
@@ -74,7 +95,7 @@ export function PrimaryResume({ resume }: { resume: Resume }) {
                     heading={
                       <>
                         <span>{role.company}</span>
-                        {role.location ? <span>{`  ·  ${role.location}`}</span> : null}
+                        {role.location ? <span>{`${RESUME_SEPARATOR}${role.location}`}</span> : null}
                       </>
                     }
                     meta={formatDateRange(role.startDate, role.endDate)}
@@ -100,7 +121,7 @@ export function PrimaryResume({ resume }: { resume: Resume }) {
                     heading={
                       <>
                         <span>{school.school}</span>
-                        {qualification ? <span>{`  ·  ${qualification}`}</span> : null}
+                        {qualification ? <span>{`${RESUME_SEPARATOR}${qualification}`}</span> : null}
                       </>
                     }
                     meta={school.endDate ? formatPartialDate(school.endDate) : undefined}
@@ -132,7 +153,7 @@ export function PrimaryResume({ resume }: { resume: Resume }) {
                   heading={
                     <>
                       <span>{project.name}</span>
-                      {project.description ? <span>{`  ·  ${project.description}`}</span> : null}
+                      {project.description ? <span>{`${RESUME_SEPARATOR}${project.description}`}</span> : null}
                     </>
                   }
                 />
@@ -157,7 +178,7 @@ export function PrimaryResume({ resume }: { resume: Resume }) {
                   heading={
                     <>
                       <span>{certification.name}</span>
-                      {certification.issuer ? <span>{`  ·  ${certification.issuer}`}</span> : null}
+                      {certification.issuer ? <span>{`${RESUME_SEPARATOR}${certification.issuer}`}</span> : null}
                     </>
                   }
                   meta={certification.date ? formatPartialDate(certification.date) : undefined}

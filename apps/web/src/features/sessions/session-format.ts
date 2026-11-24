@@ -20,3 +20,8 @@ export function sourceLabel(source: SessionSummary['source']): string | null {
 export function jobLine(parts: Array<string | null | undefined>): string {
   return parts.filter((part): part is string => Boolean(part)).join('  ·  ')
 }
+
+// The download name the server gives an export: `attachment; filename="ada-obi-resume.pdf"`.
+export function attachmentFileName(disposition: string | null): string | null {
+  return disposition?.match(/filename="([^"]+)"/)?.[1] ?? null
+}

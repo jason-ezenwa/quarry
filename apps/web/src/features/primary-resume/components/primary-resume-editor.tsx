@@ -1,4 +1,4 @@
-import type { Resume } from '@quarry/contracts'
+import { formatDateRange, RESUME_SEPARATOR, type Resume } from '@quarry/contracts'
 import { XIcon } from '@phosphor-icons/react/dist/csr/X'
 import {
   ResumeEditorAddEntry,
@@ -15,7 +15,6 @@ import { useResumeEditor } from '@/components/resume/resume-editor-context'
 import { ResumeHeader, ResumeRoot, ResumeSection, ResumeSectionTitle, ResumeSummary } from '@/components/resume/resume'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { formatDateRange } from '../resume-format'
 import type { PrimaryResumeEditorProps } from '../primary-resume.types'
 
 const NEW_ROLE: Resume['experience'][number] = { title: '', company: '', bullets: [] }
@@ -83,7 +82,7 @@ function ExperienceSection() {
               key={`${meta.revision}-${index}`}
               path={path}
               title={role.title}
-              meta={[role.company, formatDateRange(role.startDate, role.endDate)].filter(Boolean).join('  ·  ')}
+              meta={[role.company, formatDateRange(role.startDate, role.endDate)].filter(Boolean).join(RESUME_SEPARATOR)}
               defaultOpen={index === 0 || !role.title}
             >
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

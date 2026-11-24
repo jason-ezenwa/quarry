@@ -36,6 +36,8 @@ export function configureApp(app: INestApplication): void {
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    // The web app reads the download name of an export from it.
+    exposedHeaders: ['Content-Disposition'],
   });
 
   app.setGlobalPrefix('/api');

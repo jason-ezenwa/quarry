@@ -3,7 +3,8 @@ import { cn } from "@/lib/utils"
 import { EDITOR_CARD } from "./resume.constants"
 import type { ResumeVariant } from "./resume.types"
 
-// sheet renders the resume as a printed page; editor lays the same parts out as form sections.
+// sheet renders the resume as a printed page, inset as that page inside another sheet;
+// editor lays the same parts out as form sections.
 function ResumeRoot({
   className,
   variant,
@@ -13,9 +14,12 @@ function ResumeRoot({
     <article
       data-slot="resume"
       data-variant={variant}
+      // Both read variants share the page's type and rules.
+      data-read={variant === "editor" ? undefined : ""}
       className={cn(
         "group/resume flex w-full flex-col text-foreground",
         "data-[variant=sheet]:max-w-160 data-[variant=sheet]:gap-7.5 data-[variant=sheet]:rounded-xs data-[variant=sheet]:bg-sheet data-[variant=sheet]:px-5.5 data-[variant=sheet]:py-6.5 data-[variant=sheet]:shadow-sheet sm:data-[variant=sheet]:px-13 sm:data-[variant=sheet]:py-12",
+        "data-[variant=inset]:gap-6",
         "data-[variant=editor]:gap-4",
         className
       )}
@@ -29,7 +33,7 @@ function ResumeHeader({ className, ...props }: React.ComponentProps<"header">) {
     <header
       data-slot="resume-header"
       className={cn(
-        "flex flex-col gap-1.25 group-data-[variant=sheet]/resume:border-b group-data-[variant=sheet]/resume:border-border-soft group-data-[variant=sheet]/resume:pb-2.5",
+        "flex flex-col gap-1.25 group-data-read/resume:border-b group-data-read/resume:border-border-soft group-data-read/resume:pb-2.5",
         "group-data-[variant=editor]/resume:gap-4",
         EDITOR_CARD,
         className
@@ -61,7 +65,7 @@ function ResumeSummary({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="resume-summary"
       className={cn(
-        "group-data-[variant=sheet]/resume:text-doc-body",
+        "group-data-read/resume:text-doc-body",
         "group-data-[variant=editor]/resume:flex group-data-[variant=editor]/resume:flex-col group-data-[variant=editor]/resume:gap-3.5",
         EDITOR_CARD,
         className
@@ -92,7 +96,7 @@ function ResumeSectionTitle({ className, ...props }: React.ComponentProps<"h3">)
       data-slot="resume-section-title"
       className={cn(
         // On the sheet the title sits on a hairline, in the same colour as the rule under the name.
-        "group-data-[variant=sheet]/resume:border-b group-data-[variant=sheet]/resume:border-border-soft group-data-[variant=sheet]/resume:pb-[3.75px] group-data-[variant=sheet]/resume:text-doc-caps group-data-[variant=sheet]/resume:text-muted-foreground",
+        "group-data-read/resume:border-b group-data-read/resume:border-border-soft group-data-read/resume:pb-[3.75px] group-data-read/resume:text-doc-caps group-data-read/resume:text-muted-foreground",
         "group-data-[variant=editor]/resume:text-ui-strong",
         className
       )}

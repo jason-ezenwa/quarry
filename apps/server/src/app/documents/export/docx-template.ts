@@ -87,21 +87,37 @@ function entry({ title, dates, subtitle, details }: ExportEntry): Paragraph[] {
 }
 
 function section({ heading, paragraphs, entries }: ExportSection): Paragraph[] {
-  return [
-    new Paragraph({
-      spacing: { before: twips(gap.section) },
-      keepNext: true,
-      children: [
-        new TextRun({
-          text: heading.toUpperCase(),
-          bold: true,
-          size: halfPoints(fontSize.heading),
-          color: colors.muted,
-          characterSpacing: 20,
+  const title = heading
+    ? [
+        new Paragraph({
+          spacing: { before: twips(gap.section) },
+          keepNext: true,
+          children: [
+            new TextRun({
+              text: heading.toUpperCase(),
+              bold: true,
+              size: halfPoints(fontSize.heading),
+              color: colors.muted,
+              characterSpacing: 20,
+            }),
+          ],
         }),
-      ],
-    }),
-    ...paragraphs.map((paragraph) => new Paragraph({ text: paragraph })),
+      ]
+    : [];
+
+  return [
+    ...title,
+    ...paragraphs.map(
+      (paragraph, index) =>
+        new Paragraph({
+          // Without a heading, the gap above the section goes on its first line.
+          spacing:
+            !heading && index === 0
+              ? { before: twips(gap.section) }
+              : undefined,
+          text: paragraph,
+        }),
+    ),
     ...entries.flatMap(entry),
   ];
 }

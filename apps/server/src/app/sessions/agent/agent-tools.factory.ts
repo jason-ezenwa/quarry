@@ -53,7 +53,7 @@ export class AgentToolsFactory {
     return {
       get_job_description: tool({
         description:
-          "Reads a job post from its link. Returns the job's text, and its title, company and location when the site gives them. On failure, returns why, so you can ask the user to paste the description.",
+          "Reads a job post from a link the user gave. Never call it for a pasted description or without a link. Returns the job's text, and its title, company and location when the site gives them. On failure, returns why, so you can ask the user to paste the description.",
         inputSchema: z.object({
           url: z.string().describe('The job post link the user gave'),
         }),
