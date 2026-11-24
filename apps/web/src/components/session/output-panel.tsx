@@ -74,13 +74,13 @@ function OutputPanelContent({ className, ...props }: ComponentProps<typeof TabsC
   return <TabsContent data-slot="output-panel-content" className={cn('min-h-0 overflow-y-auto px-3 pt-1 pb-7 md:px-7', className)} {...props} />
 }
 
-// The output drawn as a page, centred in its tab.
+// The output drawn as a page that fills its tab, so it grows with the panel.
 function OutputPanelPage({ className, children, ...props }: ComponentProps<'div'>) {
   return (
     <div className="flex justify-center">
       <div
         data-slot="output-panel-page"
-        className={cn('w-full max-w-117.5 rounded-xs bg-sheet px-5.5 py-6.5 shadow-sheet md:px-9.5 md:py-9', className)}
+        className={cn('w-full rounded-xs bg-sheet px-5.5 py-6.5 shadow-sheet md:px-9.5 md:py-9', className)}
         {...props}
       >
         {children}
