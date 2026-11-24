@@ -60,10 +60,13 @@ export function ResumeDocumentHeader({ header }: { header: DocumentHeader }) {
           {contactParts.map((part, index) => (
             <span key={index}>{part}</span>
           ))}
+          {/* Wrapped, so the separator after each link sits outside it and isn't underlined. */}
           {contact.links.map((link, index) => (
-            <a key={index} href={link.url} target="_blank" rel="noreferrer" className="underline underline-offset-3">
-              {linkText(link.url)}
-            </a>
+            <span key={index}>
+              <a href={link.url} target="_blank" rel="noreferrer" className="underline underline-offset-3">
+                {linkText(link.url)}
+              </a>
+            </span>
           ))}
         </ResumeContact>
       ) : null}
