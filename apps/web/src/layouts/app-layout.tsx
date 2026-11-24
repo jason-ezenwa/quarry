@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { Outlet, useLocation, useMatch } from 'react-router'
+import { Outlet, useLocation } from 'react-router'
 import { AppFrameContext } from '@/components/app-frame/app-frame-context'
 import type { AppFrameContextValue } from '@/components/app-frame/app-frame.types'
 import { AppSidebar } from '@/components/app-frame/app-sidebar'
 import { useSidebarOpen } from '@/components/app-frame/use-sidebar-open'
-import { PATHS } from '@/lib/auth/auth.constants'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 
@@ -15,18 +14,7 @@ export function AppLayout() {
   // The page the menu was opened on. Any navigation, back gesture included, closes it.
   const [menuOpenOn, setMenuOpenOn] = useState<string | null>(null)
   const menuOpen = menuOpenOn === pathname
-  const [rememberedOpen, setRememberedOpen] = useSidebarOpen()
-  // A session starts with the sidebar hidden, to give the chat and its panel the room. Opening it
-  // there lasts until you leave that session and isn't remembered.
-  const onSession = useMatch(PATHS.session) !== null
-  const [openOnSession, setOpenOnSession] = useState<string | null>(null)
-  const sidebarOpen = onSession ? openOnSession === pathname : rememberedOpen
-
-  const setSidebarOpen = (open: boolean) => {
-    if (onSession) setOpenOnSession(open ? pathname : null)
-    else setRememberedOpen(open)
-  }
-
+  const [sidebarOpen, setSidebarOpen] = useSidebarOpen()
   const frame: AppFrameContextValue = { state: { sidebarOpen }, actions: { setSidebarOpen } }
 
   return (
