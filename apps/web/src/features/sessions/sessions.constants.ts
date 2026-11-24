@@ -5,7 +5,8 @@ import { GaugeIcon } from '@phosphor-icons/react/dist/csr/Gauge'
 import { GearIcon } from '@phosphor-icons/react/dist/csr/Gear'
 import { GlobeIcon } from '@phosphor-icons/react/dist/csr/Globe'
 import { PencilSimpleIcon } from '@phosphor-icons/react/dist/csr/PencilSimple'
-import type { BadgeVariant, ChatErrorCode, IconComponent, TurnErrorCode } from './sessions.types'
+import type { IconComponent } from '@/components/session/session.types'
+import type { BadgeVariant, ChatErrorCode, TurnErrorCode } from './sessions.types'
 
 // The only icon list the web app keeps, one per icon a tool may name. A stored
 // part naming an icon not listed here falls back to the gear.

@@ -1,10 +1,8 @@
 import type { DocumentKind, SavedDocumentRef, SessionErrorCode } from '@quarry/contracts'
 import type { VariantProps } from 'class-variance-authority'
-import type { ComponentType, SVGProps } from 'react'
 import type { badgeVariants } from '@/components/ui/badge'
+import type { ComposerStatus, IconComponent } from '@/components/session/session.types'
 import type { CHAT_ERRORS } from './sessions.constants'
-
-export type IconComponent = ComponentType<SVGProps<SVGSVGElement>>
 
 export type BadgeVariant = NonNullable<VariantProps<typeof badgeVariants>['variant']>
 
@@ -35,3 +33,6 @@ export type ChatErrorCode = keyof typeof CHAT_ERRORS
 
 // A message the server refused, put back in the composer.
 export type UnsentDraft = { text: string; key: string }
+
+// The composer's state, with why it is closed: archived, or at the message limit.
+export type ApplicationComposerState = Exclude<ComposerStatus, 'closed'> | 'archived' | 'limit'
