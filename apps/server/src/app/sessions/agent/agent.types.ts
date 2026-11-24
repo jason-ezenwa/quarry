@@ -6,11 +6,11 @@ export type RunningTurn = {
   done: Promise<void>;
 };
 
-// Why a reply wasn't saved. `declined`: Claude's safety checks declined the
-// request; `declined-withdrawn`: and the message was taken back.
+// Why a reply wasn't saved. `declined-withdrawn`: Claude's safety checks
+// declined the message and it was taken back; `declined-kept`: it was not.
 export type TurnFailure =
   | 'stream-error'
   | 'stopped'
-  | 'declined'
+  | 'declined-kept'
   | 'declined-withdrawn'
   | 'empty-reply';

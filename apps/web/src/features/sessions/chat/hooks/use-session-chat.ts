@@ -3,13 +3,13 @@ import { isOneOf, SESSION_ERROR_CODES, type SessionDetail } from '@quarry/contra
 import { useQueryClient } from '@tanstack/react-query'
 import { APICallError, DefaultChatTransport, type UIMessage } from 'ai'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router'
 import { asUIMessages, hasUnansweredMessage, messageBlocks, messageText } from '../../session-parts'
 import { sessionQueryOptions, stopTurn, turnsUrl } from '../../sessions-api'
 import { SESSION_QUERY_KEYS } from '../../sessions.constants'
 import { REFUSED_TURN_CODES } from '../chat.constants'
-import type { ChatErrorCode, SessionPageState, TurnErrorCode, UnsentDraft } from '../chat.types'
+import type { ChatErrorCode, TurnErrorCode, UnsentDraft } from '../chat.types'
 import { useRefreshSessionLists } from '../../hooks/use-sessions'
+import { useJustStarted } from './use-just-started'
 
 // A refused request carries its code in the response; a turn that failed while streaming, as the error's text.
 function errorCode(error: Error | undefined): TurnErrorCode | null {
@@ -30,6 +30,7 @@ function errorCode(error: Error | undefined): TurnErrorCode | null {
 function visibleError(code: TurnErrorCode | null, drafting: boolean): ChatErrorCode | null {
   if (code === 'turn-running') return drafting ? null : 'not-sent'
   if (code === 'primary-resume-not-ready') return 'resume-not-ready'
+  if (code === 'first-message-declined') return 'declined-first'
   return code === 'failed' ? code : null
 }
 
@@ -80,10 +81,9 @@ export function useSessionChat(session: SessionDetail, fresh: boolean) {
 
         // The server took the declined message back, so the chat drops it and its empty reply.
         if (code === 'reply-declined') {
-          const index = created.messages.findLastIndex((message) => message.role === 'user')
-          const declined = created.messages[index]
+          const declined = created.messages.findLast((message) => message.role === 'user')
           if (!declined) return
-          created.messages = created.messages.slice(0, index)
+          created.messages = created.messages.slice(0, created.messages.indexOf(declined))
           setUnsent({ text: messageText(declined), key: declined.id, declined: true })
           return
         }
@@ -116,9 +116,7 @@ export function useSessionChat(session: SessionDetail, fresh: boolean) {
 
   // Only a session just started from Home answers its first message on open. Anything else left
   // unanswered, such as a stopped reply after a reload, waits for Retry.
-  const location = useLocation()
-  const navigate = useNavigate()
-  const justStarted = (location.state as SessionPageState | null)?.startTurn === true
+  const [justStarted, forgetJustStarted] = useJustStarted()
 
   // The message the page answers itself on open, if any; undefined until the first fresh render. Set during render, as React allows.
   const [autoStartId, setAutoStartId] = useState<string | null | undefined>(undefined)
@@ -134,9 +132,10 @@ export function useSessionChat(session: SessionDetail, fresh: boolean) {
   useEffect(() => {
     if (checked.current || !fresh) return
     checked.current = true
-    if (justStarted) void navigate(location.pathname, { replace: true, state: null })
-    if (justStarted && canStart && hasUnansweredMessage(messages)) void regenerate()
-  }, [fresh, canStart, messages, regenerate, justStarted, navigate, location.pathname])
+    if (!justStarted) return
+    forgetJustStarted()
+    if (canStart && hasUnansweredMessage(messages)) void regenerate()
+  }, [fresh, canStart, messages, regenerate, justStarted, forgetJustStarted])
 
   // Takes the stored history when it's at least as far along as the chat, so
   // an idle chat never loses a reply it already shows.

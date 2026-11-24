@@ -998,10 +998,31 @@ describe('Sessions (integration)', () => {
 
       const response = await turn(cookie, id);
 
-      expect(response.text).toContain('Something went wrong');
-      expect(response.text).not.toContain('reply-declined');
+      expect(response.text).toContain('"errorText":"first-message-declined"');
       expect(await findMessages(id)).toHaveLength(1);
       expect((await findSession(id))?.turnStartedAt).toBeNull();
+    });
+
+    it('keeps a reply declined after a tool step, so history matches what the tool saved', async () => {
+      const { cookie } = await onboardedUser();
+      const id = await startPasted(cookie);
+      fakeAnthropicApi.reply(textReply('Hello.'));
+      await turn(cookie, id);
+
+      const [toolStep] = fitReportReplies();
+      fakeAnthropicApi.reply(toolStep, declined);
+      const response = await turn(cookie, id, {
+        message: { id: 'msg-fit', text: 'Score my fit' },
+      });
+
+      expect(response.text).not.toContain('"type":"error"');
+      const messages = await findMessages(id);
+      expect(messages.map(({ uiId }) => uiId)).toContain('msg-fit');
+      expect(messages).toHaveLength(4);
+      expect(await findSession(id)).toMatchObject({
+        userMessageCount: 2,
+        turnStartedAt: null,
+      });
     });
 
     it('stores and counts a resent message only once', async () => {

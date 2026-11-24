@@ -17,6 +17,7 @@ export const CHAT_ERRORS = {
   stopped: 'You stopped this reply.',
   unanswered: "This message hasn't been answered.",
   declined: "Wren couldn't answer that message, so it's back in the box. Try rewording it.",
+  'declined-first': "Wren couldn't work on this job. Start a new application and word it differently.",
 } as const
 
 // Errors the chat offers a Retry for.

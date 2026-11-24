@@ -13,6 +13,7 @@ import {
   readUIMessageStream,
   streamText,
   toUIMessageStream,
+  type FinishReason,
   type SystemModelMessage,
   type LanguageModelUsage,
   type UIMessage,
@@ -34,9 +35,9 @@ import {
   AGENT_MODEL,
   AGENT_SYSTEM_PROMPT,
   CACHED,
-  REPLY_FAILED_TEXT,
   COMPACTION_INSTRUCTIONS,
   COMPACTION_TRIGGER_TOKENS,
+  REPLY_FAILED_TEXT,
 } from './agent.constants';
 import type { RunningTurn, TurnFailure } from './agent.types';
 import { profileSystemMessage } from './agent.utils';
@@ -52,10 +53,13 @@ function closeAfter(
     async flush(controller) {
       const failure = await settled.catch(() => 'empty-reply' as const);
 
-      if (failure === 'declined-withdrawn') {
-        const errorText: SessionErrorCode = 'reply-declined';
+      if (failure === 'declined-withdrawn' || failure === 'declined-kept') {
+        const errorText: SessionErrorCode =
+          failure === 'declined-kept'
+            ? 'first-message-declined'
+            : 'reply-declined';
         controller.enqueue({ type: 'error', errorText });
-      } else if (failure === 'declined' || failure === 'empty-reply') {
+      } else if (failure === 'empty-reply') {
         controller.enqueue({ type: 'error', errorText: REPLY_FAILED_TEXT });
       }
     },
@@ -222,7 +226,7 @@ export class AgentService {
   ): Promise<TurnFailure | null> {
     const context = { userId: turn.userId, sessionId: turn.sessionId };
     let failed: TurnFailure | null = null;
-    let finishReason: string | undefined;
+    let finishReason: FinishReason | undefined;
 
     const reply = await this.readReply(
       stream.pipeThrough(
@@ -240,7 +244,7 @@ export class AgentService {
 
     failed ??= await this.unanswered(turn, reply, finishReason);
 
-    if (failed || !reply) {
+    if (failed) {
       this.logger.warn('Agent turn not saved', {
         ...context,
         reason: failed,
@@ -250,6 +254,8 @@ export class AgentService {
 
       return failed;
     }
+
+    if (!reply) return 'empty-reply';
 
     const usage = this.toUsage(await result.totalUsage);
     await this.sessionsService.appendAssistantMessage(turn, reply, usage);
@@ -271,17 +277,19 @@ export class AgentService {
     return null;
   }
 
-  // Why a finished reply can't be kept, if so. A declined message is taken
-  // back (but never the first), or every later request would be declined too.
+  // Why a finished reply can't be kept. A declined message is taken back (not the
+  // first, nor one whose tools already saved something) or later turns fail too.
   private async unanswered(
     turn: ClaimedTurn,
     reply: UIMessage | null,
-    finishReason: string | undefined,
+    finishReason: FinishReason | undefined,
   ): Promise<TurnFailure | null> {
-    if (finishReason === 'content-filter') {
+    const ranTools = reply?.parts.some(isToolUIPart) ?? false;
+
+    if (finishReason === 'content-filter' && !ranTools) {
       return (await this.sessionsService.withdrawUserMessage(turn))
         ? 'declined-withdrawn'
-        : 'declined';
+        : 'declined-kept';
     }
 
     return reply?.parts.some(isAnswerPart) ? null : 'empty-reply';
