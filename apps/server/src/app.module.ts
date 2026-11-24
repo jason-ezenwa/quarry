@@ -3,8 +3,10 @@ import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from '@thallesp/nestjs-better-auth';
+import { DocumentsModule } from './app/documents/documents.module';
 import { ProfileModule } from './app/profile/profile.module';
 import { ResumeModule } from './app/resume/resume.module';
+import { SessionsModule } from './app/sessions/sessions.module';
 import { StorageModule } from './app/storage/storage.module';
 import { THROTTLER_OPTIONS } from './app/throttle/throttle.constants';
 import { UserModule } from './app/user/user.module';
@@ -23,6 +25,8 @@ import { DATABASE_NAME, getMongoUri } from './lib/database';
     StorageModule,
     ProfileModule,
     ResumeModule,
+    DocumentsModule,
+    SessionsModule,
   ],
   controllers: [AppController],
   providers: [AuthIndexesProvider],

@@ -8,6 +8,8 @@ export type TestAppOptions = {
   // Extra test controllers, plus the modules that export what they need.
   controllers?: Type[];
   imports?: Type[];
+  // Providers to replace, such as the job fetcher's DNS lookup.
+  overrides?: { provide: unknown; useValue: unknown }[];
 };
 
 // The full AppModule as main.ts configures it, on the in-memory database, with
@@ -15,15 +17,21 @@ export type TestAppOptions = {
 export async function createTestApp({
   controllers = [],
   imports = [],
+  overrides = [],
 }: TestAppOptions = {}): Promise<INestApplication> {
-  const moduleRef = await Test.createTestingModule({
+  const builder = Test.createTestingModule({
     imports: [AppModule, ...imports],
     controllers,
   })
     // Retries run back to back, so failure tests don't wait out the backoff.
     .overrideProvider(PARSE_RETRY_DELAYS_MS)
-    .useValue([0, 0])
-    .compile();
+    .useValue([0, 0]);
+
+  for (const { provide, useValue } of overrides) {
+    builder.overrideProvider(provide).useValue(useValue);
+  }
+
+  const moduleRef = await builder.compile();
 
   const app = moduleRef.createNestApplication({ bodyParser: false });
   configureApp(app);
