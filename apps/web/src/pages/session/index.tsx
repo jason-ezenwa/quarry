@@ -37,17 +37,20 @@ function SessionView({ session, fresh }: { session: SessionDetail; fresh: boolea
   const [panelOpen, setPanelOpen] = useState(true)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [tab, setTab] = useState<DocumentKind>('fit-score')
-  // A document opened from a card. Without one, each tab shows the newest of its kind.
-  const [pinned, setPinned] = useState<OpenDocument | null>(null)
+  // A document opened from a card, until a newer one of its kind arrives. Otherwise each tab shows the newest of its kind.
+  const [pinned, setPinned] = useState<{ document: OpenDocument; newestWhenOpened: string | undefined } | null>(null)
 
   const latest = latestDocuments(chat.messages)
   const documents: Partial<Record<DocumentKind, OpenDocument>> = Object.fromEntries(
-    DOCUMENT_KINDS.map((kind) => [kind, pinned?.kind === kind ? pinned : latest[kind]]),
+    DOCUMENT_KINDS.map((kind) => {
+      const keepPinned = pinned?.document.kind === kind && latest[kind]?.id === pinned.newestWhenOpened
+      return [kind, keepPinned ? pinned.document : latest[kind]]
+    }),
   )
   const showing = wide ? panelOpen : sheetOpen
 
-  function openDocument({ kind, id }: DocumentAnnouncement) {
-    setPinned({ kind, id })
+  function openDocument({ kind, id, name }: DocumentAnnouncement) {
+    setPinned({ document: { kind, id, name }, newestWhenOpened: latest[kind]?.id })
     setTab(kind)
     if (wide) setPanelOpen(true)
     else setSheetOpen(true)

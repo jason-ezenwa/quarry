@@ -50,6 +50,8 @@ export const EMPTY_TAB_COPY: Record<DocumentKind, string> = {
   'cover-letter': 'Ask for a cover letter and it shows here.',
 }
 
+export const EXPORT_FAILED_MESSAGE = "We couldn't download it. Try again."
+
 export const SESSION_STATUS_DISPLAY: Record<SessionStatus, { label: string; variant: BadgeVariant }> = {
   drafting: { label: 'Drafting', variant: 'drafting' },
   ready: { label: 'Ready', variant: 'ready' },

@@ -181,8 +181,8 @@ async function resolvePublicAddresses(
   return addresses;
 }
 
-// Connects only to the addresses already checked, so a second DNS answer
-// cannot point the request somewhere else.
+// Connects only to the addresses already checked, so DNS can't swap in a
+// private address between the check and the connection (DNS rebinding).
 function pinnedLookup(addresses: HostAddress[]): LookupFunction {
   return ((_hostname, options, callback) => {
     if (options.all) {
@@ -199,7 +199,6 @@ function send(
   accept: string,
   signal: AbortSignal,
 ): Promise<IncomingMessage> {
-  // Looked up at call time, so the network mock in tests can intercept it.
   const request = url.protocol === 'https:' ? https.request : http.request;
 
   return new Promise((resolve, reject) => {

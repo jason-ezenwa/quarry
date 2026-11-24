@@ -3,10 +3,10 @@ import { PencilSimpleIcon } from '@phosphor-icons/react/dist/csr/PencilSimple'
 import { type ReactNode, useState } from 'react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/app-frame/page-header'
+import { ResumeDocument } from '@/components/resume/resume-document'
 import { ResumeEditorSubmit } from '@/components/resume/resume-editor'
 import { Button } from '@/components/ui/button'
 import { RESUME_PAGE_CRUMBS } from '../primary-resume.constants'
-import { PrimaryResume } from './primary-resume'
 import { PrimaryResumeEditor } from './primary-resume-editor'
 import { ReuploadButton } from './reupload-button'
 import { FailedResumeCallout, ReadingResumeCallout } from './resume-state-callouts'
@@ -105,7 +105,7 @@ export function ResumeContent({ data }: { data: PrimaryResumeResponse }) {
         }
       />
       <div className="flex justify-center px-4 pt-4 pb-8 sm:px-6 md:pt-10 md:pb-14">
-        <PrimaryResume resume={resume} />
+        <ResumeDocument resume={resume} aria-label="Your resume" />
       </div>
     </>
   )

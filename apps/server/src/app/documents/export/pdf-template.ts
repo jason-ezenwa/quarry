@@ -121,7 +121,9 @@ function section({
   return h(
     View,
     { style: styles.section },
-    h(Text, { style: styles.heading, minPresenceAhead: 24 }, heading),
+    heading
+      ? h(Text, { style: styles.heading, minPresenceAhead: 24 }, heading)
+      : null,
     ...paragraphs.map((paragraph) => text(undefined, paragraph)),
     ...entries.map(entry),
   );

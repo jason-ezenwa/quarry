@@ -623,8 +623,10 @@ describe('Documents (integration)', () => {
         expect(text).toContain(
           'Payments engineer who ships settlement systems.',
         );
-        expect(text).toContain('Backend Engineer, Paystack');
-        expect(text).toContain('Mar 2021 – Present');
+        expect(text).toMatch(/Paystack\s+·\s+Lagos/);
+        expect(text).toContain('Backend Engineer');
+        expect(text).toContain('Mar 2021–now');
+        expect(text).toContain('ada.dev');
         expect(text).toContain('Built the settlement service in Go.');
         expect(text).toContain('Go, TypeScript');
       }
