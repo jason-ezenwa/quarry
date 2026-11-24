@@ -43,6 +43,7 @@ function SubmitError({ error }: { error: unknown }) {
     const body: Partial<Record<keyof MonthlySessionLimitError, unknown>> = error.body ?? {}
     const limit = typeof body.limit === 'number' ? body.limit : SESSION_LIMITS.sessionsPerMonth
     const resetsAt = typeof body.resetsAt === 'string' ? body.resetsAt : null
+
     return (
       <p role="alert" className="text-small text-destructive-ink">
         You've used all {limit} applications this month.
@@ -73,9 +74,11 @@ function SubmitError({ error }: { error: unknown }) {
 export function NewApplicationForm({ usageLabel }: { usageLabel?: string }) {
   const navigate = useNavigate()
   const createSession = useCreateSession()
+
   const [mode, setMode] = useState<Mode>('link')
   const [value, setValue] = useState('')
   const [invalid, setInvalid] = useState<string | null>(null)
+
   const startInField = useMediaQuery(MEDIUM_SCREEN_QUERY)
 
   function switchMode(next: Mode) {
@@ -88,6 +91,7 @@ export function NewApplicationForm({ usageLabel }: { usageLabel?: string }) {
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const request = requestFor(mode, value)
+
     if (typeof request === 'string') {
       setInvalid(request)
       return
@@ -98,6 +102,7 @@ export function NewApplicationForm({ usageLabel }: { usageLabel?: string }) {
   }
 
   const errorId = useId()
+
   const start = (
     <Button type="submit" variant="primary" size="lg" loading={createSession.isPending}>
       Start

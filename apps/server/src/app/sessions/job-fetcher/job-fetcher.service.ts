@@ -45,6 +45,7 @@ export class JobFetcherService {
     const startedAt = performance.now();
     const link = URL.parse(url);
     const board = link ? findJobBoard(link) : undefined;
+
     const { outcome, httpStatus, detail } = link
       ? await this.fetchLink(link, board)
       : { outcome: failure('invalid-url') };
@@ -94,6 +95,7 @@ export class JobFetcherService {
 
     const { response } = result;
     const httpStatus = response.status;
+
     const text = extractMainText(
       response.body,
       response.url,

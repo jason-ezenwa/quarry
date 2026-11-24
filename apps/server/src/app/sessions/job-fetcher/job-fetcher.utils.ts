@@ -66,6 +66,7 @@ export function htmlToText(html: string): string {
 
     parts.push(breakBefore);
     node.childNodes.forEach(walk);
+
     if (PARAGRAPH_TAGS.has(tag)) parts.push('\n\n');
     else if (LINE_TAGS.has(tag)) parts.push('\n');
   };

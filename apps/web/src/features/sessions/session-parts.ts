@@ -19,9 +19,11 @@ function isCompaction(part: Part): boolean {
 
 function displayFor(metadata: ToolPart['toolMetadata']) {
   const { icon, active, done, failed } = metadata ?? {}
+
   if (!isOneOf(TOOL_ICONS, icon) || typeof active !== 'string' || typeof done !== 'string' || typeof failed !== 'string') {
     return FALLBACK_TOOL_STEP
   }
+
   return { icon: TOOL_ICON_COMPONENTS[icon], active, done, failed }
 }
 
@@ -56,6 +58,7 @@ export function messageBlocks(message: UIMessage, live = false): MessageBlock[] 
       if (!isCompaction(part) && part.text.trim()) {
         blocks.push({ kind: 'text', key: `${message.id}-${index}`, text: part.text })
       }
+
       return
     }
 
@@ -94,9 +97,11 @@ export function messageDocuments(message: UIMessage): DocumentAnnouncement[] {
 // The newest document of each kind, which is what each panel tab shows.
 export function latestDocuments(messages: UIMessage[]): Partial<Record<DocumentKind, DocumentAnnouncement>> {
   const latest: Partial<Record<DocumentKind, DocumentAnnouncement>> = {}
+
   for (const message of messages) {
     for (const document of messageDocuments(message)) latest[document.kind] = document
   }
+
   return latest
 }
 

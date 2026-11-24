@@ -11,6 +11,7 @@ export function useOpenDocuments(messages: UIMessage[]) {
   const [pinned, setPinned] = useState<{ document: OpenDocument; newestWhenOpened: string | undefined } | null>(null)
 
   const latest = latestDocuments(messages)
+
   const documents: Partial<Record<DocumentKind, OpenDocument>> = Object.fromEntries(
     DOCUMENT_KINDS.map((kind) => {
       const keepPinned = pinned?.document.kind === kind && latest[kind]?.id === pinned.newestWhenOpened

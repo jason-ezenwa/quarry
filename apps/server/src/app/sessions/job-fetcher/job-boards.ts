@@ -86,6 +86,7 @@ const greenhouse: JobBoardAdapter = {
     if (!host) return undefined;
 
     const [first, second, third] = pathSegments(link);
+
     const [board, id] =
       first === 'embed'
         ? [link.searchParams.get('for'), link.searchParams.get('token')]
@@ -239,6 +240,7 @@ const workday: JobBoardAdapter = {
     const tenantHost = /^([\w-]+)\.wd\d+\.myworkdayjobs\.com$/.exec(
       link.hostname,
     );
+
     const isSharedHost = /^wd\d+\.myworkdaysite\.com$/.test(link.hostname);
     const segments = pathSegments(link);
 

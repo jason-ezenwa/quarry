@@ -14,6 +14,7 @@ function Spin({ className }: { className?: string }) {
 function ToolSteps({ running, className, ...props }: ComponentProps<'div'> & { running: boolean }) {
   const [opened, setOpened] = useState(false)
   const listId = useId()
+
   const value: ToolStepsContextValue = {
     state: { running, open: running || opened },
     actions: { toggle: () => setOpened((current) => !current) },
@@ -113,6 +114,7 @@ function ToolStepLabel({ className, ...props }: ComponentProps<'span'>) {
 
 function ToolStepNote({ className, ...props }: ComponentProps<'span'>) {
   const { unfinished } = useToolStep()
+
   return (
     <span
       data-slot="tool-step-note"

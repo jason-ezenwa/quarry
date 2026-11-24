@@ -48,10 +48,12 @@ function createTransport(sessionId: string) {
 export function useSessionChat(session: SessionDetail, fresh: boolean) {
   const queryClient = useQueryClient()
   const refreshLists = useRefreshSessionLists()
+
   const [unsent, setUnsent] = useState<UnsentDraft | null>(null)
   // Set while the server drops a stopped reply, then until the next send or retry.
   const [stopState, setStopState] = useState<'stopping' | 'stopped' | null>(null)
   const stored = useMemo(() => new Set(session.messages.map((message) => message.id)), [session.messages])
+
   // Asks the server, since the chat keeps its handlers from the first render and the cache may lag.
   const isStored = async (messageId: string) => {
     const current = await queryClient.fetchQuery({ ...sessionQueryOptions(session.id), staleTime: 0 })
@@ -73,18 +75,22 @@ export function useSessionChat(session: SessionDetail, fresh: boolean) {
         const code = errorCode(error)
         const last = created.messages.at(-1)
         const refused = code && REFUSED_TURN_CODES.has(code) && last?.role === 'user'
+
         if (!refused) {
           void queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEYS.detail(session.id) })
           return
         }
+
         if (await isStored(last.id).catch(() => true)) return
         if (created.messages.at(-1)?.id !== last.id) return
         created.messages = created.messages.slice(0, -1)
         setUnsent({ text: messageText(last), key: last.id })
       },
     })
+
     return created
   })
+
   const chat = useChat<UIMessage>({ chat: instance })
 
   const idle = (chat.status === 'ready' || chat.status === 'error') && stopState !== 'stopping'
@@ -93,12 +99,14 @@ export function useSessionChat(session: SessionDetail, fresh: boolean) {
 
   // The message the page answers itself on open, if any; undefined until the first fresh render. Set during render, as React allows.
   const [autoStartId, setAutoStartId] = useState<string | null | undefined>(undefined)
+
   if (fresh && autoStartId === undefined) {
     setAutoStartId(canStart && hasUnansweredMessage(messages) ? (messages.at(-1)?.id ?? null) : null)
   }
 
   // The first message is stored with the session; the page answers it once a fresh fetch shows no turn running.
   const checked = useRef(false)
+
   useEffect(() => {
     if (checked.current || !fresh) return
     checked.current = true
@@ -108,6 +116,7 @@ export function useSessionChat(session: SessionDetail, fresh: boolean) {
   // Takes the stored history when it's at least as far along as the chat, so
   // an idle chat never loses a reply it already shows.
   const synced = useRef(session.messages)
+
   useEffect(() => {
     if (!idle || session.messages === synced.current) return
     if (session.messages.length < messages.length) return
@@ -117,12 +126,16 @@ export function useSessionChat(session: SessionDetail, fresh: boolean) {
   }, [idle, session.messages, messages.length, setMessages, clearError])
 
   const code = errorCode(chat.error)
+
   // A stored message left unanswered elsewhere can be retried; the one the page answers on open shows its own error.
   const last = messages.at(-1)
+
   const stalled =
     autoStartId !== undefined && idle && canStart && last?.role === 'user' && last.id !== autoStartId && stored.has(last.id)
+
   // A reply that landed before the stop reached the server isn't a stopped one.
   const stopped = stopState === 'stopped' && session.messages.at(-1)?.role !== 'assistant'
+
   const error: ChatErrorCode | null = stopped
     ? 'stopped'
     : (visibleError(code, session.status === 'drafting') ?? (stalled ? 'failed' : null))
@@ -157,13 +170,16 @@ export function useSessionChat(session: SessionDetail, fresh: boolean) {
       if (!messageId) return
       setStopState('stopping')
       void chat.stop()
+
       const confirmed = await stopTurn(session.id, messageId).then(
         () => true,
         () => false,
       )
+
       const askedAt = Date.now()
       await queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEYS.detail(session.id) })
       void refreshLists()
+
       // A stop whose answer was lost may still have ended the turn: a fresh read with nothing running and no reply means stopped.
       const read = queryClient.getQueryState(sessionQueryOptions(session.id).queryKey)
       const current = read && read.dataUpdatedAt >= askedAt ? read.data : undefined

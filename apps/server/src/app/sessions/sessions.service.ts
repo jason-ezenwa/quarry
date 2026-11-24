@@ -129,6 +129,7 @@ export class SessionsService {
   // skip or repeat a session.
   async list(userId: string, query: ListSessionsDto): Promise<SessionPage> {
     const limit = query.limit ?? SESSION_LIMITS.sessionsPageSize;
+
     const sessions = await this.sessionModel
       .find({
         ...this.ownedBy(userId),
@@ -139,6 +140,7 @@ export class SessionsService {
       .limit(limit + 1);
 
     const page = sessions.slice(0, limit);
+
     const overalls = await this.documentsService.latestFitOveralls(
       page.map((session) => session._id),
     );

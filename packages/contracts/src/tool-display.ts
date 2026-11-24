@@ -7,6 +7,7 @@ export const TOOL_ICONS = [
   "pencil",
   "envelope",
 ] as const;
+
 export type ToolIcon = (typeof TOOL_ICONS)[number];
 
 // Every agent tool's AI SDK `metadata`. `failed` shows for an `ok: false`

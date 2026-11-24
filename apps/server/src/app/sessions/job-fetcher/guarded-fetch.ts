@@ -94,6 +94,7 @@ async function followRedirects(
       resolvePublicAddresses(current.hostname, lookup),
       deadline,
     );
+
     const response = await send(current, addresses, accept, deadline);
     const status = response.statusCode ?? 0;
     const location = response.headers.location;
@@ -150,6 +151,7 @@ function withDeadline<T>(
     if (deadline.aborted) return abort();
 
     deadline.addEventListener('abort', abort, { once: true });
+
     promise
       .then(resolve, reject)
       .finally(() => deadline.removeEventListener('abort', abort));

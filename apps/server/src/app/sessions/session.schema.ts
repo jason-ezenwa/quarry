@@ -53,5 +53,6 @@ export class ApplicationSession {
 }
 
 export type ApplicationSessionDocument = HydratedDocument<ApplicationSession>;
+
 export const ApplicationSessionSchema =
   SchemaFactory.createForClass(ApplicationSession);

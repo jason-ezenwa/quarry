@@ -60,6 +60,7 @@ describe('messageBlocks', () => {
 
 describe('toolStepFor', () => {
   const metadata = { icon: 'globe', active: 'Reading the job', done: 'Read the job', failed: "Couldn't read the job" }
+
   const step = (state: string, output: unknown = { note: 'Ashby' }) =>
     toolStepFor({ ...toolPart('1', output, state), toolMetadata: metadata } as ToolPart, false)
 

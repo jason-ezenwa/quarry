@@ -114,6 +114,7 @@ describe("fitScoreInputSchema", () => {
     };
 
     expect(fitScoreInputSchema.safeParse(emptyDetail).success).toBe(false);
+
     expect(
       fitScoreInputSchema.safeParse({
         ...validInput,

@@ -188,6 +188,7 @@ describe('Documents (integration)', () => {
       );
 
       expect(response.status).toBe(200);
+
       expect(response.body).toEqual({
         id: resumeId,
         kind: 'resume',
@@ -225,6 +226,7 @@ describe('Documents (integration)', () => {
       expect(sourceAfter).toEqual(sourceBefore);
 
       const [part] = await lastToolParts(sessionId);
+
       expect(part).toMatchObject({
         type: 'tool-edit_tailored_resume',
         output: {
@@ -278,12 +280,14 @@ describe('Documents (integration)', () => {
         expect(await tailoredResumes(sessionId)).toHaveLength(1);
 
         const [result] = lastToolResults();
+
         expect(result).toMatchObject({
           tool_use_id: 'toolu_0',
           is_error: true,
         });
 
         const [part] = await lastToolParts(sessionId);
+
         expect(part).toMatchObject({
           type: 'tool-edit_tailored_resume',
           state: 'output-error',
@@ -312,6 +316,7 @@ describe('Documents (integration)', () => {
       expect(await tailoredResumes(firstSessionId)).toHaveLength(1);
 
       const [part] = await lastToolParts(sessionId);
+
       expect(part).toMatchObject({
         type: 'tool-edit_tailored_resume',
         state: 'output-available',
@@ -337,6 +342,7 @@ describe('Documents (integration)', () => {
       const coverLetterId = saved._id.toHexString();
 
       const [part] = await lastToolParts(sessionId);
+
       expect(part).toMatchObject({
         type: 'tool-save_cover_letter',
         output: {
@@ -354,6 +360,7 @@ describe('Documents (integration)', () => {
       );
 
       expect(response.status).toBe(200);
+
       expect(response.body).toEqual({
         id: coverLetterId,
         kind: 'cover-letter',
@@ -382,11 +389,13 @@ describe('Documents (integration)', () => {
           },
         },
       ]);
+
       await runTools(cookie, sessionId, [
         { name: 'save_cover_letter', input: coverLetter },
       ]);
 
       const [saved] = await coverLetters(sessionId);
+
       const response = await get(
         `/sessions/${sessionId}/documents/cover-letter/${saved._id.toHexString()}`,
         cookie,
@@ -401,6 +410,7 @@ describe('Documents (integration)', () => {
     it('keeps a header the user asked for on that letter', async () => {
       const { cookie } = await onboardedUser();
       const sessionId = await startSession(cookie);
+
       const header = {
         name: 'Ada Obi',
         contact: {
@@ -414,6 +424,7 @@ describe('Documents (integration)', () => {
       ]);
 
       const [saved] = await coverLetters(sessionId);
+
       const response = await get(
         `/sessions/${sessionId}/documents/cover-letter/${saved._id.toHexString()}`,
         cookie,
@@ -459,11 +470,13 @@ describe('Documents (integration)', () => {
       const fitScore = await getTestDatabase()
         .collection('fit-scores')
         .findOne({ session: new Types.ObjectId(sessionId) });
+
       const documentId = fitScore!._id.toHexString();
 
       expect(fitScore!.overall).toBeCloseTo(85.85, 5);
 
       const [part] = await lastToolParts(sessionId);
+
       expect(part).toMatchObject({
         type: 'tool-save_fit_score',
         state: 'output-available',
@@ -491,6 +504,7 @@ describe('Documents (integration)', () => {
       );
 
       expect(response.status).toBe(200);
+
       expect(response.body).toEqual({
         id: documentId,
         kind: 'fit-score',
@@ -534,6 +548,7 @@ describe('Documents (integration)', () => {
       await runTools(cookie, sessionId, [
         { name: 'save_cover_letter', input: coverLetter },
       ]);
+
       const [letter] = await coverLetters(sessionId);
       const coverLetterId = letter._id.toHexString();
 
@@ -580,6 +595,7 @@ describe('Documents (integration)', () => {
       await runTools(user.cookie, sessionId, [
         { name: 'save_cover_letter', input: coverLetter },
       ]);
+
       const [letter] = await coverLetters(sessionId);
 
       return {
@@ -603,6 +619,7 @@ describe('Documents (integration)', () => {
 
       expect(pdf.status).toBe(200);
       expect(pdf.headers['content-type']).toBe('application/pdf');
+
       expect(pdf.headers['content-disposition']).toBe(
         'attachment; filename="ada-obi-payments-focus.pdf"',
       );
@@ -610,9 +627,11 @@ describe('Documents (integration)', () => {
       const docx = await download(`${resumePath}?format=docx`, cookie);
 
       expect(docx.status).toBe(200);
+
       expect(docx.headers['content-type']).toBe(
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       );
+
       expect(docx.headers['content-disposition']).toBe(
         'attachment; filename="ada-obi-payments-focus.docx"',
       );
@@ -620,9 +639,11 @@ describe('Documents (integration)', () => {
       for (const text of [await pdfText(pdf.body), await docxText(docx.body)]) {
         expect(text).toContain('Ada Obi');
         expect(text).toContain('ada@example.com');
+
         expect(text).toContain(
           'Payments engineer who ships settlement systems.',
         );
+
         expect(text).toMatch(/Paystack\s+·\s+Lagos/);
         expect(text).toContain('Backend Engineer');
         expect(text).toContain('Mar 2021–now');
@@ -640,6 +661,7 @@ describe('Documents (integration)', () => {
 
       expect(pdf.status).toBe(200);
       expect(docx.status).toBe(200);
+
       expect(pdf.headers['content-disposition']).toBe(
         'attachment; filename="ada-obi-payments-first-letter.pdf"',
       );
@@ -708,6 +730,7 @@ describe('Documents (integration)', () => {
       await runTools(cookie, sessionId, [
         { name: 'save_fit_score', input: fitScoreInput },
       ]);
+
       const fitScore = await getTestDatabase()
         .collection('fit-scores')
         .findOne({ session: new Types.ObjectId(sessionId) });

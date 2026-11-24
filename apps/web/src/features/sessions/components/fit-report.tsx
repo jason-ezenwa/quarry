@@ -55,6 +55,7 @@ export function FitReport({ report, job }: { report: FitScoreDocumentResponse; j
         <tbody>
           {FIT_DIMENSION_KEYS.map((key) => {
             const { score, detail } = report.dimensions[key]
+
             return (
               <tr key={key} className="border-t border-border">
                 <th scope="row" className="py-2.25 text-left">

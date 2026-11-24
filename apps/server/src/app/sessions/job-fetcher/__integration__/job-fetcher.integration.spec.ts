@@ -338,6 +338,7 @@ describe('other job sites', () => {
     const outcome = await jobFetcher.fetch(
       'https://careers.acme.example/jobs/long',
     );
+
     const description = outcome.ok ? outcome.job.description : '';
 
     expect(description.length).toBeLessThanOrEqual(MAX_DESCRIPTION_CHARS);
@@ -365,6 +366,7 @@ describe('other job sites', () => {
     expect(description.split('\n\n')).toEqual(
       expect.arrayContaining(JOB_PARAGRAPHS),
     );
+
     expect(description).not.toMatch(/Privacy policy|secret-tracker|All jobs/);
   });
 
@@ -527,6 +529,7 @@ describe('redirects', () => {
     await jobFetcher.fetch('https://acme.example/j/42');
 
     expect(sentHeaders).toHaveLength(2);
+
     for (const headers of sentHeaders) {
       expect(headers.get('cookie')).toBeNull();
       expect(headers.get('authorization')).toBeNull();
@@ -539,6 +542,7 @@ describe('redirects', () => {
     ['a host that resolves to loopback', 'https://internal.acme.example/'],
   ])('refuses a redirect to %s', async (_label, target) => {
     hostLookup.point('internal.acme.example', '127.0.0.1');
+
     mswServer.use(
       http.get('https://careers.acme.example/jobs/42', () =>
         redirectTo(target),
@@ -633,6 +637,7 @@ describe('limits', () => {
 
   it('reads a board API response larger than the page cap', async () => {
     const id = '1f2a3b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b';
+
     const otherJob = {
       id: '00000000-0000-4000-8000-000000000000',
       title: 'Designer',
@@ -742,6 +747,7 @@ describe('logging', () => {
       httpStatus: 200,
       ms: expect.any(Number),
     });
+
     expect(JSON.stringify(log.mock.calls)).not.toMatch(
       /payment rails|backend-engineer/,
     );

@@ -96,6 +96,7 @@ export function DocumentPanel({
       ) : null}
       {DOCUMENT_KINDS.map((kind) => {
         const document = documents[kind]
+
         return (
           <OutputPanelContent key={kind} value={kind}>
             {document ? (
@@ -118,6 +119,7 @@ export function DocumentTabs() {
     <OutputPanelTabs aria-label="Outputs">
       {DOCUMENT_KINDS.map((kind) => {
         const { label, icon: KindIcon } = DOCUMENT_KIND_DISPLAY[kind]
+
         return (
           <OutputPanelTab key={kind} value={kind}>
             <KindIcon aria-hidden="true" />

@@ -82,9 +82,11 @@ export class AgentService {
     let settled: Promise<void> | undefined;
     const stop = new AbortController();
     let markDone!: () => void;
+
     const done = new Promise<void>((resolve) => {
       markDone = resolve;
     });
+
     const running: RunningTurn = { messageId: turn.messageId, stop, done };
     this.running.set(turn.sessionId, running);
 
@@ -164,9 +166,11 @@ export class AgentService {
       if (!response.headersSent) response.writeHead(500).end();
     } finally {
       if (!settled) await this.sessionsService.releaseTurn(turn);
+
       if (this.running.get(turn.sessionId) === running) {
         this.running.delete(turn.sessionId);
       }
+
       markDone();
     }
   }

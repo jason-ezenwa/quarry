@@ -17,6 +17,7 @@ function ApplicationList({ tab }: { tab: ListTab }) {
 
   if (isPending) return <Spinner className="mx-auto mt-6" />
   if (isError) return <p className="pt-2 text-small text-muted-foreground">We couldn't load your applications.</p>
+
   if (sessions.length === 0) {
     return (
       <p className="pt-2 text-small text-muted-foreground">

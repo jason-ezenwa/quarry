@@ -20,6 +20,7 @@ export function ExportButtons({
     mutationFn: (format: ExportFormat) => downloadExport(sessionId, kind, documentId, format),
     onError: () => toast.error(EXPORT_FAILED_MESSAGE),
   })
+
   const label = DOCUMENT_KIND_DISPLAY[kind].label.toLowerCase()
 
   return (

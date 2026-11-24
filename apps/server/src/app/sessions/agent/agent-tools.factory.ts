@@ -116,6 +116,7 @@ export class AgentToolsFactory {
               context,
               input,
             );
+
             await this.sessionsService.nameAfterFitScore(context, input);
 
             this.logToolCall(context, 'save_fit_score', true);

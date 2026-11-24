@@ -102,8 +102,10 @@ export class DocumentsService {
     coverLetter.user = new Types.ObjectId(userId);
     coverLetter.session = new Types.ObjectId(sessionId);
     coverLetter.title = input.name;
+
     coverLetter.header =
       input.header ?? (await this.resumeService.findHeader(owner));
+
     coverLetter.greeting = input.greeting;
     coverLetter.paragraphs = input.paragraphs;
     coverLetter.signOff = input.signOff;

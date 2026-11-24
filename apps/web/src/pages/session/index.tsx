@@ -44,6 +44,7 @@ function SessionView({ session, fresh }: { session: SessionDetail; fresh: boolea
   const chat = useSessionChat(session, fresh)
   const wide = useMediaQuery(WIDE_SCREEN_QUERY)
   const outputs = useOpenDocuments(chat.messages)
+
   // Open by default beside the chat on wide screens; elsewhere a card opens it over the page.
   const [panelOpen, setPanelOpen] = useState(true)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -56,6 +57,7 @@ function SessionView({ session, fresh }: { session: SessionDetail; fresh: boolea
   }
 
   const working = chat.busy || chat.waiting
+
   const panelProps = {
     sessionId: session.id,
     job: session.job,
@@ -135,6 +137,7 @@ export function SessionPage() {
 
   if (error) {
     const missing = error instanceof ApiError && error.status === 404
+
     return (
       <>
         <PageHeader title="Application" crumbs={CRUMBS} />

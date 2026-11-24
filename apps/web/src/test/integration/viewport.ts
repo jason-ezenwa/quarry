@@ -9,6 +9,7 @@ export function setViewport(size: keyof typeof WIDTHS) {
   window.matchMedia = (query: string) => {
     const match = MIN_WIDTH.exec(query)
     const min = match ? Number(match[1]) * (match[2] === 'rem' ? 16 : 1) : Infinity
+
     return {
       matches: width >= min,
       media: query,
