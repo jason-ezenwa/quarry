@@ -1,21 +1,10 @@
 import type { BlockedJobSite } from '@quarry/contracts';
-import type { FetchFailureReason } from './job-fetcher.types';
+import type { FetchFailureReason, JobFetchLimits } from './job-fetcher.types';
 
 // Resolves hostnames for the address check; tests point hosts at chosen addresses.
 export const JOB_FETCH_HOST_LOOKUP = Symbol('JOB_FETCH_HOST_LOOKUP');
 
 export const JOB_FETCH_LIMITS = Symbol('JOB_FETCH_LIMITS');
-
-export type JobFetchLimits = {
-  // For the whole fetch, redirects included.
-  timeoutMs: number;
-  maxRedirects: number;
-  // Web pages go through jsdom and Readability, which block the event loop
-  // for longer the bigger the page, so they get the smaller cap.
-  maxPageBytes: number;
-  // Board APIs can list a whole board (Ashby), and JSON is cheap to parse.
-  maxApiBytes: number;
-};
 
 const MB = 1024 * 1024;
 
@@ -65,3 +54,7 @@ export const blockedSiteNote = (site: BlockedJobSite) =>
 
 export const blockedSiteMessage = (site: BlockedJobSite) =>
   `${BLOCKED_SITE_NAMES[site]} blocks automated access, so paste the description from the ${BLOCKED_SITE_NAMES[site]} page.`;
+
+export const JSON_ACCEPT = 'application/json';
+export const HTML_ACCEPT = 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.1';
+export const NOT_FOUND_STATUSES = new Set([404, 410]);

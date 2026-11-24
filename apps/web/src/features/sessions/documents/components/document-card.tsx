@@ -6,9 +6,9 @@ import {
   OutputCardText,
   OutputCardTitle,
 } from '@/components/session/output-card'
-import { DOCUMENT_KIND_DISPLAY, FIT_LABEL_TEXT } from '../sessions.constants'
-import type { DocumentAnnouncement } from '../sessions.types'
-import { jobLine } from '../session-format'
+import { DOCUMENT_KIND_DISPLAY, FIT_LABEL_TEXT } from '../documents.constants'
+import type { DocumentAnnouncement } from '../../sessions.types'
+import { jobLine } from '../../session-format'
 
 // A saved document in the chat. The fit card leads with the score; the others with the kind's icon.
 export function DocumentCard({

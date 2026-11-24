@@ -6,20 +6,14 @@ import { Link, useNavigate } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import { Textarea } from '@/components/ui/textarea'
-import { MEDIUM_SCREEN_QUERY, useMediaQuery } from '@/hooks/use-media-query'
+import { useMediaQuery } from '@/hooks/use-media-query'
+import { MEDIUM_SCREEN_QUERY } from '@/hooks/use-media-query.constants'
 import { ApiError } from '@/lib/api/api-fetch'
 import { PATHS, sessionPath } from '@/lib/auth/auth.constants'
 import { useCreateSession } from '../hooks/use-sessions'
 import { formatResetDate } from '../session-format'
-
-type Mode = 'link' | 'paste'
-
-const FORM_ERRORS = {
-  link: 'Paste a job link that starts with http:// or https://',
-  paste: 'Paste the job description',
-  tooLong: `Keep the description under ${SESSION_LIMITS.jobDescriptionMaxLength.toLocaleString('en')} characters`,
-  failed: "We couldn't start this application. Try again.",
-} as const
+import { FORM_ERRORS } from '../sessions.constants'
+import type { Mode } from '../sessions.types'
 
 function isHttpUrl(value: string): boolean {
   try {
@@ -43,6 +37,7 @@ function SubmitError({ error }: { error: unknown }) {
     const body: Partial<Record<keyof MonthlySessionLimitError, unknown>> = error.body ?? {}
     const limit = typeof body.limit === 'number' ? body.limit : SESSION_LIMITS.sessionsPerMonth
     const resetsAt = typeof body.resetsAt === 'string' ? body.resetsAt : null
+
     return (
       <p role="alert" className="text-small text-destructive-ink">
         You've used all {limit} applications this month.
@@ -73,9 +68,11 @@ function SubmitError({ error }: { error: unknown }) {
 export function NewApplicationForm({ usageLabel }: { usageLabel?: string }) {
   const navigate = useNavigate()
   const createSession = useCreateSession()
+
   const [mode, setMode] = useState<Mode>('link')
   const [value, setValue] = useState('')
   const [invalid, setInvalid] = useState<string | null>(null)
+
   const startInField = useMediaQuery(MEDIUM_SCREEN_QUERY)
 
   function switchMode(next: Mode) {
@@ -88,6 +85,7 @@ export function NewApplicationForm({ usageLabel }: { usageLabel?: string }) {
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const request = requestFor(mode, value)
+
     if (typeof request === 'string') {
       setInvalid(request)
       return
@@ -98,6 +96,7 @@ export function NewApplicationForm({ usageLabel }: { usageLabel?: string }) {
   }
 
   const errorId = useId()
+
   const start = (
     <Button type="submit" variant="primary" size="lg" loading={createSession.isPending}>
       Start

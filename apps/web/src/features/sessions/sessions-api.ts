@@ -78,6 +78,7 @@ export async function downloadExport(
   const response = await fetch(`${API_BASE_URL}${documentUrl(sessionId, kind, documentId)}/export?format=${format}`, {
     credentials: 'include',
   })
+
   if (!response.ok) throw await errorFrom(response)
 
   saveFile(await response.blob(), attachmentFileName(response.headers.get('Content-Disposition')) ?? `document.${format}`)

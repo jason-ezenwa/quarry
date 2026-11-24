@@ -1,5 +1,6 @@
 import type { Resume } from "@quarry/contracts"
-import type { ReactNode } from "react"
+import type { ComponentProps, ReactNode } from "react"
+import type { ResumeRoot } from "./resume"
 
 // A path into the draft, such as ['experience', 0, 'bullets', 2].
 export type ResumeFieldPath = readonly (string | number)[]
@@ -62,4 +63,9 @@ export type ResumeEditorEntryProps = {
   meta?: string
   defaultOpen?: boolean
   children: ReactNode
+}
+
+export type ResumeDocumentProps = Omit<ComponentProps<typeof ResumeRoot>, 'variant' | 'children'> & {
+  resume: Resume
+  variant?: Exclude<ResumeVariant, 'editor'>
 }

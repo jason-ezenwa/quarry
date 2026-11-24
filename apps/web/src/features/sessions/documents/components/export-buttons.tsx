@@ -3,8 +3,8 @@ import { EXPORT_FORMATS, type ExportableKind, type ExportFormat } from '@quarry/
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { downloadExport } from '../sessions-api'
-import { DOCUMENT_KIND_DISPLAY, EXPORT_FAILED_MESSAGE } from '../sessions.constants'
+import { downloadExport } from '../../sessions-api'
+import { DOCUMENT_KIND_DISPLAY, EXPORT_FAILED_MESSAGE } from '../documents.constants'
 
 // PDF and DOCX downloads of the document a tab shows, rendered by the server from the saved copy.
 export function ExportButtons({
@@ -20,6 +20,7 @@ export function ExportButtons({
     mutationFn: (format: ExportFormat) => downloadExport(sessionId, kind, documentId, format),
     onError: () => toast.error(EXPORT_FAILED_MESSAGE),
   })
+
   const label = DOCUMENT_KIND_DISPLAY[kind].label.toLowerCase()
 
   return (

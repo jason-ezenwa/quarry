@@ -166,6 +166,7 @@ describe('Sessions (integration)', () => {
       ]);
 
       expect(stored?.job).toEqual({ source: 'pasted', description });
+
       expect(messages.map(({ role, parts }) => ({ role, parts }))).toEqual([
         {
           role: 'user',
@@ -225,6 +226,7 @@ describe('Sessions (integration)', () => {
         toFake: ['Date'],
         now: new Date('2026-11-01T00:00:05Z'),
       });
+
       onTestFinished(() => {
         vi.useRealTimers();
       });
@@ -245,6 +247,7 @@ describe('Sessions (integration)', () => {
       });
 
       expect(eleventh.status).toBe(429);
+
       expect(eleventh.body).toMatchObject({
         code: 'monthly-session-limit',
         used: 10,
@@ -276,6 +279,7 @@ describe('Sessions (integration)', () => {
       const first = await api('post', '/sessions', cookie).send({
         jobUrl: JOB_URL,
       });
+
       const second = await api('post', '/sessions', cookie).send({
         jobDescription: 'A job',
       });
@@ -283,6 +287,7 @@ describe('Sessions (integration)', () => {
       const active = await api('get', '/sessions', cookie);
 
       expect(active.body.nextCursor).toBeNull();
+
       expect(active.body.items).toEqual([
         {
           id: second.body.id,
@@ -313,6 +318,7 @@ describe('Sessions (integration)', () => {
       expect(
         activeAfter.body.items.map(({ id }: { id: string }) => id),
       ).toEqual([second.body.id]);
+
       expect(
         archivedList.body.items.map(({ id }: { id: string }) => id),
       ).toEqual([first.body.id]);
@@ -329,6 +335,7 @@ describe('Sessions (integration)', () => {
     it('pages through sessions newest first with a cursor', async () => {
       const { cookie, userId } = await onboardedUser();
       const createdAt = new Date('2026-11-10T12:00:00Z');
+
       // Five sessions, two sharing a timestamp, so ties are paged by id.
       await seedSessions(userId, [
         new Date('2026-11-01T00:00:00Z'),
@@ -357,6 +364,7 @@ describe('Sessions (integration)', () => {
       expect(ids).toHaveLength(5);
       expect(pages.map((page) => page.length)).toEqual([2, 2, 1]);
       expect(pages.flat()).toEqual(ids);
+
       expect(
         all.body.items.map(({ createdAt }: { createdAt: string }) => createdAt),
       ).toEqual([
@@ -371,6 +379,7 @@ describe('Sessions (integration)', () => {
     it("refuses a cursor that isn't one of the user's sessions", async () => {
       const owner = await onboardedUser();
       const other = await onboardedUser('bola@example.com');
+
       const created = await api('post', '/sessions', owner.cookie).send({
         jobUrl: JOB_URL,
       });
@@ -380,11 +389,13 @@ describe('Sessions (integration)', () => {
         `/sessions?cursor=${created.body.id}`,
         other.cookie,
       );
+
       const malformed = await api(
         'get',
         '/sessions?cursor=not-an-id',
         owner.cookie,
       );
+
       const tooMany = await api('get', '/sessions?limit=51', owner.cookie);
 
       expect([foreign.status, malformed.status, tooMany.status]).toEqual([
@@ -405,6 +416,7 @@ describe('Sessions (integration)', () => {
       expect((await api('get', `/sessions/${id}`, other.cookie)).status).toBe(
         404,
       );
+
       expect(
         (
           await api('patch', `/sessions/${id}`, other.cookie).send({
@@ -412,10 +424,12 @@ describe('Sessions (integration)', () => {
           })
         ).status,
       ).toBe(404);
+
       expect(
         (await api('post', `/sessions/${id}/turns`, other.cookie).send({}))
           .status,
       ).toBe(404);
+
       expect(
         (await api('get', '/sessions/not-an-id', other.cookie)).status,
       ).toBe(404);
@@ -456,6 +470,7 @@ describe('Sessions (integration)', () => {
       const [, assistant] = await findMessages(id);
 
       expect(assistant.role).toBe('assistant');
+
       expect(assistant.usage).toEqual({
         model: AGENT_MODEL,
         // Input includes the cached tokens read and written.
@@ -491,9 +506,11 @@ describe('Sessions (integration)', () => {
 
     it('reads the job from a link and saves it on the session', async () => {
       const { cookie } = await onboardedUser();
+
       const created = await api('post', '/sessions', cookie).send({
         jobUrl: JOB_URL,
       });
+
       const id = created.body.id as string;
 
       mswServer.use(
@@ -565,6 +582,7 @@ describe('Sessions (integration)', () => {
     it('passes a blocked site back to the model with a reason to ask for a paste', async () => {
       const { cookie } = await onboardedUser();
       const link = 'https://www.linkedin.com/jobs/view/123';
+
       const created = await api('post', '/sessions', cookie).send({
         jobUrl: link,
       });
@@ -594,6 +612,7 @@ describe('Sessions (integration)', () => {
       expect((await findSession(created.body.id))?.job).toEqual({ url: link });
 
       const [, assistant] = await findMessages(created.body.id);
+
       expect(assistant.parts).toContainEqual(
         expect.objectContaining({
           type: 'tool-get_job_description',
@@ -633,13 +652,16 @@ describe('Sessions (integration)', () => {
         'save_cover_letter',
         'save_fit_score',
       ]);
+
       expect(sent.tool_choice).toEqual({ type: 'auto' });
+
       expect(sent.context_management?.edits).toEqual([
         expect.objectContaining({
           type: 'compact_20260112',
           trigger: { type: 'input_tokens', value: COMPACTION_TRIGGER_TOKENS },
         }),
       ]);
+
       expect(fakeAnthropicApi.betas[0]).toContain('compact-2026-01-12');
     });
 
@@ -658,6 +680,7 @@ describe('Sessions (integration)', () => {
     it('refuses a turn with a 409 and stores nothing while the primary resume is being read again', async () => {
       const { cookie, userId } = await onboardedUser();
       const id = await startPasted(cookie);
+
       await getTestDatabase()
         .collection('resumes')
         .updateOne(
@@ -672,10 +695,12 @@ describe('Sessions (integration)', () => {
       expect(response.status).toBe(409);
       expect(response.body.code).toBe('primary-resume-not-ready');
       expect(await findMessages(id)).toHaveLength(1);
+
       expect(await findSession(id)).toMatchObject({
         userMessageCount: 1,
         turnStartedAt: null,
       });
+
       expect(fakeAnthropicApi.requests).toHaveLength(0);
     });
 
@@ -702,6 +727,7 @@ describe('Sessions (integration)', () => {
         'assistant',
         'user',
       ]);
+
       expect(sent.messages[1].content).toEqual([
         { type: 'thinking', thinking: 'Weighing the fit.', signature: 'sig-1' },
         expect.objectContaining({
@@ -711,12 +737,14 @@ describe('Sessions (integration)', () => {
           input: fitScoreInput,
         }),
       ]);
+
       expect(sent.messages[2].content).toEqual([
         expect.objectContaining({
           type: 'tool_result',
           tool_use_id: 'toolu_fit',
         }),
       ]);
+
       expect(sent.messages[4].content).toEqual([
         expect.objectContaining({ type: 'text', text: 'Thanks' }),
       ]);
@@ -729,6 +757,7 @@ describe('Sessions (integration)', () => {
         ['user', 'msg-user-2'],
         ['assistant', expect.any(String)],
       ]);
+
       expect((await findSession(id))?.userMessageCount).toBe(2);
     });
 
@@ -769,6 +798,7 @@ describe('Sessions (integration)', () => {
         { type: 'step-start' },
         expect.objectContaining({ type: 'text', text: 'Done.' }),
       ]);
+
       expect(session.body.messages[1]).not.toHaveProperty('usage');
     });
 
@@ -826,6 +856,7 @@ describe('Sessions (integration)', () => {
     it('refuses the 41st user message with a 429', async () => {
       const { cookie } = await onboardedUser();
       const id = await startPasted(cookie);
+
       await setSession(id, {
         userMessageCount: SESSION_LIMITS.userMessagesPerSession,
       });
@@ -922,8 +953,10 @@ describe('Sessions (integration)', () => {
       });
 
       const server = app.getHttpServer();
+
       if (!server.listening)
         await new Promise((done) => server.listen(0, done));
+
       const { port } = server.address() as { port: number };
       const controller = new AbortController();
 
@@ -951,6 +984,7 @@ describe('Sessions (integration)', () => {
         async () => {
           const messages = await findMessages(id);
           expect(messages).toHaveLength(2);
+
           expect(messages[1].parts).toContainEqual(
             expect.objectContaining({ type: 'text', text: 'After the drop.' }),
           );
@@ -993,6 +1027,7 @@ describe('Sessions (integration)', () => {
         });
 
         const running = turn(cookie, id).then((response) => response);
+
         await vi.waitFor(
           () => expect(fakeAnthropicApi.requests).toHaveLength(2),
           { timeout: 5_000, interval: 20 },
@@ -1007,6 +1042,7 @@ describe('Sessions (integration)', () => {
         // The lock is released by the time the stop is answered.
         expect((await findSession(id))?.turnStartedAt).toBeNull();
         expect(await findMessages(id)).toHaveLength(1);
+
         expect(
           await getTestDatabase()
             .collection('fit-scores')
@@ -1024,9 +1060,11 @@ describe('Sessions (integration)', () => {
 
       it('saves nothing from a job fetch still running at the stop', async () => {
         const { cookie } = await onboardedUser();
+
         const created = await api('post', '/sessions', cookie).send({
           jobUrl: JOB_URL,
         });
+
         const id = created.body.id as string;
         const fetching = deferred();
         const release = deferred();
@@ -1038,6 +1076,7 @@ describe('Sessions (integration)', () => {
             async () => {
               fetching.resolve();
               await release.promise;
+
               return HttpResponse.json({
                 id: 4012345,
                 title: 'Senior Backend Engineer',
@@ -1047,6 +1086,7 @@ describe('Sessions (integration)', () => {
             },
           ),
         );
+
         fakeAnthropicApi.reply({
           kind: 'stream',
           blocks: [
@@ -1097,6 +1137,7 @@ describe('Sessions (integration)', () => {
           ],
           pauseAfterFirstBlock: gate.promise,
         });
+
         const running = turn(cookie, id).then((response) => response);
         await waitForTurn(id);
 
@@ -1123,6 +1164,7 @@ describe('Sessions (integration)', () => {
           ],
           pauseAfterFirstBlock: gate.promise,
         });
+
         const running = turn(cookie, id).then((response) => response);
         await waitForTurn(id);
 

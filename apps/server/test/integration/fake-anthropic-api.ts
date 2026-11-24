@@ -188,6 +188,7 @@ function streamed({
         delta: { stop_reason: stopReason, stop_sequence: null },
         usage: { output_tokens: usage.output_tokens },
       });
+
       send('message_stop', {});
       controller.close();
     },
@@ -200,6 +201,7 @@ function streamed({
 
 function blockEvents(block: StreamedBlock, index: number): [string, object][] {
   const stop: [string, object] = ['content_block_stop', { index }];
+
   const delta = (value: object): [string, object] => [
     'content_block_delta',
     { index, delta: value },

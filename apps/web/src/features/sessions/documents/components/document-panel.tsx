@@ -21,9 +21,9 @@ import {
   OutputPanelTabs,
   OutputPanelToolbar,
 } from '@/components/session/output-panel'
-import { documentQueryOptions } from '../sessions-api'
-import { DOCUMENT_KIND_DISPLAY, EMPTY_TAB_COPY } from '../sessions.constants'
-import type { OpenDocument } from '../sessions.types'
+import { documentQueryOptions } from '../../sessions-api'
+import { DOCUMENT_KIND_DISPLAY, EMPTY_TAB_COPY } from '../documents.constants'
+import type { OpenDocument } from '../documents.types'
 import { CoverLetter } from './cover-letter'
 import { ExportButtons } from './export-buttons'
 import { FitReport } from './fit-report'
@@ -96,6 +96,7 @@ export function DocumentPanel({
       ) : null}
       {DOCUMENT_KINDS.map((kind) => {
         const document = documents[kind]
+
         return (
           <OutputPanelContent key={kind} value={kind}>
             {document ? (
@@ -118,6 +119,7 @@ export function DocumentTabs() {
     <OutputPanelTabs aria-label="Outputs">
       {DOCUMENT_KINDS.map((kind) => {
         const { label, icon: KindIcon } = DOCUMENT_KIND_DISPLAY[kind]
+
         return (
           <OutputPanelTab key={kind} value={kind}>
             <KindIcon aria-hidden="true" />

@@ -36,6 +36,7 @@ export async function runTools(
       session: new Types.ObjectId(sessionId),
       role: 'assistant',
     });
+
   const body =
     answered === 0
       ? {}

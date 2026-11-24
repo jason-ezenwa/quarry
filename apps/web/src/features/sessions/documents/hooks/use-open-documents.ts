@@ -1,8 +1,9 @@
 import { DOCUMENT_KINDS, type DocumentKind } from '@quarry/contracts'
 import type { UIMessage } from 'ai'
 import { useState } from 'react'
-import { latestDocuments } from '../session-parts'
-import type { DocumentAnnouncement, OpenDocument } from '../sessions.types'
+import { latestDocuments } from '../../session-parts'
+import type { DocumentAnnouncement } from '../../sessions.types'
+import type { OpenDocument } from '../documents.types'
 
 // The panel's tab and the document each tab shows. A document opened from a card stays
 // until a newer one of its kind arrives; otherwise each tab shows the newest of its kind.
@@ -11,6 +12,7 @@ export function useOpenDocuments(messages: UIMessage[]) {
   const [pinned, setPinned] = useState<{ document: OpenDocument; newestWhenOpened: string | undefined } | null>(null)
 
   const latest = latestDocuments(messages)
+
   const documents: Partial<Record<DocumentKind, OpenDocument>> = Object.fromEntries(
     DOCUMENT_KINDS.map((kind) => {
       const keepPinned = pinned?.document.kind === kind && latest[kind]?.id === pinned.newestWhenOpened

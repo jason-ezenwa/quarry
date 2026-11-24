@@ -8,8 +8,8 @@ import {
   ToolStepsToggle,
   ToolStepsWorking,
 } from '@/components/session/tool-steps'
-import { FALLBACK_TOOL_STEP } from '../sessions.constants'
-import type { ToolStep as ToolStepData } from '../sessions.types'
+import { FALLBACK_TOOL_STEP } from '../../sessions.constants'
+import type { ToolStep as ToolStepData } from '../../sessions.types'
 
 // While a step runs: a spinner, "Working" and the steps so far. Once settled: "N steps", folded away until opened.
 export function AgentSteps({ steps, working = false }: { steps: ToolStepData[]; working?: boolean }) {

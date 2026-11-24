@@ -83,6 +83,7 @@ function ComposerInput({
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     onKeyDownProp?.(event)
     if (event.defaultPrevented) return
+
     if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
       event.preventDefault()
       actions.submit()
@@ -115,6 +116,7 @@ function ComposerSubmit() {
 
   if (state.status === 'stoppable' || state.status === 'stopping') {
     const stopping = state.status === 'stopping'
+
     return (
       <Button type="button" variant="primary" size="icon-lg" aria-label="Stop" onClick={actions.stop} loading={stopping}>
         {stopping ? null : <StopIcon weight="fill" aria-hidden="true" />}
@@ -123,6 +125,7 @@ function ComposerSubmit() {
   }
 
   const busy = state.status === 'busy'
+
   return (
     <Button type="submit" variant="primary" size="icon-lg" aria-label="Send" disabled={!meta.canSend} loading={busy}>
       {busy ? null : <ArrowUpIcon aria-hidden="true" />}

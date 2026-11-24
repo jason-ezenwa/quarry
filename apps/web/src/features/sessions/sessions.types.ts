@@ -1,8 +1,8 @@
-import type { DocumentKind, SavedDocumentRef, SessionErrorCode } from '@quarry/contracts'
+import type { SavedDocumentRef } from '@quarry/contracts'
+import type { UIMessage } from 'ai'
 import type { VariantProps } from 'class-variance-authority'
 import type { badgeVariants } from '@/components/ui/badge'
-import type { ComposerStatus, IconComponent } from '@/components/session/session.types'
-import type { CHAT_ERRORS } from './sessions.constants'
+import type { IconComponent } from '@/components/session/session.types'
 
 export type BadgeVariant = NonNullable<VariantProps<typeof badgeVariants>['variant']>
 
@@ -23,16 +23,7 @@ export type MessageBlock = { kind: 'text'; key: string; text: string } | { kind:
 // A saved document announced in a tool output, with where it was announced.
 export type DocumentAnnouncement = SavedDocumentRef & { messageId: string }
 
-// What a panel tab shows: its name heads the tab's exports.
-export type OpenDocument = { kind: DocumentKind; id: string; name: string }
+export type Part = UIMessage['parts'][number]
+export type ToolPart = Extract<Part, { toolCallId: string }>
 
-// The server's codes, plus `failed` for anything else.
-export type TurnErrorCode = SessionErrorCode | 'failed'
-
-export type ChatErrorCode = keyof typeof CHAT_ERRORS
-
-// A message the server refused, put back in the composer.
-export type UnsentDraft = { text: string; key: string }
-
-// The composer's state, with why it is closed: archived, or at the message limit.
-export type ApplicationComposerState = Exclude<ComposerStatus, 'closed'> | 'archived' | 'limit'
+export type Mode = 'link' | 'paste'

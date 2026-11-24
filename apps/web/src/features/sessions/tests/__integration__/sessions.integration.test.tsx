@@ -37,12 +37,14 @@ describe('Home: new application (integration)', () => {
     setViewport('desktop')
     signInAs()
     const created: unknown[] = []
+
     server.use(
       http.post(apiUrl('/api/sessions'), async ({ request }) => {
         created.push(await request.json())
         return HttpResponse.json({ id: SESSION_ID }, { status: 201 })
       }),
     )
+
     const recorded = serveSession(freshSession())
     const router = renderRoute('/')
 
@@ -64,12 +66,14 @@ describe('Home: new application (integration)', () => {
   it('starts a session from a pasted description', async () => {
     signInAs()
     const created: unknown[] = []
+
     server.use(
       http.post(apiUrl('/api/sessions'), async ({ request }) => {
         created.push(await request.json())
         return HttpResponse.json({ id: SESSION_ID }, { status: 201 })
       }),
     )
+
     serveSession(freshSession('Score my fit for this job:\n\nWe need a senior engineer.'))
     renderRoute('/')
 
@@ -93,6 +97,7 @@ describe('Home: new application (integration)', () => {
 
   it('shows the monthly limit with the reset date', async () => {
     signInAs()
+
     server.use(
       http.post(apiUrl('/api/sessions'), () =>
         HttpResponse.json(
@@ -108,6 +113,7 @@ describe('Home: new application (integration)', () => {
         ),
       ),
     )
+
     const router = renderRoute('/')
 
     await userEvent.type(await screen.findByRole('textbox', { name: 'Job link' }), JOB_URL)
@@ -120,12 +126,14 @@ describe('Home: new application (integration)', () => {
   it('lists recent applications and the month count', async () => {
     setViewport('desktop')
     signInAs()
+
     server.use(
       http.get(apiUrl('/api/sessions'), () => HttpResponse.json({ items: [summary()], nextCursor: null })),
       http.get(apiUrl('/api/usage'), () =>
         HttpResponse.json({ sessions: { used: 4, limit: 10, resetsAt: '2026-12-01T00:00:00.000Z' } }),
       ),
     )
+
     renderRoute('/')
 
     const recent = await screen.findByRole('region', { name: 'Recent' })
@@ -178,6 +186,7 @@ describe('Session page (integration)', () => {
 
   it('draws tool steps from their metadata, refusals with their failed text, and falls back to the gear without metadata', async () => {
     signInAs()
+
     const reply = {
       id: 'msg-reply',
       role: 'assistant' as const,
@@ -189,6 +198,7 @@ describe('Session page (integration)', () => {
         { type: 'text', text: 'Done.' },
       ],
     }
+
     serveSession(detail({ messages: [userMessage('msg-1', 'Hi'), reply] }))
     renderRoute(SESSION_PATH)
 
@@ -246,9 +256,11 @@ describe('Session page (integration)', () => {
     const revised = resumeDocument('resume-2', 'Payments first, one page')
     const letter = coverLetterDocument('letter-1', 'Halden letter')
     let finishTurn = () => {}
+
     const turnFinished = new Promise<void>((resolve) => {
       finishTurn = resolve
     })
+
     serveSession(
       detail({
         messages: [
@@ -272,6 +284,7 @@ describe('Session page (integration)', () => {
       ],
       turnFinished,
     )
+
     renderRoute(SESSION_PATH)
 
     const panel = await screen.findByRole('complementary', { name: 'Output' })
@@ -318,9 +331,11 @@ describe('Session page (integration)', () => {
       const saved: string[] = []
       vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:export')
       vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
+
       vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
         saved.push(this.download)
       })
+
       return saved
     }
 
@@ -333,11 +348,13 @@ describe('Session page (integration)', () => {
       signInAs()
       const resume = resumeDocument('resume-1', 'Halden resume')
       const letter = coverLetterDocument('letter-1', 'Halden letter')
+
       const recorded = serveSession(
         detail({ messages: [...detail().messages, documentReplyMessage('msg-3', resume), documentReplyMessage('msg-4', letter)] }),
         undefined,
         [tailoredResume({ id: resume.id, name: resume.name }), coverLetter({ id: letter.id, name: letter.name })],
       )
+
       const saved = captureSaves()
       renderRoute(SESSION_PATH)
 
@@ -360,14 +377,17 @@ describe('Session page (integration)', () => {
       setViewport('desktop')
       signInAs()
       const resume = resumeDocument('resume-1', 'Halden resume')
+
       serveSession(detail({ messages: [...detail().messages, documentReplyMessage('msg-3', resume)] }), undefined, [
         tailoredResume({ id: resume.id, name: resume.name }),
       ])
+
       server.use(
         http.get(apiUrl(`/api/sessions/${SESSION_ID}/documents/resume/resume-1/export`), () =>
           HttpResponse.json({ statusCode: 500, message: 'Render failed' }, { status: 500 }),
         ),
       )
+
       const saved = captureSaves()
       renderRoute(SESSION_PATH)
 
@@ -419,6 +439,7 @@ describe('Session page (integration)', () => {
   it('shows the working state for a turn running elsewhere, then the reply once it lands', async () => {
     signInAs()
     let polls = 0
+
     server.use(
       http.get(apiUrl(`/api/sessions/${SESSION_ID}`), () => {
         polls += 1
@@ -429,6 +450,7 @@ describe('Session page (integration)', () => {
         return HttpResponse.json({ message: 'unexpected' }, { status: 500 })
       }),
     )
+
     let turnsSent = 0
     renderRoute(SESSION_PATH)
 
@@ -442,6 +464,7 @@ describe('Session page (integration)', () => {
     signInAs()
     let polls = 0
     let turnsSent = 0
+
     server.use(
       http.get(apiUrl(`/api/sessions/${SESSION_ID}`), () => {
         polls += 1
@@ -452,6 +475,7 @@ describe('Session page (integration)', () => {
         return HttpResponse.json({ message: 'unexpected' }, { status: 500 })
       }),
     )
+
     renderRoute(SESSION_PATH)
 
     expect(await screen.findByRole('button', { name: 'Retry' }, { timeout: 5000 })).toBeInTheDocument()
@@ -462,6 +486,7 @@ describe('Session page (integration)', () => {
     signInAs()
     serveSession(detail())
     const turns: unknown[] = []
+
     server.use(
       http.post(apiUrl(`/api/sessions/${SESSION_ID}/turns`), async ({ request }) => {
         turns.push(await request.json())
@@ -469,6 +494,7 @@ describe('Session page (integration)', () => {
         return HttpResponse.json({ statusCode: 400, code: 'nothing-to-answer', message: 'Nothing to answer' }, { status: 400 })
       }),
     )
+
     renderRoute(SESSION_PATH)
 
     await userEvent.type(await screen.findByRole('textbox', { name: 'Message' }), 'Lead with the agent work{Enter}')
@@ -485,11 +511,13 @@ describe('Session page (integration)', () => {
   ])('puts a message refused with %s back in the composer and says why', async (code, explanation) => {
     signInAs()
     serveSession(detail())
+
     server.use(
       http.post(apiUrl(`/api/sessions/${SESSION_ID}/turns`), () =>
         HttpResponse.json({ statusCode: 409, code, message: 'Refused' }, { status: 409 }),
       ),
     )
+
     renderRoute(SESSION_PATH)
 
     const composer = await screen.findByRole('textbox', { name: 'Message' })
@@ -504,6 +532,7 @@ describe('Session page (integration)', () => {
     signInAs()
     let session = freshSession()
     const turns: unknown[] = []
+
     server.use(
       http.get(apiUrl(`/api/sessions/${SESSION_ID}`), () => HttpResponse.json(session)),
       http.post(apiUrl(`/api/sessions/${SESSION_ID}/turns`), async ({ request }) => {
@@ -513,6 +542,7 @@ describe('Session page (integration)', () => {
         return uiStream(fitTurnChunks())
       }),
     )
+
     renderRoute(SESSION_PATH)
 
     await userEvent.click(await screen.findByRole('button', { name: 'Retry' }))
@@ -532,6 +562,7 @@ describe('Stopping a turn (integration)', () => {
     let session = freshSession()
     const turns: unknown[] = []
     const stops: unknown[] = []
+
     server.use(
       http.get(apiUrl(`/api/sessions/${SESSION_ID}`), () => HttpResponse.json(session)),
       http.post(TURNS_URL, async ({ request }) => {
@@ -545,6 +576,7 @@ describe('Stopping a turn (integration)', () => {
         return new HttpResponse(null, { status: 204 })
       }),
     )
+
     renderRoute(SESSION_PATH)
 
     await userEvent.click(await screen.findByRole('button', { name: 'Stop' }))
@@ -571,6 +603,7 @@ describe('Stopping a turn (integration)', () => {
     // The server stores each sent message, and a reply only when the turn isn't stopped.
     let session = freshSession()
     const turns: unknown[] = []
+
     server.use(
       http.get(apiUrl(`/api/sessions/${SESSION_ID}`), () => HttpResponse.json(session)),
       http.post(TURNS_URL, async ({ request }) => {
@@ -584,6 +617,7 @@ describe('Stopping a turn (integration)', () => {
       }),
       http.post(`${TURNS_URL}/stop`, () => new HttpResponse(null, { status: 204 })),
     )
+
     renderRoute(SESSION_PATH)
 
     await userEvent.click(await screen.findByRole('button', { name: 'Stop' }))
@@ -599,6 +633,7 @@ describe('Stopping a turn (integration)', () => {
   it('keeps a reply that was saved before the stop reached the server', async () => {
     signInAs()
     let session = freshSession()
+
     server.use(
       http.get(apiUrl(`/api/sessions/${SESSION_ID}`), () => HttpResponse.json(session)),
       http.post(TURNS_URL, () => openUiStream(runningChunks())),
@@ -607,6 +642,7 @@ describe('Stopping a turn (integration)', () => {
         return new HttpResponse(null, { status: 204 })
       }),
     )
+
     renderRoute(SESSION_PATH)
 
     await userEvent.click(await screen.findByRole('button', { name: 'Stop' }))
@@ -618,10 +654,12 @@ describe('Stopping a turn (integration)', () => {
   it('offers a retry when the stop ended the turn but its answer was lost', async () => {
     signInAs()
     serveSession(freshSession(), runningChunks())
+
     server.use(
       http.post(TURNS_URL, () => openUiStream(runningChunks())),
       http.post(`${TURNS_URL}/stop`, () => HttpResponse.error()),
     )
+
     renderRoute(SESSION_PATH)
 
     await userEvent.click(await screen.findByRole('button', { name: 'Stop' }))
@@ -634,6 +672,7 @@ describe('Stopping a turn (integration)', () => {
     signInAs()
     let session = freshSession()
     let reads = 0
+
     server.use(
       http.get(apiUrl(`/api/sessions/${SESSION_ID}`), () => {
         reads += 1
@@ -643,12 +682,15 @@ describe('Stopping a turn (integration)', () => {
       http.post(`${TURNS_URL}/stop`, () => {
         // The turn runs on and lands a moment later.
         session = { ...session, status: 'drafting' }
+
         setTimeout(() => {
           session = detail()
         }, 500)
+
         return HttpResponse.json({ message: 'Internal server error' }, { status: 500 })
       }),
     )
+
     renderRoute(SESSION_PATH)
 
     await userEvent.click(await screen.findByRole('button', { name: 'Stop' }))
@@ -662,9 +704,11 @@ describe('Stopping a turn (integration)', () => {
 describe('Applications page (integration)', () => {
   it('shows more applications a page at a time', async () => {
     signInAs()
+
     server.use(
       http.get(apiUrl('/api/sessions'), ({ request }) => {
         const cursor = new URL(request.url).searchParams.get('cursor')
+
         return HttpResponse.json(
           cursor
             ? { items: [summary({ id: 'older', title: 'Founding Engineer', company: 'Northmoor' })], nextCursor: null }
@@ -672,6 +716,7 @@ describe('Applications page (integration)', () => {
         )
       }),
     )
+
     renderRoute('/applications')
 
     const list = await screen.findByRole('tabpanel', { name: 'Active' })

@@ -10,6 +10,7 @@ export const JOB_SOURCES = [
   "web",
   "pasted",
 ] as const;
+
 export type JobSource = (typeof JOB_SOURCES)[number];
 
 // How a source reads beside a job, in lists and in the tool step.
@@ -49,6 +50,7 @@ export const SESSION_ERROR_CODES = [
   "session-message-limit",
   "nothing-to-answer",
 ] as const;
+
 export type SessionErrorCode = (typeof SESSION_ERROR_CODES)[number];
 
 // Exactly one of the two.

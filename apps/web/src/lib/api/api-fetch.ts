@@ -1,6 +1,5 @@
+import type { ApiErrorBody } from './api.types'
 import { API_BASE_URL } from './base-url'
-
-export type ApiErrorBody = { message?: string; code?: string } & Record<string, unknown>
 
 export class ApiError extends Error {
   readonly status: number

@@ -1,12 +1,7 @@
 import { FIT_LABELS, isDocumentKind, isOneOf, TOOL_ICONS, type DocumentKind, type SavedDocumentRef, type SessionMessage } from '@quarry/contracts'
 import { isTextUIPart, isToolUIPart, type UIMessage } from 'ai'
-import { FALLBACK_TOOL_STEP, TOOL_ICON_COMPONENTS, UNFINISHED_STEP_NOTE } from './sessions.constants'
-import type { DocumentAnnouncement, MessageBlock, ToolStep } from './sessions.types'
-
-type Part = UIMessage['parts'][number]
-type ToolPart = Extract<Part, { toolCallId: string }>
-
-const RUNNING_STATES: ReadonlySet<string> = new Set(['input-streaming', 'input-available'])
+import { FALLBACK_TOOL_STEP, RUNNING_STATES, TOOL_ICON_COMPONENTS, UNFINISHED_STEP_NOTE } from './sessions.constants'
+import type { DocumentAnnouncement, MessageBlock, Part, ToolPart, ToolStep } from './sessions.types'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -19,9 +14,11 @@ function isCompaction(part: Part): boolean {
 
 function displayFor(metadata: ToolPart['toolMetadata']) {
   const { icon, active, done, failed } = metadata ?? {}
+
   if (!isOneOf(TOOL_ICONS, icon) || typeof active !== 'string' || typeof done !== 'string' || typeof failed !== 'string') {
     return FALLBACK_TOOL_STEP
   }
+
   return { icon: TOOL_ICON_COMPONENTS[icon], active, done, failed }
 }
 
@@ -56,6 +53,7 @@ export function messageBlocks(message: UIMessage, live = false): MessageBlock[] 
       if (!isCompaction(part) && part.text.trim()) {
         blocks.push({ kind: 'text', key: `${message.id}-${index}`, text: part.text })
       }
+
       return
     }
 
@@ -63,6 +61,7 @@ export function messageBlocks(message: UIMessage, live = false): MessageBlock[] 
 
     const last = blocks.at(-1)
     const step = toolStepFor(part, live)
+
     if (last?.kind === 'steps') last.steps.push(step)
     else blocks.push({ kind: 'steps', key: `${message.id}-${index}`, steps: [step] })
   })
@@ -94,9 +93,11 @@ export function messageDocuments(message: UIMessage): DocumentAnnouncement[] {
 // The newest document of each kind, which is what each panel tab shows.
 export function latestDocuments(messages: UIMessage[]): Partial<Record<DocumentKind, DocumentAnnouncement>> {
   const latest: Partial<Record<DocumentKind, DocumentAnnouncement>> = {}
+
   for (const message of messages) {
     for (const document of messageDocuments(message)) latest[document.kind] = document
   }
+
   return latest
 }
 

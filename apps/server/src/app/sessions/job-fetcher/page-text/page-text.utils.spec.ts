@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractMainText, htmlToText } from './job-fetcher.utils';
+import { extractMainText, htmlToText } from './page-text.utils';
 
 describe('htmlToText', () => {
   it('keeps paragraphs, headings and list items on their own lines', () => {

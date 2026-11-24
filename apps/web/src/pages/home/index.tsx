@@ -1,6 +1,6 @@
 import { PageHeader } from '@/components/app-frame/page-header'
 import { NewApplicationForm } from '@/features/sessions/components/new-application-form'
-import { RecentApplications } from '@/features/sessions/components/recent-applications'
+import { RecentApplications } from '@/features/sessions/applications/components/recent-applications'
 import { useUsage } from '@/features/sessions/hooks/use-sessions'
 import { ReviewResumeCallout } from '@/features/primary-resume/components/review-resume-callout'
 

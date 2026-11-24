@@ -31,20 +31,12 @@ import {
   AGENT_MAX_STEPS,
   AGENT_MODEL,
   AGENT_SYSTEM_PROMPT,
+  CACHED,
   COMPACTION_INSTRUCTIONS,
   COMPACTION_TRIGGER_TOKENS,
 } from './agent.constants';
+import type { RunningTurn } from './agent.types';
 import { profileSystemMessage } from './agent.utils';
-
-const CACHED = { anthropic: { cacheControl: { type: 'ephemeral' } } } as const;
-
-// A running turn: aborting it cancels the call to Claude; `done` settles
-// once the turn has released its lock.
-type RunningTurn = {
-  messageId: string;
-  stop: AbortController;
-  done: Promise<void>;
-};
 
 const generateMessageId = createIdGenerator({ prefix: 'msg', size: 16 });
 
@@ -82,9 +74,11 @@ export class AgentService {
     let settled: Promise<void> | undefined;
     const stop = new AbortController();
     let markDone!: () => void;
+
     const done = new Promise<void>((resolve) => {
       markDone = resolve;
     });
+
     const running: RunningTurn = { messageId: turn.messageId, stop, done };
     this.running.set(turn.sessionId, running);
 
@@ -164,9 +158,11 @@ export class AgentService {
       if (!response.headersSent) response.writeHead(500).end();
     } finally {
       if (!settled) await this.sessionsService.releaseTurn(turn);
+
       if (this.running.get(turn.sessionId) === running) {
         this.running.delete(turn.sessionId);
       }
+
       markDone();
     }
   }

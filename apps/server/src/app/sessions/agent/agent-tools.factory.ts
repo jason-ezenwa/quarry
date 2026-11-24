@@ -18,23 +18,7 @@ import {
   JOB_FETCH_FAILURE_NOTES,
 } from '../job-fetcher/job-fetcher.constants';
 import { SessionsService } from '../sessions.service';
-
-// `note` is shown beside the failed step; `message` is for the model.
-const TOOL_FAILURE = {
-  ok: false,
-  reason: 'tool-failed',
-  message:
-    'That step failed on our side. Tell the user and suggest trying again.',
-  note: 'Something went wrong on our side',
-} as const;
-
-const SOURCE_NOT_FOUND = {
-  ok: false,
-  reason: 'source-not-found',
-  message:
-    'No tailored resume in this application has that id. Use the id of a resume saved in this conversation, or write a new one with create_tailored_resume.',
-  note: 'Source resume not found',
-} as const;
+import { SOURCE_NOT_FOUND, TOOL_FAILURE } from './agent.constants';
 
 // The ids come from the signed-in request and are captured here, never
 // taken from the model's input. Each tool only calls a service method.
@@ -116,6 +100,7 @@ export class AgentToolsFactory {
               context,
               input,
             );
+
             await this.sessionsService.nameAfterFitScore(context, input);
 
             this.logToolCall(context, 'save_fit_score', true);

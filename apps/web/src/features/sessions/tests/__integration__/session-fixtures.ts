@@ -93,6 +93,7 @@ export function fitReplyMessage(id = 'msg-reply', document: FitScoreRef = fitDoc
 // A stored reply that saved a resume or a cover letter, then said so.
 export function documentReplyMessage(id: string, document: Exclude<SavedDocumentRef, { kind: 'fit-score' }>): SessionMessage {
   const { toolName, toolMetadata } = SAVING_TOOLS[document.kind]
+
   return {
     id,
     role: 'assistant',
@@ -191,6 +192,7 @@ export function coverLetter(overrides: Partial<CoverLetterDocumentResponse> = {}
 // A reply that saves one resume or cover letter, then says so.
 export function documentTurnChunks(document: Exclude<SavedDocumentRef, { kind: 'fit-score' }>, messageId = 'msg-streamed'): UIMessageChunk[] {
   const { toolName, toolMetadata } = SAVING_TOOLS[document.kind]
+
   return [
     { type: 'start', messageId },
     { type: 'start-step' },
@@ -229,12 +231,14 @@ export function fitTurnChunks(document = fitDocument(), messageId = 'msg-streame
 // reply stays open before its `finish` chunk until the promise settles.
 export function uiStream(chunks: UIMessageChunk[], holdFinish?: Promise<void>) {
   const encoder = new TextEncoder()
+
   const body = new ReadableStream<Uint8Array>({
     async start(controller) {
       for (const chunk of chunks) {
         if (chunk.type === 'finish' && holdFinish) await holdFinish
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`))
       }
+
       controller.enqueue(encoder.encode('data: [DONE]\n\n'))
       controller.close()
     },
@@ -248,6 +252,7 @@ export function uiStream(chunks: UIMessageChunk[], holdFinish?: Promise<void>) {
 // A turn still running: sends `chunks`, then stays open until the client goes away.
 export function openUiStream(chunks: UIMessageChunk[]) {
   const encoder = new TextEncoder()
+
   const body = new ReadableStream<Uint8Array>({
     start(controller) {
       for (const chunk of chunks) controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`))
@@ -280,9 +285,11 @@ export function serveSession(
     }),
     http.get(apiUrl('/api/sessions'), ({ request }) => {
       const archived = new URL(request.url).searchParams.get('archived') === 'true'
+
       const items = Boolean(session.archivedAt) === archived
         ? [summary({ title: session.title, archivedAt: session.archivedAt, status: session.status })]
         : []
+
       return HttpResponse.json({ items, nextCursor: null })
     }),
     http.patch(apiUrl(`/api/sessions/${SESSION_ID}`), async ({ request }) => {
@@ -295,24 +302,30 @@ export function serveSession(
       const body = (await request.json()) as { message?: { id: string; text: string } }
       recorded.turns.push(body)
       const sent = body.message ? [userMessage(body.message.id, body.message.text)] : []
+
       // Saved as streamed: same id, same document.
       const start = turnChunks.find((chunk) => chunk.type === 'start')
+
       const output = turnChunks.find(
         (chunk): chunk is Extract<UIMessageChunk, { type: 'tool-output-available' }> =>
           chunk.type === 'tool-output-available' && typeof chunk.output === 'object' && chunk.output !== null && 'document' in chunk.output,
       )
+
       const document = (output?.output as { document: SavedDocumentRef } | undefined)?.document
       const reply = replyMessage(start?.messageId ?? `reply-${recorded.turns.length}`, document)
+
       session = {
         ...session,
         userMessageCount: session.userMessageCount + sent.length,
         messages: [...session.messages, ...sent, reply],
       }
+
       return uiStream(turnChunks, holdFinish)
     }),
     http.get(apiUrl(`/api/sessions/${SESSION_ID}/documents/:kind/:documentId/export`), ({ params, request }) => {
       const format = new URL(request.url).searchParams.get('format') ?? ''
       recorded.exports.push(`${String(params.kind)}/${String(params.documentId)}/${format}`)
+
       return new HttpResponse(`${format} file`, {
         headers: { 'Content-Disposition': `attachment; filename="ada-obi-${String(params.documentId)}.${format}"` },
       })
@@ -320,6 +333,7 @@ export function serveSession(
     http.get(apiUrl(`/api/sessions/${SESSION_ID}/documents/:kind/:documentId`), ({ params }) => {
       const id = String(params.documentId)
       recorded.documentReads.push(id)
+
       const found = documents.find((document) => document.kind === params.kind && document.id === id)
       if (found) return HttpResponse.json(found)
       if (params.kind === 'fit-score') return HttpResponse.json(fitReport({ id }))
