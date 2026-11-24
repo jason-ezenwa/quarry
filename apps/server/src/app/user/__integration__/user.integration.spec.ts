@@ -42,7 +42,7 @@ describe('User (integration)', () => {
         id: userId,
         name: 'Ada Obi',
         email: 'ada@example.com',
-        emailVerified: false,
+        emailVerified: true,
         createdAt: expect.any(String),
         updatedAt: expect.any(String),
       });

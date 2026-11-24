@@ -6,6 +6,7 @@ import {
 } from './database';
 import { fakeAnthropicApi } from './fake-anthropic-api';
 import { fakeR2 } from './fake-r2';
+import { fakeResend } from './fake-resend';
 import { listenToNetwork, mswServer } from './msw-server';
 
 // Every test starts from an empty database, which also wipes anything seeded
@@ -19,6 +20,7 @@ afterEach(async () => {
   mswServer.resetHandlers();
   fakeAnthropicApi.reset();
   fakeR2.reset();
+  fakeResend.reset();
   await clearTestDatabase();
 });
 

@@ -9,21 +9,24 @@ const DEMO_USER = {
 
 const logger = new Logger('Seed');
 
-// Creates the demo account through Better Auth, so the stored password hash
-// and account record match a real sign-up. Running it again is a no-op.
+// Signs up through Better Auth, then verifies, since unverified accounts can't sign in.
 async function seed(): Promise<void> {
   const context = await auth.$context;
+
   const existing = await context.internalAdapter.findUserByEmail(
     DEMO_USER.email,
   );
 
   if (existing) {
     logger.log('Demo user already exists', { email: DEMO_USER.email });
-    return;
+  } else {
+    await auth.api.signUpEmail({ body: DEMO_USER });
+    logger.log('Demo user created', { email: DEMO_USER.email });
   }
 
-  await auth.api.signUpEmail({ body: DEMO_USER });
-  logger.log('Demo user created', { email: DEMO_USER.email });
+  await context.internalAdapter.updateUserByEmail(DEMO_USER.email, {
+    emailVerified: true,
+  });
 }
 
 seed()

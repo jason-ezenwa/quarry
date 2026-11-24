@@ -7,13 +7,16 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import type { VerifyEmailState } from '@/features/email-verification/email-verification.types'
 import { authClient } from '@/lib/auth-client'
-import { PATHS } from '@/lib/auth/auth.constants'
-import { signInSchema, type SignInValues } from '@/lib/auth/auth-schemas'
+import { PATHS, SIGN_IN_ERRORS } from '@/lib/auth/auth.constants'
+import { signInSchema } from '@/lib/auth/auth-schemas'
+import type { SignInValues } from '@/lib/auth/auth.types'
 
 export function SignInPage() {
   const navigate = useNavigate()
   const [formError, setFormError] = useState<string | null>(null)
+
   const {
     register,
     handleSubmit,
@@ -27,8 +30,14 @@ export function SignInPage() {
     setFormError(null)
     const { error } = await authClient.signIn.email(values)
 
+    // The check-your-email page offers a new link, under the resend limit.
+    if (error?.code === 'EMAIL_NOT_VERIFIED') {
+      navigate(PATHS.verifyEmail, { state: { email: values.email, from: 'sign-in' } satisfies VerifyEmailState })
+      return
+    }
+
     if (error) {
-      setFormError(error.status === 401 ? 'Incorrect email or password.' : 'We could not sign you in. Try again.')
+      setFormError(SIGN_IN_ERRORS[error.status] ?? 'We could not sign you in. Try again.')
       return
     }
 
@@ -69,7 +78,12 @@ export function SignInPage() {
           <FieldError errors={[errors.email]} />
         </Field>
         <Field data-invalid={Boolean(errors.password)}>
-          <FieldLabel htmlFor="password">Password</FieldLabel>
+          <div className="flex items-center justify-between">
+            <FieldLabel htmlFor="password">Password</FieldLabel>
+            <Button asChild variant="link">
+              <Link to={PATHS.forgotPassword}>Forgot password?</Link>
+            </Button>
+          </div>
           <Input
             id="password"
             type="password"

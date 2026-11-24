@@ -2,6 +2,9 @@
 export const PASSWORD_MIN_LENGTH = 8
 export const PASSWORD_MAX_LENGTH = 128
 
+export const TOO_MANY_REQUESTS_STATUS = 429
+export const RATE_LIMITED_MESSAGE = 'Too many attempts. Try again in a few minutes.'
+
 export const PATHS = {
   home: '/',
   signIn: '/sign-in',
@@ -9,4 +12,17 @@ export const PATHS = {
   onboarding: '/onboarding',
   profile: '/profile',
   resume: '/profile/resume',
+  verifyEmail: '/verify-email',
+  emailVerified: '/email-verified',
+  forgotPassword: '/forgot-password',
+  resetPassword: '/reset-password',
 } as const
+
+export const SIGN_UP_ERRORS: Record<number, string> = {
+  [TOO_MANY_REQUESTS_STATUS]: RATE_LIMITED_MESSAGE,
+}
+
+export const SIGN_IN_ERRORS: Record<number, string> = {
+  401: 'Incorrect email or password.',
+  [TOO_MANY_REQUESTS_STATUS]: RATE_LIMITED_MESSAGE,
+}

@@ -22,6 +22,11 @@ import { UploadFileDto } from '../storage/dto/upload-file.dto';
 import { UploadedFileRefDto } from '../storage/dto/uploaded-file-ref.dto';
 import { StorageService } from '../storage/storage.service';
 import { UploadFileInterceptor } from '../storage/upload-file.interceptor';
+import {
+  RESUME_PARSE_THROTTLE,
+  RESUME_UPLOAD_THROTTLE,
+} from '../throttle/throttle.constants';
+import { ThrottlePerUser } from '../throttle/throttle-per-user.decorator';
 import { SaveResumeDto } from './dto/save-resume.dto';
 import { ResumeService } from './resume.service';
 
@@ -35,6 +40,7 @@ export class ResumeController {
 
   // A replacement file, uploaded before PUT primary/file commits it.
   @Post('uploads')
+  @ThrottlePerUser(RESUME_UPLOAD_THROTTLE)
   @UseInterceptors(UploadFileInterceptor('primary-resume'))
   async upload(
     @CurrentUser() user: SessionUser,
@@ -64,6 +70,7 @@ export class ResumeController {
   }
 
   @Post('primary/parse')
+  @ThrottlePerUser(RESUME_PARSE_THROTTLE)
   @HttpCode(HttpStatus.ACCEPTED)
   async retryParse(@CurrentUser() user: SessionUser): Promise<void> {
     await this.resumeService.retryParse(user.id);

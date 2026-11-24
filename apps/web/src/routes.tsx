@@ -9,12 +9,16 @@ import {
   requireSession,
   sequence,
 } from './lib/auth/session-loaders.ts'
+import { EmailVerifiedPage } from './pages/email-verified/index.tsx'
+import { ForgotPasswordPage } from './pages/forgot-password/index.tsx'
 import { HomePage } from './pages/home/index.tsx'
 import { OnboardingPage } from './pages/onboarding/index.tsx'
 import { ProfilePage } from './pages/profile/index.tsx'
+import { ResetPasswordPage } from './pages/reset-password/index.tsx'
 import { ResumePage } from './pages/resume/index.tsx'
 import { SignInPage } from './pages/sign-in/index.tsx'
 import { SignUpPage } from './pages/sign-up/index.tsx'
+import { VerifyEmailPage } from './pages/verify-email/index.tsx'
 
 // The design system page is a development aid, so it is left out of production builds.
 const developmentRoutes: RouteObject[] = import.meta.env.DEV
@@ -45,6 +49,11 @@ export const routes: RouteObject[] = [
       { path: PATHS.onboarding, loader: sequence(requireSession, requireNoProfile), Component: OnboardingPage },
       { path: PATHS.signIn, loader: requireNoSession, Component: SignInPage },
       { path: PATHS.signUp, loader: requireNoSession, Component: SignUpPage },
+      { path: PATHS.verifyEmail, Component: VerifyEmailPage },
+      // The link signs the user in, so they go straight on to the app.
+      { path: PATHS.emailVerified, loader: requireNoSession, Component: EmailVerifiedPage },
+      { path: PATHS.forgotPassword, loader: requireNoSession, Component: ForgotPasswordPage },
+      { path: PATHS.resetPassword, Component: ResetPasswordPage },
       ...developmentRoutes,
     ],
   },
