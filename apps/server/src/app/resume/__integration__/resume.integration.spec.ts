@@ -652,6 +652,44 @@ describe('Resume (integration)', () => {
     });
   });
 
+  describe('rate limits', () => {
+    it('allows five parse retries per user an hour', async () => {
+      const { cookie } = await signUp(app);
+      await onboardParsed(cookie);
+
+      const statuses: number[] = [];
+      for (let attempt = 0; attempt < 6; attempt++) {
+        statuses.push(
+          (await api('post', '/resumes/primary/parse', cookie)).status,
+        );
+      }
+      const other = await signUp(app, { email: 'bo@example.com' });
+      await onboardParsed(other.cookie);
+      const otherUser = await api(
+        'post',
+        '/resumes/primary/parse',
+        other.cookie,
+      );
+
+      expect(statuses).toEqual([409, 409, 409, 409, 409, 429]);
+      expect(otherUser.status).toBe(409);
+    });
+
+    it('allows ten resume uploads per user an hour', async () => {
+      const { cookie } = await signUp(app);
+      await onboardParsed(cookie);
+
+      const statuses: number[] = [];
+      for (let attempt = 0; attempt < 11; attempt++) {
+        statuses.push(
+          (await upload(cookie, pdfFile, '/resumes/uploads')).status,
+        );
+      }
+
+      expect(statuses).toEqual([...Array(10).fill(201), 429]);
+    });
+  });
+
   it('refuses every resume endpoint without a profile', async () => {
     const { cookie } = await signUp(app);
 

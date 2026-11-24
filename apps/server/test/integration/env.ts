@@ -15,3 +15,6 @@ process.env.R2_ACCOUNT_ID = R2_TEST_CONFIG.accountId;
 process.env.R2_ACCESS_KEY_ID = R2_TEST_CONFIG.accessKeyId;
 process.env.R2_SECRET_ACCESS_KEY = R2_TEST_CONFIG.secretAccessKey;
 process.env.R2_BUCKET_NAME = R2_TEST_CONFIG.bucketName;
+// Resend is faked with MSW in fake-resend.ts.
+process.env.RESEND_API_KEY = 'test-resend-key';
+process.env.EMAIL_FROM = 'Quarry <noreply@quarry.test>';

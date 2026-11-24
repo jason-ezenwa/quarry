@@ -10,3 +10,9 @@ export type AuthCardProps = {
   alternative: ReactNode
   children: ReactNode
 }
+
+export type AuthNoticeProps = {
+  title: string
+  description: string
+  action: { label: string; to: string }
+}

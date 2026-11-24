@@ -3,13 +3,16 @@ import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
 import { apiUrl } from '@/test/integration/handlers'
-import { renderRoute, signInAs, TEST_USER } from '@/test/integration/render-route'
+import { renderRoute, TEST_USER } from '@/test/integration/render-route'
 import { server } from '@/test/integration/server'
 
-async function fillAndSubmit({ confirmPassword = 'correct-horse' }: { confirmPassword?: string } = {}) {
+async function fillAndSubmit({
+  name = 'Ada Obi',
+  confirmPassword = 'correct-horse',
+}: { name?: string; confirmPassword?: string } = {}) {
   const password = 'correct-horse'
   const user = userEvent.setup()
-  await user.type(await screen.findByLabelText('Name'), 'Ada Obi')
+  await user.type(await screen.findByLabelText('Name'), name)
   await user.type(screen.getByLabelText('Email'), 'ada@example.com')
   await user.type(screen.getByLabelText('Password'), password)
   await user.type(screen.getByLabelText('Confirm password'), confirmPassword)
@@ -17,35 +20,39 @@ async function fillAndSubmit({ confirmPassword = 'correct-horse' }: { confirmPas
 }
 
 describe('Sign up (integration)', () => {
-  it('creates the account without the confirmation field and goes to onboarding', async () => {
+  it('creates the account without the confirmation field and asks to check email', async () => {
     let body: unknown
     server.use(
       http.post(apiUrl('/api/auth/sign-up/email'), async ({ request }) => {
         body = await request.json()
-        signInAs({ profile: false })
-        return HttpResponse.json({ token: 'token-1', user: TEST_USER })
+        return HttpResponse.json({ token: null, user: { ...TEST_USER, emailVerified: false } })
       }),
     )
     const router = renderRoute('/sign-up')
 
     await fillAndSubmit()
 
-    expect(await screen.findByRole('heading', { name: 'Set up your profile' })).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe('/onboarding')
-    expect(body).toEqual({ name: 'Ada Obi', email: 'ada@example.com', password: 'correct-horse' })
+    expect(await screen.findByRole('heading', { name: 'Check your email' })).toBeInTheDocument()
+    expect(screen.getByText('We sent a link to ada@example.com. Open it to verify your address, then sign in.')).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/verify-email')
+    expect(body).toEqual({
+      name: 'Ada Obi',
+      email: 'ada@example.com',
+      password: 'correct-horse',
+    })
   })
 
-  it('explains when the email already has an account', async () => {
+  it('explains when there were too many attempts', async () => {
     server.use(
       http.post(apiUrl('/api/auth/sign-up/email'), () =>
-        HttpResponse.json({ code: 'USER_ALREADY_EXISTS', message: 'User already exists' }, { status: 422 }),
+        HttpResponse.json({ message: 'Too many requests. Please try again later.' }, { status: 429 }),
       ),
     )
     renderRoute('/sign-up')
 
     await fillAndSubmit()
 
-    expect(await screen.findByText('An account with this email already exists.')).toBeInTheDocument()
+    expect(await screen.findByText('Too many attempts. Try again in a few minutes.')).toBeInTheDocument()
   })
 
   it('flags mismatched passwords on the confirmation field', async () => {
@@ -54,5 +61,35 @@ describe('Sign up (integration)', () => {
     await fillAndSubmit({ confirmPassword: 'different-one' })
 
     expect(await screen.findByText('Passwords do not match')).toBeInTheDocument()
+  })
+
+  it('refuses a name with a link before sending anything', async () => {
+    let called = false
+    server.use(
+      http.post(apiUrl('/api/auth/sign-up/email'), () => {
+        called = true
+        return HttpResponse.json({ token: null, user: null })
+      }),
+    )
+    renderRoute('/sign-up')
+
+    await fillAndSubmit({ name: 'Claim https://bit.ly/x' })
+
+    expect(await screen.findByText("Names can't include web addresses.")).toBeInTheDocument()
+    expect(called).toBe(false)
+  })
+
+  it("shows the server's name check on the name field", async () => {
+    server.use(
+      http.post(apiUrl('/api/auth/sign-up/email'), () =>
+        HttpResponse.json({ code: 'INVALID_NAME', message: 'Enter your name.' }, { status: 400 }),
+      ),
+    )
+    renderRoute('/sign-up')
+
+    await fillAndSubmit()
+
+    expect(await screen.findByText('Enter your name.')).toBeInTheDocument()
+    expect(screen.getByLabelText('Name')).toHaveAttribute('aria-invalid', 'true')
   })
 })

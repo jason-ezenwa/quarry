@@ -29,7 +29,33 @@ describe('Sign in (integration)', () => {
 
     expect(await screen.findByText('Ada Obi')).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/')
-    expect(body).toMatchObject({ email: 'ada@example.com', password: 'correct-horse' })
+    expect(body).toEqual({ email: 'ada@example.com', password: 'correct-horse' })
+  })
+
+  it('sends an unverified user to check their email', async () => {
+    server.use(
+      http.post(apiUrl('/api/auth/sign-in/email'), () =>
+        HttpResponse.json({ code: 'EMAIL_NOT_VERIFIED', message: 'Email not verified' }, { status: 403 }),
+      ),
+    )
+    const router = renderRoute('/sign-in')
+
+    await fillAndSubmit('ada@example.com', 'correct-horse')
+
+    expect(await screen.findByRole('heading', { name: 'Check your email' })).toBeInTheDocument()
+    expect(
+      screen.getByText('Verify ada@example.com before you sign in. Open the link we emailed you, or send a new one.'),
+    ).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/verify-email')
+  })
+
+  it('treats a session for an unverified account as signed out', async () => {
+    signInAs({ user: { ...TEST_USER, emailVerified: false } })
+
+    const router = renderRoute('/')
+
+    expect(await screen.findByRole('button', { name: 'Sign in' })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/sign-in')
   })
 
   it('shows an error for a wrong password and stays on the page', async () => {
