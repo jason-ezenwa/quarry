@@ -467,6 +467,9 @@ describe('Session page (integration)', () => {
     expect(await screen.findByText(/This application is archived/)).toBeInTheDocument()
     expect(screen.getByRole('textbox', { name: 'Message' })).toBeDisabled()
 
+    // A session opens with the sidebar hidden, to give the chat room.
+    expect(screen.queryByRole('navigation', { name: 'Main' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Show sidebar' }))
     await userEvent.click(within(screen.getByRole('navigation', { name: 'Main' })).getByRole('link', { name: 'Applications' }))
     expect(await screen.findByText('No applications yet.', { exact: false })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('tab', { name: 'Archived' }))
