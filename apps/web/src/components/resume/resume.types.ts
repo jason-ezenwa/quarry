@@ -32,7 +32,8 @@ export type ResumeEditorContextValue = {
   meta: ResumeEditorMeta
 }
 
-export type ResumeVariant = "sheet" | "editor"
+// sheet: a page of its own. inset: the same page set inside another sheet, such as a document in the output panel. editor: form sections.
+export type ResumeVariant = "sheet" | "inset" | "editor"
 
 export type Draft = Record<string | number, unknown>
 

@@ -1,4 +1,14 @@
-import type { FitScoreDocumentResponse, SessionDetail, SessionMessage, SessionSummary } from '@quarry/contracts'
+import type {
+  CoverLetterDocumentResponse,
+  DocumentResponse,
+  FitScoreDocumentResponse,
+  FitScoreRef,
+  SavedDocumentRef,
+  SessionDetail,
+  SessionMessage,
+  SessionSummary,
+  TailoredResumeDocumentResponse,
+} from '@quarry/contracts'
 import type { UIMessageChunk } from 'ai'
 import { http, HttpResponse } from 'msw'
 import { apiUrl } from '@/test/integration/handlers'
@@ -30,12 +40,29 @@ export function userMessage(id: string, text: string): SessionMessage {
 const FIT_METADATA = { icon: 'gauge', active: 'Scoring your fit', done: 'Scored your fit', failed: "Couldn't score your fit" }
 const FETCH_METADATA = { icon: 'globe', active: 'Reading the job post', done: 'Read the job post', failed: "Couldn't read the job post" }
 
+const RESUME_METADATA = { icon: 'file-text', active: 'Tailoring your resume', done: 'Tailored your resume', failed: "Couldn't tailor your resume" }
+const COVER_LETTER_METADATA = { icon: 'envelope', active: 'Writing your cover letter', done: 'Wrote your cover letter', failed: "Couldn't write your cover letter" }
+
+// The tool that saves each kind besides the fit report, as the agent names it.
+const SAVING_TOOLS = {
+  resume: { toolName: 'create_tailored_resume', toolMetadata: RESUME_METADATA },
+  'cover-letter': { toolName: 'save_cover_letter', toolMetadata: COVER_LETTER_METADATA },
+} as const
+
+export function resumeDocument(id: string, name: string) {
+  return { kind: 'resume', id, name } as const
+}
+
+export function coverLetterDocument(id: string, name: string) {
+  return { kind: 'cover-letter', id, name } as const
+}
+
 export function fitDocument(id = FIT_ID, score = 86, name = 'Halden fit') {
   return { kind: 'fit-score', id, name, score, label: score >= 80 ? 'strong-fit' : 'good-fit' } as const
 }
 
 // A stored reply: the job fetch, the fit score and a line of text.
-export function fitReplyMessage(id = 'msg-reply', document = fitDocument()): SessionMessage {
+export function fitReplyMessage(id = 'msg-reply', document: FitScoreRef = fitDocument()): SessionMessage {
   return {
     id,
     role: 'assistant',
@@ -61,6 +88,25 @@ export function fitReplyMessage(id = 'msg-reply', document = fitDocument()): Ses
       { type: 'text', text: 'You line up well. Go is the main gap.', state: 'done' },
     ],
   }
+}
+
+// A stored reply that saved a resume or a cover letter, then said so.
+export function documentReplyMessage(id: string, document: Exclude<SavedDocumentRef, { kind: 'fit-score' }>): SessionMessage {
+  const { toolName, toolMetadata } = SAVING_TOOLS[document.kind]
+  return {
+    id,
+    role: 'assistant',
+    parts: [
+      { type: 'step-start' },
+      { type: `tool-${toolName}`, toolCallId: `${id}-save`, state: 'output-available', input: {}, output: { document }, toolMetadata },
+      { type: 'step-start' },
+      { type: 'text', text: `Saved ${document.name}.`, state: 'done' },
+    ],
+  }
+}
+
+function replyMessage(id: string, document: SavedDocumentRef | undefined): SessionMessage {
+  return !document || document.kind === 'fit-score' ? fitReplyMessage(id, document) : documentReplyMessage(id, document)
 }
 
 export function detail(overrides: Partial<SessionDetail> = {}): SessionDetail {
@@ -100,6 +146,66 @@ export function fitReport(overrides: Partial<FitScoreDocumentResponse> = {}): Fi
   }
 }
 
+export function tailoredResume(overrides: Partial<TailoredResumeDocumentResponse> = {}): TailoredResumeDocumentResponse {
+  return {
+    id: 'resume-1',
+    kind: 'resume',
+    name: 'Halden resume',
+    sourceResume: null,
+    createdAt: '2026-11-22T10:05:00.000Z',
+    resume: {
+      name: 'Ada Obi',
+      contact: { email: 'ada@example.com', location: 'Lagos, Nigeria', links: [] },
+      summary: 'Full-stack engineer building agentic products.',
+      experience: [
+        {
+          title: 'Lead Engineer',
+          company: 'Paystack',
+          startDate: '2024-01',
+          bullets: ['Built the payments agent'],
+        },
+      ],
+      education: [],
+      skills: [{ name: 'TypeScript' }, { name: 'React' }],
+      projects: [],
+      certifications: [],
+    },
+    ...overrides,
+  }
+}
+
+export function coverLetter(overrides: Partial<CoverLetterDocumentResponse> = {}): CoverLetterDocumentResponse {
+  return {
+    id: 'letter-1',
+    kind: 'cover-letter',
+    name: 'Halden letter',
+    header: { name: 'Ada Obi', contact: { email: 'ada@example.com', links: [] } },
+    greeting: 'Dear Hiring Team,',
+    paragraphs: ['I build agents.', 'Halden builds agents.', 'We should talk.'],
+    signOff: 'Kind regards,',
+    createdAt: '2026-11-22T10:06:00.000Z',
+    ...overrides,
+  }
+}
+
+// A reply that saves one resume or cover letter, then says so.
+export function documentTurnChunks(document: Exclude<SavedDocumentRef, { kind: 'fit-score' }>, messageId = 'msg-streamed'): UIMessageChunk[] {
+  const { toolName, toolMetadata } = SAVING_TOOLS[document.kind]
+  return [
+    { type: 'start', messageId },
+    { type: 'start-step' },
+    { type: 'tool-input-available', toolCallId: 'call-save', toolName, input: {}, toolMetadata },
+    { type: 'tool-output-available', toolCallId: 'call-save', output: { document } },
+    { type: 'finish-step' },
+    { type: 'start-step' },
+    { type: 'text-start', id: 'text-1' },
+    { type: 'text-delta', id: 'text-1', delta: `Saved ${document.name}.` },
+    { type: 'text-end', id: 'text-1' },
+    { type: 'finish-step' },
+    { type: 'finish' },
+  ]
+}
+
 // The chunks a first turn streams: the job fetch, the fit score, then a line of text.
 export function fitTurnChunks(document = fitDocument(), messageId = 'msg-streamed'): UIMessageChunk[] {
   return [
@@ -119,12 +225,16 @@ export function fitTurnChunks(document = fitDocument(), messageId = 'msg-streame
   ]
 }
 
-// An AI SDK UI message stream, as the turns endpoint sends it.
-export function uiStream(chunks: UIMessageChunk[]) {
+// An AI SDK UI message stream, as the turns endpoint sends it. With `holdFinish`, the
+// reply stays open before its `finish` chunk until the promise settles.
+export function uiStream(chunks: UIMessageChunk[], holdFinish?: Promise<void>) {
   const encoder = new TextEncoder()
   const body = new ReadableStream<Uint8Array>({
-    start(controller) {
-      for (const chunk of chunks) controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`))
+    async start(controller) {
+      for (const chunk of chunks) {
+        if (chunk.type === 'finish' && holdFinish) await holdFinish
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`))
+      }
       controller.enqueue(encoder.encode('data: [DONE]\n\n'))
       controller.close()
     },
@@ -135,13 +245,19 @@ export function uiStream(chunks: UIMessageChunk[]) {
   })
 }
 
-// `documentReads` holds the id of every document fetched, in order.
-type Recorded = { turns: unknown[]; patches: unknown[]; sessionReads: number; documentReads: string[] }
+// `documentReads` holds the id of every document fetched, in order; `exports` each download as `kind/id/format`.
+type Recorded = { turns: unknown[]; patches: unknown[]; sessionReads: number; documentReads: string[]; exports: string[] }
 
-// A session API backed by one in-memory session. A turn appends the streamed reply, as the server saves it.
-export function serveSession(initial: SessionDetail, turnChunks: UIMessageChunk[] = fitTurnChunks()): Recorded {
+// One in-memory session; a turn appends its reply as the server saves it. `documents` are served by id,
+// other fit report ids get the default report, and `holdFinish` is passed to uiStream.
+export function serveSession(
+  initial: SessionDetail,
+  turnChunks: UIMessageChunk[] = fitTurnChunks(),
+  documents: DocumentResponse[] = [],
+  holdFinish?: Promise<void>,
+): Recorded {
   let session = initial
-  const recorded: Recorded = { turns: [], patches: [], sessionReads: 0, documentReads: [] }
+  const recorded: Recorded = { turns: [], patches: [], sessionReads: 0, documentReads: [], exports: [] }
 
   server.use(
     http.get(apiUrl(`/api/sessions/${SESSION_ID}`), () => {
@@ -171,18 +287,29 @@ export function serveSession(initial: SessionDetail, turnChunks: UIMessageChunk[
         (chunk): chunk is Extract<UIMessageChunk, { type: 'tool-output-available' }> =>
           chunk.type === 'tool-output-available' && typeof chunk.output === 'object' && chunk.output !== null && 'document' in chunk.output,
       )
-      const document = (output?.output as { document: ReturnType<typeof fitDocument> } | undefined)?.document
-      const reply = fitReplyMessage(start?.messageId ?? `reply-${recorded.turns.length}`, document)
+      const document = (output?.output as { document: SavedDocumentRef } | undefined)?.document
+      const reply = replyMessage(start?.messageId ?? `reply-${recorded.turns.length}`, document)
       session = {
         ...session,
         userMessageCount: session.userMessageCount + sent.length,
         messages: [...session.messages, ...sent, reply],
       }
-      return uiStream(turnChunks)
+      return uiStream(turnChunks, holdFinish)
     }),
-    http.get(apiUrl(`/api/sessions/${SESSION_ID}/documents/fit-score/:documentId`), ({ params }) => {
-      recorded.documentReads.push(String(params.documentId))
-      return HttpResponse.json(fitReport({ id: String(params.documentId) }))
+    http.get(apiUrl(`/api/sessions/${SESSION_ID}/documents/:kind/:documentId/export`), ({ params, request }) => {
+      const format = new URL(request.url).searchParams.get('format') ?? ''
+      recorded.exports.push(`${String(params.kind)}/${String(params.documentId)}/${format}`)
+      return new HttpResponse(`${format} file`, {
+        headers: { 'Content-Disposition': `attachment; filename="ada-obi-${String(params.documentId)}.${format}"` },
+      })
+    }),
+    http.get(apiUrl(`/api/sessions/${SESSION_ID}/documents/:kind/:documentId`), ({ params }) => {
+      const id = String(params.documentId)
+      recorded.documentReads.push(id)
+      const found = documents.find((document) => document.kind === params.kind && document.id === id)
+      if (found) return HttpResponse.json(found)
+      if (params.kind === 'fit-score') return HttpResponse.json(fitReport({ id }))
+      return HttpResponse.json({ statusCode: 404, message: 'Not found' }, { status: 404 })
     }),
   )
 

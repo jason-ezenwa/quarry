@@ -25,7 +25,8 @@ export type MessageBlock = { kind: 'text'; key: string; text: string } | { kind:
 // A saved document announced in a tool output, with where it was announced.
 export type DocumentAnnouncement = SavedDocumentRef & { messageId: string }
 
-export type OpenDocument = { kind: DocumentKind; id: string }
+// What a panel tab shows: its name heads the tab's exports.
+export type OpenDocument = { kind: DocumentKind; id: string; name: string }
 
 // The server's codes, plus `failed` for anything else.
 export type TurnErrorCode = SessionErrorCode | 'failed'

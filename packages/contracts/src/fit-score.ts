@@ -25,7 +25,8 @@ export const FIT_LABEL_BANDS: readonly { min: number; label: FitLabel }[] = [
 ];
 
 export const FIT_SCORE_LIMITS = {
-  detailMaxLength: 30,
+  // Room for the short phrases the agent writes (up to 45 characters seen in QA).
+  detailMaxLength: 60,
   roleMaxLength: 120,
   maxScore: 10,
   maxPoints: 10,
@@ -51,7 +52,7 @@ const dimension = z.object({
   detail: requiredText
     .max(FIT_SCORE_LIMITS.detailMaxLength)
     .describe(
-      `At most ${FIT_SCORE_LIMITS.detailMaxLength} characters, e.g. "5 of 7 met, 1 partial"`,
+      `A short phrase of at most ${FIT_SCORE_LIMITS.detailMaxLength} characters, e.g. "5 of 7 met, 1 partial"`,
     ),
 });
 

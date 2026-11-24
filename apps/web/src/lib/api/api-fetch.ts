@@ -17,6 +17,12 @@ export class ApiError extends Error {
   }
 }
 
+// The ApiError for a non-2xx response, with the server's message and code when it sent them.
+export async function errorFrom(response: Response): Promise<ApiError> {
+  const body = (await response.json().catch(() => null)) as ApiErrorBody | null
+  return new ApiError(response.status, body?.message ?? response.statusText, body)
+}
+
 // Every API call sends the session cookie and throws ApiError on a non-2xx.
 // A FormData body keeps the multipart content type fetch sets for it.
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -28,10 +34,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     headers: { ...contentType, ...init?.headers },
   })
 
-  if (!response.ok) {
-    const body = (await response.json().catch(() => null)) as ApiErrorBody | null
-    throw new ApiError(response.status, body?.message ?? response.statusText, body)
-  }
+  if (!response.ok) throw await errorFrom(response)
 
   // A 202 or 204 can come back with no body at all.
   const text = await response.text()

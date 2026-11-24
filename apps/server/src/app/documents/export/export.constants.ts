@@ -8,19 +8,12 @@ export const EXPORT_CONTENT_TYPES: Record<ExportFormat, string> = {
   docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 };
 
-export const PRESENT_LABEL = 'Present';
-
-export const HTTP_PROTOCOL_PREFIX = /^https?:\/\//;
-
-export const CONTACT_SEPARATOR = '  ·  ';
-
-// Section headings, in the order a resume shows them.
+// Section headings, in the order a resume shows them. The summary has none.
 export const RESUME_HEADINGS = {
-  summary: 'Summary',
   experience: 'Experience',
-  projects: 'Projects',
   education: 'Education',
   skills: 'Skills',
+  projects: 'Projects',
   certifications: 'Certifications',
 } as const;
 

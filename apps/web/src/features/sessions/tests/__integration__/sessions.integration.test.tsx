@@ -1,19 +1,25 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { apiUrl } from '@/test/integration/handlers'
 import { renderRoute, signInAs } from '@/test/integration/render-route'
 import { server } from '@/test/integration/server'
 import { setViewport } from '@/test/integration/viewport'
 import {
+  coverLetter,
+  coverLetterDocument,
   detail,
+  documentReplyMessage,
+  documentTurnChunks,
   fitDocument,
   fitTurnChunks,
   JOB_URL,
+  resumeDocument,
   serveSession,
   SESSION_ID,
   summary,
+  tailoredResume,
   uiStream,
   userMessage,
 } from './session-fixtures'
@@ -230,6 +236,150 @@ describe('Session page (integration)', () => {
     expect(await within(dialog).findByText('86%')).toBeInTheDocument()
     await userEvent.click(within(dialog).getByRole('button', { name: 'Close' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+  })
+
+  it('opens each resume and cover letter from its own card, and a revision takes over the Resume tab as it streams in', async () => {
+    setViewport('desktop')
+    signInAs()
+    const first = resumeDocument('resume-1', 'Halden resume')
+    const revised = resumeDocument('resume-2', 'Payments first, one page')
+    const letter = coverLetterDocument('letter-1', 'Halden letter')
+    let finishTurn = () => {}
+    const turnFinished = new Promise<void>((resolve) => {
+      finishTurn = resolve
+    })
+    serveSession(
+      detail({
+        messages: [
+          ...detail().messages,
+          userMessage('msg-2', 'Tailor my resume'),
+          documentReplyMessage('msg-3', first),
+          userMessage('msg-4', 'Write a cover letter'),
+          documentReplyMessage('msg-5', letter),
+        ],
+      }),
+      documentTurnChunks(revised),
+      [
+        tailoredResume({ id: first.id, name: first.name }),
+        tailoredResume({
+          id: revised.id,
+          name: revised.name,
+          sourceResume: first.id,
+          resume: { ...tailoredResume().resume, summary: 'Payments engineer first.' },
+        }),
+        coverLetter({ id: letter.id, name: letter.name }),
+      ],
+      turnFinished,
+    )
+    renderRoute(SESSION_PATH)
+
+    const panel = await screen.findByRole('complementary', { name: 'Output' })
+    await userEvent.click(await screen.findByRole('button', { name: 'Open resume: Halden resume' }))
+    expect(within(panel).getByRole('tab', { name: 'Resume' })).toHaveAttribute('aria-selected', 'true')
+    expect(await within(panel).findByRole('article', { name: 'Resume: Halden resume' })).toBeInTheDocument()
+    expect(within(panel).getByText('Full-stack engineer building agentic products.')).toBeInTheDocument()
+
+    // The revision shows while its reply is still streaming, even though the first resume was opened from its card.
+    await userEvent.type(screen.getByRole('textbox', { name: 'Message' }), 'Lead with payments, one page{Enter}')
+    expect(await within(panel).findByRole('article', { name: 'Resume: Payments first, one page' })).toBeInTheDocument()
+    expect(within(panel).getByText('Payments engineer first.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Open resume: Payments first, one page' })).toHaveAttribute('aria-pressed', 'true')
+    finishTurn()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Open resume: Halden resume' }))
+    expect(await within(panel).findByRole('article', { name: 'Resume: Halden resume' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Open resume: Payments first, one page' }))
+    expect(await within(panel).findByRole('article', { name: 'Resume: Payments first, one page' })).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Open cover letter: Halden letter' }))
+    expect(within(panel).getByRole('tab', { name: 'Cover letter' })).toHaveAttribute('aria-selected', 'true')
+    const letterSheet = await within(panel).findByRole('article', { name: 'Cover letter: Halden letter' })
+    expect(within(letterSheet).getByText('Dear Hiring Team,')).toBeInTheDocument()
+    expect(within(letterSheet).getByText('We should talk.')).toBeInTheDocument()
+  })
+
+  it('says when a resume could not load, with nothing to download', async () => {
+    setViewport('desktop')
+    signInAs()
+    serveSession(detail({ messages: [...detail().messages, documentReplyMessage('msg-3', resumeDocument('missing', 'Gone'))] }))
+    renderRoute(SESSION_PATH)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Open resume: Gone' }))
+
+    const panel = screen.getByRole('complementary', { name: 'Output' })
+    expect(await within(panel).findByText("We couldn't load this resume.")).toBeInTheDocument()
+    expect(within(panel).queryByRole('button', { name: /^Download/ })).not.toBeInTheDocument()
+  })
+
+  describe('downloads', () => {
+    // jsdom can't save a file, so record what the page asks the browser to save.
+    function captureSaves() {
+      const saved: string[] = []
+      vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:export')
+      vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
+      vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+        saved.push(this.download)
+      })
+      return saved
+    }
+
+    afterEach(() => {
+      vi.restoreAllMocks()
+    })
+
+    it('downloads the open resume and cover letter as PDF and DOCX, full screen on a phone', async () => {
+      setViewport('phone')
+      signInAs()
+      const resume = resumeDocument('resume-1', 'Halden resume')
+      const letter = coverLetterDocument('letter-1', 'Halden letter')
+      const recorded = serveSession(
+        detail({ messages: [...detail().messages, documentReplyMessage('msg-3', resume), documentReplyMessage('msg-4', letter)] }),
+        undefined,
+        [tailoredResume({ id: resume.id, name: resume.name }), coverLetter({ id: letter.id, name: letter.name })],
+      )
+      const saved = captureSaves()
+      renderRoute(SESSION_PATH)
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Open resume: Halden resume' }))
+      const dialog = await screen.findByRole('dialog', { name: 'Halden' })
+      expect(await within(dialog).findByRole('article', { name: 'Resume: Halden resume' })).toBeInTheDocument()
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Download resume as PDF' }))
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Download resume as DOCX' }))
+
+      await userEvent.click(within(dialog).getByRole('tab', { name: 'Cover letter' }))
+      expect(await within(dialog).findByRole('article', { name: 'Cover letter: Halden letter' })).toBeInTheDocument()
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Download cover letter as PDF' }))
+
+      await waitFor(() => expect(saved).toHaveLength(3))
+      expect(recorded.exports).toEqual(['resume/resume-1/pdf', 'resume/resume-1/docx', 'cover-letter/letter-1/pdf'])
+      expect(saved).toEqual(['ada-obi-resume-1.pdf', 'ada-obi-resume-1.docx', 'ada-obi-letter-1.pdf'])
+    })
+
+    it('says so when a download fails, and offers none for a fit report', async () => {
+      setViewport('desktop')
+      signInAs()
+      const resume = resumeDocument('resume-1', 'Halden resume')
+      serveSession(detail({ messages: [...detail().messages, documentReplyMessage('msg-3', resume)] }), undefined, [
+        tailoredResume({ id: resume.id, name: resume.name }),
+      ])
+      server.use(
+        http.get(apiUrl(`/api/sessions/${SESSION_ID}/documents/resume/resume-1/export`), () =>
+          HttpResponse.json({ statusCode: 500, message: 'Render failed' }, { status: 500 }),
+        ),
+      )
+      const saved = captureSaves()
+      renderRoute(SESSION_PATH)
+
+      const panel = await screen.findByRole('complementary', { name: 'Output' })
+      expect(await within(panel).findByText('86%')).toBeInTheDocument()
+      expect(within(panel).queryByRole('button', { name: /^Download/ })).not.toBeInTheDocument()
+
+      await userEvent.click(within(panel).getByRole('tab', { name: 'Resume' }))
+      await userEvent.click(within(panel).getByRole('button', { name: 'Download resume as PDF' }))
+
+      expect(await screen.findByText("We couldn't download it. Try again.")).toBeInTheDocument()
+      expect(saved).toEqual([])
+    })
   })
 
   it('archives into the Archived tab with the composer closed, and unarchives back', async () => {

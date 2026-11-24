@@ -8,6 +8,7 @@ export * from "./is-one-of.js";
 export * from "./profile.js";
 export * from "./required-text.js";
 export * from "./resume.js";
+export * from "./resume-format.js";
 export * from "./sessions.js";
 export * from "./tailored-resume.js";
 export * from "./tool-display.js";

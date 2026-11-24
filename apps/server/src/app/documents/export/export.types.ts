@@ -7,7 +7,8 @@ export type ExportEntry = {
 };
 
 export type ExportSection = {
-  heading: string;
+  // Null for the summary, which sits under the name without one.
+  heading: string | null;
   paragraphs: string[];
   entries: ExportEntry[];
 };

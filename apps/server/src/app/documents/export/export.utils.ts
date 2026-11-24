@@ -1,42 +1,22 @@
-import type { ExportFormat, Resume } from '@quarry/contracts';
-import { format, parse } from 'date-fns';
-import type { ExportableDocument } from '../documents.types';
 import {
-  CONTACT_SEPARATOR,
-  EXPORT_FALLBACK_FILE_NAME,
-  HTTP_PROTOCOL_PREFIX,
-  PRESENT_LABEL,
-  RESUME_HEADINGS,
-} from './export.constants';
+  contactDetails,
+  formatDateRange,
+  linkText,
+  RESUME_SEPARATOR,
+  type ExportFormat,
+  type Resume,
+} from '@quarry/contracts';
+import type { ExportableDocument } from '../documents.types';
+import { EXPORT_FALLBACK_FILE_NAME, RESUME_HEADINGS } from './export.constants';
 import type { ExportSection } from './export.types';
 
-// "2021-03" reads "Mar 2021"; a bare year stays as it is.
-export function formatPartialDate(value: string): string {
-  if (/^\d{4}$/.test(value)) return value;
-
-  return format(parse(value, 'yyyy-MM', new Date(0)), 'MMM yyyy');
-}
-
-// A role with a start and no end is current.
-export function formatDateRange(startDate?: string, endDate?: string): string {
-  if (!startDate) return endDate ? formatPartialDate(endDate) : '';
-
-  const end = endDate ? formatPartialDate(endDate) : PRESENT_LABEL;
-
-  return `${formatPartialDate(startDate)} – ${end}`;
-}
-
-// Email, phone, location and links on one line, links without the scheme.
+// The contact line as the web sheet shows it: location, email, phone, then
+// links without the scheme.
 export function contactLine(contact: Resume['contact']): string {
-  return joinPresent(
-    [
-      contact.email,
-      contact.phone,
-      contact.location,
-      ...contact.links.map(({ url }) => url.replace(HTTP_PROTOCOL_PREFIX, '')),
-    ],
-    CONTACT_SEPARATOR,
-  );
+  return [
+    ...contactDetails(contact),
+    ...contact.links.map(({ url }) => linkText(url)),
+  ].join(RESUME_SEPARATOR);
 }
 
 function joinPresent(parts: (string | undefined)[], separator = ', '): string {
@@ -46,9 +26,10 @@ function joinPresent(parts: (string | undefined)[], separator = ', '): string {
 // The resume body as the template lays it out, in order, empty sections
 // left out. Both formats draw from this.
 export function resumeSections(resume: Resume): ExportSection[] {
+  // In the order, and with the lines, the web sheet shows.
   const sections: ExportSection[] = [
     {
-      heading: RESUME_HEADINGS.summary,
+      heading: null,
       paragraphs: resume.summary?.trim() ? [resume.summary] : [],
       entries: [],
     },
@@ -56,32 +37,22 @@ export function resumeSections(resume: Resume): ExportSection[] {
       heading: RESUME_HEADINGS.experience,
       paragraphs: [],
       entries: resume.experience.map((role) => ({
-        title: joinPresent([role.title, role.company]),
+        title: joinPresent([role.company, role.location], RESUME_SEPARATOR),
         dates: formatDateRange(role.startDate, role.endDate),
-        subtitle: role.location ?? '',
+        subtitle: role.title,
         details: role.bullets,
-      })),
-    },
-    {
-      heading: RESUME_HEADINGS.projects,
-      paragraphs: [],
-      entries: resume.projects.map((project) => ({
-        title: project.name,
-        dates: '',
-        subtitle: joinPresent(
-          [project.description, project.url],
-          CONTACT_SEPARATOR,
-        ),
-        details: project.bullets,
       })),
     },
     {
       heading: RESUME_HEADINGS.education,
       paragraphs: [],
       entries: resume.education.map((school) => ({
-        title: school.school,
+        title: joinPresent(
+          [school.school, joinPresent([school.qualification, school.field])],
+          RESUME_SEPARATOR,
+        ),
         dates: formatDateRange(undefined, school.endDate),
-        subtitle: joinPresent([school.qualification, school.field]),
+        subtitle: '',
         details: school.details,
       })),
     },
@@ -94,12 +65,28 @@ export function resumeSections(resume: Resume): ExportSection[] {
       entries: [],
     },
     {
+      heading: RESUME_HEADINGS.projects,
+      paragraphs: [],
+      entries: resume.projects.map((project) => ({
+        title: joinPresent(
+          [project.name, project.description],
+          RESUME_SEPARATOR,
+        ),
+        dates: '',
+        subtitle: project.url ?? '',
+        details: project.bullets,
+      })),
+    },
+    {
       heading: RESUME_HEADINGS.certifications,
       paragraphs: [],
       entries: resume.certifications.map((certification) => ({
-        title: certification.name,
+        title: joinPresent(
+          [certification.name, certification.issuer],
+          RESUME_SEPARATOR,
+        ),
         dates: formatDateRange(undefined, certification.date),
-        subtitle: certification.issuer ?? '',
+        subtitle: '',
         details: [],
       })),
     },
