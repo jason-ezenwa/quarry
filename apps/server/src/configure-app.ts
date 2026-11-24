@@ -1,5 +1,8 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { resolveClientIp, warnIfTrustedHeaderUnset } from './lib/client-ip/client-ip';
+import {
+  resolveClientIp,
+  warnIfTrustedHeaderUnset,
+} from './lib/client-ip/client-ip';
 import { TRUSTED_ORIGINS } from './lib/trusted-origins';
 
 // Shared by main.ts and the integration test app so tests exercise the same

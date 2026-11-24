@@ -16,7 +16,11 @@ import type { StoredFile } from '../storage/storage.types';
 import { ResumeParserService } from './parser/parser.service';
 import { Resume, ResumeDocument, ResumeFile } from './resume.schema';
 import type { CreatePrimaryResumeInput } from './resume.types';
-import { toPrimaryResumeResponse, toResumeContentUpdate } from './resume.utils';
+import {
+  toPrimaryResumeResponse,
+  toResumeContent,
+  toResumeContentUpdate,
+} from './resume.utils';
 
 @Injectable()
 export class ResumeService {
@@ -62,6 +66,20 @@ export class ResumeService {
         error: error instanceof Error ? error.name : 'unknown',
       });
     }
+  }
+
+  // The content an agent may work from: parsed and reviewed, else null.
+  async findReviewedPrimaryContent(
+    userId: string,
+  ): Promise<ResumeContent | null> {
+    const resume = await this.resumeModel.findOne(
+      this.primaryFilter(userId, {
+        parsedAt: { $ne: null },
+        reviewedAt: { $ne: null },
+      }),
+    );
+
+    return resume ? toResumeContent(resume) : null;
   }
 
   async getPrimary(userId: string): Promise<PrimaryResumeResponse> {

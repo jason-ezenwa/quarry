@@ -28,7 +28,7 @@ export function toResumeContentUpdate(
   return { $set: { ...$set, summary: content.summary } };
 }
 
-function toResumeContent(resume: ResumeDocument): ResumeContent {
+export function toResumeContent(resume: ResumeDocument): ResumeContent {
   const plain = resume.toObject();
 
   return {
