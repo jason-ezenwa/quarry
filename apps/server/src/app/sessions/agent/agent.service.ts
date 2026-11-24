@@ -53,9 +53,12 @@ function closeAfter(
     async flush(controller) {
       const failure = await settled.catch(() => 'empty-reply' as const);
 
-      if (failure === 'declined-withdrawn' || failure === 'declined-kept') {
+      if (
+        failure === 'declined-and-withdrawn' ||
+        failure === 'declined-and-kept'
+      ) {
         const errorText: SessionErrorCode =
-          failure === 'declined-kept'
+          failure === 'declined-and-kept'
             ? 'first-message-declined'
             : 'reply-declined';
         controller.enqueue({ type: 'error', errorText });
@@ -236,7 +239,7 @@ export class AgentService {
     startedAt: number,
   ): Promise<TurnFailure | null> {
     const context = { userId: turn.userId, sessionId: turn.sessionId };
-    let failed: TurnFailure | null = null;
+    let turnFailure: TurnFailure | null = null;
     let finishReason: FinishReason | undefined;
 
     const reply = await this.readReply(
@@ -244,8 +247,8 @@ export class AgentService {
         new TransformStream<UIMessageChunk, UIMessageChunk>({
           transform(chunk, controller) {
             // A stop counts like an error: none of the reply is kept.
-            if (chunk.type === 'error') failed = 'stream-error';
-            if (chunk.type === 'abort') failed = 'stopped';
+            if (chunk.type === 'error') turnFailure = 'stream-error';
+            if (chunk.type === 'abort') turnFailure = 'stopped';
             if (chunk.type === 'finish') finishReason = chunk.finishReason;
             controller.enqueue(chunk);
           },
@@ -253,19 +256,19 @@ export class AgentService {
       ),
     );
 
-    failed ??= await this.unanswered(turn, reply, finishReason);
+    turnFailure ??= await this.unanswered(turn, reply, finishReason);
     const providerStopReason = stopReason();
 
-    if (failed) {
+    if (turnFailure) {
       this.logger.warn('Agent turn not saved', {
         ...context,
-        reason: failed,
+        reason: turnFailure,
         finishReason,
         stopReason: providerStopReason,
         durationMs: Date.now() - startedAt,
       });
 
-      return failed;
+      return turnFailure;
     }
 
     if (!reply) return 'empty-reply';
@@ -303,8 +306,8 @@ export class AgentService {
 
     if (finishReason === 'content-filter' && !ranTools) {
       return (await this.sessionsService.withdrawUserMessage(turn))
-        ? 'declined-withdrawn'
-        : 'declined-kept';
+        ? 'declined-and-withdrawn'
+        : 'declined-and-kept';
     }
 
     return reply?.parts.some(isAnswerPart) ? null : 'empty-reply';
