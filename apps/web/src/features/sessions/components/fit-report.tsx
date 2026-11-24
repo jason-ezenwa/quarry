@@ -1,10 +1,8 @@
-import { FIT_DIMENSIONS, type FitDimension, type FitScoreDocumentResponse, type SessionJob } from '@quarry/contracts'
+import { FIT_DIMENSION_KEYS, FIT_DIMENSIONS, type FitScoreDocumentResponse, type SessionJob } from '@quarry/contracts'
 import { Meter } from '@/components/ui/meter'
 import { cn } from '@/lib/utils'
 import { jobLine, sourceLabel } from '../session-format'
 import { FIT_DIMENSION_NAMES, FIT_LABEL_TEXT } from '../sessions.constants'
-
-const DIMENSIONS = Object.keys(FIT_DIMENSIONS) as FitDimension[]
 
 function Points({ title, items, tone }: { title: string; items: string[]; tone: 'success' | 'warning' }) {
   return (
@@ -55,7 +53,7 @@ export function FitReport({ report, job }: { report: FitScoreDocumentResponse; j
           </tr>
         </thead>
         <tbody>
-          {DIMENSIONS.map((key) => {
+          {FIT_DIMENSION_KEYS.map((key) => {
             const { score, detail } = report.dimensions[key]
             return (
               <tr key={key} className="border-t border-border">

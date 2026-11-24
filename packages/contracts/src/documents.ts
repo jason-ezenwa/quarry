@@ -1,20 +1,36 @@
+import type { DocumentHeader } from "./document-header.js";
 import type { FitDimension, FitLabel } from "./fit-score.js";
+import { isOneOf } from "./is-one-of.js";
 import type { Resume } from "./resume.js";
 
 export const DOCUMENT_KINDS = ["fit-score", "resume", "cover-letter"] as const;
 export type DocumentKind = (typeof DOCUMENT_KINDS)[number];
 
+export function isDocumentKind(value: unknown): value is DocumentKind {
+  return isOneOf(DOCUMENT_KINDS, value);
+}
+
+// The kinds that download as files; fit reports don't.
+export const EXPORTABLE_KINDS = ["resume", "cover-letter"] as const;
+export type ExportableKind = (typeof EXPORTABLE_KINDS)[number];
+
+export function isExportableKind(value: unknown): value is ExportableKind {
+  return isOneOf(EXPORTABLE_KINDS, value);
+}
+
+export type FitScoreRef = {
+  kind: "fit-score";
+  id: string;
+  name: string;
+  score: number;
+  label: FitLabel;
+};
+
 // What every tool that saves a document returns, so the web app can show a
 // card for it without knowing the tool.
 export type SavedDocumentRef =
-  | {
-      kind: "fit-score";
-      id: string;
-      name: string;
-      score: number;
-      label: FitLabel;
-    }
-  | { kind: "resume" | "cover-letter"; id: string; name: string };
+  | FitScoreRef
+  | { kind: ExportableKind; id: string; name: string };
 
 export type FitScoreDocumentResponse = {
   id: string;
@@ -32,19 +48,13 @@ export type FitScoreDocumentResponse = {
   createdAt: string;
 };
 
-// The name and contact details at the top of a cover letter.
-export type DocumentHeader = {
-  name: string;
-  contact: Resume["contact"];
-};
-
 export type TailoredResumeDocumentResponse = {
   id: string;
   kind: "resume";
   name: string;
   resume: Resume;
   // The resume this one was edited from; null when it was written whole.
-  sourceResumeId: string | null;
+  sourceResume: string | null;
   createdAt: string;
 };
 
@@ -66,10 +76,3 @@ export type DocumentResponse =
 
 export const EXPORT_FORMATS = ["pdf", "docx"] as const;
 export type ExportFormat = (typeof EXPORT_FORMATS)[number];
-
-// The display hints every agent tool declares as its AI SDK `metadata`.
-export type ToolDisplayMetadata = {
-  icon: string;
-  active: string;
-  done: string;
-};

@@ -44,14 +44,16 @@ export function ToolSteps({ steps, working = false }: { steps: ToolStep[]; worki
       )}
       {open && steps.length > 0 ? (
         <ul id={listId} className="ml-1.75 flex flex-col border-l border-border py-0.5 pl-3.5">
-          {steps.map(({ id, icon: StepIcon, label, meta, running: stepRunning }) => (
+          {steps.map(({ id, icon: StepIcon, label, note, running: stepRunning, unfinished }) => (
             <li
               key={id}
               className={cn('flex h-7 items-center gap-2.25 text-small text-muted-foreground', stepRunning && 'text-foreground')}
             >
               {stepRunning ? <Spin className="size-3.5" /> : <StepIcon aria-hidden="true" className="size-3.5 shrink-0" />}
               <span className={cn('truncate', stepRunning && 'text-shimmer')}>{label}</span>
-              {meta ? <span className="text-label text-muted-foreground">{meta}</span> : null}
+              {note ? (
+                <span className={cn('text-label', unfinished ? 'text-destructive-ink' : 'text-muted-foreground')}>{note}</span>
+              ) : null}
             </li>
           ))}
         </ul>

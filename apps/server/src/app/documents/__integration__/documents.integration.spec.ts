@@ -16,10 +16,14 @@ import {
   TEST_ORIGIN,
 } from '../../../lib/__integration__/sign-up.fixture';
 import {
+  runTools as runToolsIn,
+  type ToolCall,
+} from '../../../../test/integration/run-tools';
+import {
   fitScoreInput,
   primaryResume,
   seedOnboarded,
-} from '../../sessions/__integration__/session-fixtures';
+} from '../../../../test/integration/session-fixtures';
 
 // Its own contact line: the agent may add a link the primary resume lacks.
 const tailoredResume: Resume = {
@@ -54,8 +58,6 @@ const coverLetter: CoverLetterInput = {
   ],
   signOff: 'Kind regards,',
 };
-
-type ToolCall = { name: string; input: object };
 
 // Parts of a stored tool call the specs read.
 type StoredToolPart = { type: string; state: string; output?: unknown };
@@ -104,46 +106,8 @@ describe('Documents (integration)', () => {
     return created.body.id as string;
   };
 
-  // One turn where Claude calls the given tools, then says a line.
-  const runTools = async (
-    cookie: string[],
-    sessionId: string,
-    calls: ToolCall[],
-  ) => {
-    fakeAnthropicApi.reply(
-      {
-        kind: 'stream',
-        blocks: calls.map(({ name, input }, index) => ({
-          type: 'tool_use',
-          id: `toolu_${index}`,
-          name,
-          input,
-        })),
-        stopReason: 'tool_use',
-      },
-      { kind: 'stream', blocks: [{ type: 'text', text: 'Done.' }] },
-    );
-
-    // The first turn answers the stored first message; later ones send one.
-    const answered = await getTestDatabase()
-      .collection('messages')
-      .countDocuments({
-        session: new Types.ObjectId(sessionId),
-        role: 'assistant',
-      });
-    const body =
-      answered === 0
-        ? {}
-        : { message: { id: new Types.ObjectId().toHexString(), text: 'Go.' } };
-
-    const response = await request(app.getHttpServer())
-      .post(`/api/sessions/${sessionId}/turns`)
-      .set('Origin', TEST_ORIGIN)
-      .set('Cookie', cookie)
-      .send(body);
-
-    expect(response.status).toBe(200);
-  };
+  const runTools = (cookie: string[], sessionId: string, calls: ToolCall[]) =>
+    runToolsIn(app, cookie, sessionId, calls);
 
   // The tool results the app sent back to Claude after the latest tool step.
   const lastToolResults = () => {
@@ -211,6 +175,7 @@ describe('Documents (integration)', () => {
           icon: 'file-text',
           active: 'Tailoring your resume',
           done: 'Tailored your resume',
+          failed: "Couldn't tailor your resume",
         },
         output: {
           document: { kind: 'resume', id: resumeId, name: 'Payments focus' },
@@ -228,7 +193,7 @@ describe('Documents (integration)', () => {
         kind: 'resume',
         name: 'Payments focus',
         resume: tailoredResume,
-        sourceResumeId: null,
+        sourceResume: null,
         createdAt: expect.any(String),
       });
     });
@@ -246,6 +211,7 @@ describe('Documents (integration)', () => {
             sourceResumeId: sourceId,
             name: 'One page, Kafka first',
             sections: {
+              name: 'Ada N. Obi',
               contact: { email: 'ada@work.dev', links: [] },
               summary: 'Kafka and payments.',
               skills: [{ name: 'Kafka' }],
@@ -277,9 +243,10 @@ describe('Documents (integration)', () => {
 
       expect(response.body).toMatchObject({
         name: 'One page, Kafka first',
-        sourceResumeId: sourceId,
+        sourceResume: sourceId,
         resume: {
           ...tailoredResume,
+          name: 'Ada N. Obi',
           contact: { email: 'ada@work.dev', links: [] },
           summary: 'Kafka and payments.',
           skills: [{ name: 'Kafka' }],
@@ -348,13 +315,17 @@ describe('Documents (integration)', () => {
       expect(part).toMatchObject({
         type: 'tool-edit_tailored_resume',
         state: 'output-available',
-        output: { ok: false, reason: 'source-not-found' },
+        output: {
+          ok: false,
+          reason: 'source-not-found',
+          note: 'Source resume not found',
+        },
       });
     });
   });
 
   describe('cover letters', () => {
-    it("saves a cover letter and reads it back under the primary resume's header", async () => {
+    it("saves a cover letter and reads it back under the primary resume's header when no resume is tailored", async () => {
       const { cookie } = await onboardedUser();
       const sessionId = await startSession(cookie);
 
@@ -392,6 +363,38 @@ describe('Documents (integration)', () => {
         paragraphs: coverLetter.paragraphs,
         signOff: coverLetter.signOff,
         createdAt: expect.any(String),
+      });
+    });
+
+    it("takes the latest tailored resume's header by default", async () => {
+      const { cookie } = await onboardedUser();
+      const sessionId = await startSession(cookie);
+      const sourceId = await createResume(cookie, sessionId);
+      const latestContact = { email: 'ada@work.dev', links: [] };
+
+      await runTools(cookie, sessionId, [
+        {
+          name: 'edit_tailored_resume',
+          input: {
+            sourceResumeId: sourceId,
+            name: 'Work email',
+            sections: { name: 'Ada N. Obi', contact: latestContact },
+          },
+        },
+      ]);
+      await runTools(cookie, sessionId, [
+        { name: 'save_cover_letter', input: coverLetter },
+      ]);
+
+      const [saved] = await coverLetters(sessionId);
+      const response = await get(
+        `/sessions/${sessionId}/documents/cover-letter/${saved._id.toHexString()}`,
+        cookie,
+      );
+
+      expect(response.body.header).toEqual({
+        name: 'Ada N. Obi',
+        contact: latestContact,
       });
     });
 
@@ -444,7 +447,85 @@ describe('Documents (integration)', () => {
     );
   });
 
+  describe('fit reports', () => {
+    it('saves a fit report and returns it rounded, labelled and out of 100', async () => {
+      const { cookie } = await onboardedUser();
+      const sessionId = await startSession(cookie);
+
+      await runTools(cookie, sessionId, [
+        { name: 'save_fit_score', input: fitScoreInput },
+      ]);
+
+      const fitScore = await getTestDatabase()
+        .collection('fit-scores')
+        .findOne({ session: new Types.ObjectId(sessionId) });
+      const documentId = fitScore!._id.toHexString();
+
+      expect(fitScore!.overall).toBeCloseTo(85.85, 5);
+
+      const [part] = await lastToolParts(sessionId);
+      expect(part).toMatchObject({
+        type: 'tool-save_fit_score',
+        state: 'output-available',
+        toolMetadata: {
+          icon: 'gauge',
+          active: 'Scoring your fit',
+          done: 'Scored your fit',
+          failed: "Couldn't score your fit",
+        },
+        output: {
+          document: {
+            kind: 'fit-score',
+            id: documentId,
+            name: 'First read',
+            score: 86,
+            label: 'strong-fit',
+          },
+          note: '86%',
+        },
+      });
+
+      const response = await get(
+        `/sessions/${sessionId}/documents/fit-score/${documentId}`,
+        cookie,
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        id: documentId,
+        kind: 'fit-score',
+        name: 'First read',
+        role: 'Senior Backend Engineer',
+        company: 'Moniepoint',
+        overall: 86,
+        label: 'strong-fit',
+        dimensions: {
+          requirements: { score: 79, detail: '5 of 7 met, 1 partial' },
+          skills: { score: 89, detail: 'Strong overlap' },
+          seniority: { score: 85, detail: 'Senior, matches' },
+          domain: { score: 100, detail: 'Payments' },
+        },
+        strengths: ['Six years in payments.'],
+        gaps: ['No Kafka.'],
+        createdAt: expect.any(String),
+      });
+    });
+  });
+
   describe('reading', () => {
+    it('refuses an unknown kind with a 400', async () => {
+      const { cookie } = await onboardedUser();
+      const sessionId = await startSession(cookie);
+      const resumeId = await createResume(cookie, sessionId);
+
+      const response = await get(
+        `/sessions/${sessionId}/documents/essay/${resumeId}`,
+        cookie,
+      );
+
+      expect(response.status).toBe(400);
+    });
+
     it('returns 404 for a document from another session, kind or user', async () => {
       const { cookie } = await onboardedUser();
       const sessionId = await startSession(cookie);

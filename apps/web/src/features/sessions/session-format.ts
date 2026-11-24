@@ -1,7 +1,6 @@
 import { UTCDate } from '@date-fns/utc'
-import type { SessionSummary } from '@quarry/contracts'
+import { JOB_SOURCE_LABELS, type SessionSummary } from '@quarry/contracts'
 import { format, parseISO } from 'date-fns'
-import { JOB_SOURCE_LABELS } from './sessions.constants'
 
 // "Nov 22", in the viewer's own time zone.
 export function formatShortDate(iso: string): string {

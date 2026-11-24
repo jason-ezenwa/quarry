@@ -1,7 +1,5 @@
 import { PARTIAL_DATE_PATTERN, type Resume } from '@quarry/contracts';
-import { trim } from '../../common/transforms';
 import { Transform, Type } from 'class-transformer';
-import { IsHttpUrl } from './is-http-url.decorator';
 import {
   IsArray,
   IsNotEmpty,
@@ -11,6 +9,8 @@ import {
   Matches,
   ValidateNested,
 } from 'class-validator';
+import { IsHttpUrl } from '../../common/is-http-url.decorator';
+import { trim } from '../../common/transforms';
 import { DATE_MESSAGE } from '../resume.constants';
 import type {
   ResumeCertification,

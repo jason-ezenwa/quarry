@@ -1,32 +1,26 @@
-import type { DocumentKind, FitDimension, FitLabel, JobSource, SessionStatus } from '@quarry/contracts'
-import { ArrowsDownUpIcon } from '@phosphor-icons/react/dist/csr/ArrowsDownUp'
+import type { DocumentKind, FitDimension, FitLabel, SessionStatus, ToolIcon } from '@quarry/contracts'
 import { EnvelopeSimpleIcon } from '@phosphor-icons/react/dist/csr/EnvelopeSimple'
-import { FilePdfIcon } from '@phosphor-icons/react/dist/csr/FilePdf'
 import { FileTextIcon } from '@phosphor-icons/react/dist/csr/FileText'
 import { GaugeIcon } from '@phosphor-icons/react/dist/csr/Gauge'
 import { GearIcon } from '@phosphor-icons/react/dist/csr/Gear'
 import { GlobeIcon } from '@phosphor-icons/react/dist/csr/Globe'
 import { PencilSimpleIcon } from '@phosphor-icons/react/dist/csr/PencilSimple'
-import { ScissorsIcon } from '@phosphor-icons/react/dist/csr/Scissors'
-import type { BadgeVariant, IconComponent, SessionErrorCode } from './sessions.types'
+import type { BadgeVariant, IconComponent, TurnErrorCode } from './sessions.types'
 
-// The only icon list the web app keeps. Tools name an icon in their metadata;
-// a name not listed here falls back to the gear.
-export const TOOL_ICONS: Record<string, IconComponent> = {
+// The only icon list the web app keeps, one per icon a tool may name. A stored
+// part naming an icon not listed here falls back to the gear.
+export const TOOL_ICON_COMPONENTS: Record<ToolIcon, IconComponent> = {
   globe: GlobeIcon,
   gauge: GaugeIcon,
   'file-text': FileTextIcon,
-  'envelope-simple': EnvelopeSimpleIcon,
-  'file-pdf': FilePdfIcon,
-  'arrows-down-up': ArrowsDownUpIcon,
-  scissors: ScissorsIcon,
-  'pencil-simple': PencilSimpleIcon,
+  pencil: PencilSimpleIcon,
+  envelope: EnvelopeSimpleIcon,
 }
 
-export const FALLBACK_TOOL_STEP = { icon: GearIcon, active: 'Working', done: 'Worked' } as const
+export const FALLBACK_TOOL_STEP = { icon: GearIcon, active: 'Working', done: 'Worked', failed: "Didn't work" } as const
 
 // Shown beside a step that errored or was cut off.
-export const UNFINISHED_STEP_META = "Didn't finish"
+export const UNFINISHED_STEP_NOTE = "Didn't finish"
 
 // The three kinds are the only document list the web app keeps: each picks a
 // card's look, the panel tab and the route that fetches it.
@@ -49,16 +43,6 @@ export const FIT_DIMENSION_NAMES: Record<FitDimension, string> = {
   domain: 'Domain',
 }
 
-export const JOB_SOURCE_LABELS: Record<JobSource, string> = {
-  greenhouse: 'Greenhouse',
-  lever: 'Lever',
-  ashby: 'Ashby',
-  workable: 'Workable',
-  workday: 'Workday',
-  web: 'Web',
-  pasted: 'Pasted',
-}
-
 // What each panel tab says before it has a document.
 export const EMPTY_TAB_COPY: Record<DocumentKind, string> = {
   'fit-score': 'Your fit report shows here once it is scored.',
@@ -78,26 +62,18 @@ export const RECENT_SESSIONS_LIMIT = 4
 export const HOME_RECENT_SESSIONS_LIMIT = 5
 
 // Turns the server turned away without storing the message.
-export const REFUSED_TURN_CODES: ReadonlySet<SessionErrorCode> = new Set<SessionErrorCode>([
+export const REFUSED_TURN_CODES: ReadonlySet<TurnErrorCode> = new Set<TurnErrorCode>([
+  'primary-resume-not-ready',
   'turn-running',
   'session-archived',
   'session-message-limit',
   'nothing-to-answer',
 ])
 
-// The turn error codes the server sends; any other failure counts as 'failed'.
-export const SESSION_ERROR_CODES = [
-  'primary-resume-not-ready',
-  'turn-running',
-  'session-archived',
-  'session-message-limit',
-  'nothing-to-answer',
-  'failed',
-] as const
-
 // The only turn errors the chat shows; the composer explains the archived and limit states.
 export const CHAT_ERRORS = {
   'not-sent': "Your message wasn't sent. Try sending it again.",
+  'resume-not-ready': "Your resume is being read or couldn't be read. Check it on the Resume page, then send your message again.",
   failed: 'Something went wrong. Try again.',
 } as const
 
@@ -105,7 +81,8 @@ export const SESSION_QUERY_KEYS = {
   lists: ['sessions', 'list'] as const,
   list: (archived: boolean) => ['sessions', 'list', { archived }] as const,
   detail: (sessionId: string) => ['sessions', 'detail', sessionId] as const,
+  // Outside the session's own key, so refreshing the session leaves open documents alone.
   document: (sessionId: string, kind: DocumentKind, documentId: string) =>
-    ['sessions', 'detail', sessionId, 'documents', kind, documentId] as const,
+    ['documents', sessionId, kind, documentId] as const,
   usage: ['usage'] as const,
 }

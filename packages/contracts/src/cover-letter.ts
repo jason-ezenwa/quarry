@@ -1,6 +1,7 @@
 import { z } from "zod";
+import { documentHeaderSchema } from "./document-header.js";
 import { documentNameSchema } from "./document-name.js";
-import { resumeSchema } from "./resume.js";
+import { requiredText } from "./required-text.js";
 
 export const COVER_LETTER_LIMITS = {
   minParagraphs: 3,
@@ -9,14 +10,9 @@ export const COVER_LETTER_LIMITS = {
   paragraphMaxLength: 2_000,
 } as const;
 
-const requiredText = z.string().trim().min(1);
-
-// The name and contact details above a letter. Left out, they're copied from
-// the primary resume when the letter is saved.
-export const coverLetterHeaderSchema = z.object({
-  name: resumeSchema.shape.name,
-  contact: resumeSchema.shape.contact,
-});
+// Said the same way in the system prompt and the tool's description.
+export const COVER_LETTER_HEADER_DEFAULT =
+  "Left out, the letter takes the name and contact details of the latest tailored resume in this application, or the primary resume's when there is none.";
 
 export const coverLetterInputSchema = z.object({
   name: documentNameSchema,
@@ -33,10 +29,10 @@ export const coverLetterInputSchema = z.object({
   signOff: requiredText
     .max(COVER_LETTER_LIMITS.lineMaxLength)
     .describe('For example "Kind regards,"; the name is added for you'),
-  header: coverLetterHeaderSchema
+  header: documentHeaderSchema
     .optional()
     .describe(
-      "Only when the user wants different name or contact details on this letter; otherwise the primary resume's are used",
+      `Only when the user wants different name or contact details on this letter. ${COVER_LETTER_HEADER_DEFAULT}`,
     ),
 });
 

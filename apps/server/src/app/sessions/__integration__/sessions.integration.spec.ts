@@ -22,6 +22,7 @@ import {
 import {
   AGENT_MODEL,
   COMPACTION_TRIGGER_TOKENS,
+  UNREVIEWED_RESUME_NOTE,
 } from '../agent/agent.constants';
 import { createFakeHostLookup } from '../job-fetcher/__integration__/fake-host-lookup';
 import { JOB_FETCH_HOST_LOOKUP } from '../job-fetcher/job-fetcher.constants';
@@ -38,13 +39,7 @@ import {
   seedOnboarded,
   seedSessions,
   setSession,
-} from './session-fixtures';
-
-const SAVE_FIT_SCORE_METADATA = {
-  icon: 'gauge',
-  active: 'Scoring your fit',
-  done: 'Scored your fit',
-};
+} from '../../../../test/integration/session-fixtures';
 
 // A first turn that saves a fit report, then says a line about it.
 const fitReportReplies = (): AnthropicReply[] => [
@@ -205,17 +200,20 @@ describe('Sessions (integration)', () => {
       );
     });
 
-    it('refuses with a 409 until the primary resume is reviewed', async () => {
-      const { cookie, userId } = await signUp(app);
-      await seedOnboarded(userId, 'unreviewed');
+    it.each(['parsing', 'failed'] as const)(
+      'refuses with a 409 while the primary resume is %s',
+      async (resumeState) => {
+        const { cookie, userId } = await signUp(app);
+        await seedOnboarded(userId, resumeState);
 
-      const created = await api('post', '/sessions', cookie).send({
-        jobUrl: JOB_URL,
-      });
+        const created = await api('post', '/sessions', cookie).send({
+          jobUrl: JOB_URL,
+        });
 
-      expect(created.status).toBe(409);
-      expect(created.body.code).toBe('primary-resume-not-ready');
-    });
+        expect(created.status).toBe(409);
+        expect(created.body.code).toBe('primary-resume-not-ready');
+      },
+    );
 
     it('allows 10 sessions a calendar month, archived ones included', async () => {
       const { cookie, userId } = await onboardedUser();
@@ -447,13 +445,6 @@ describe('Sessions (integration)', () => {
       expect(response.headers['content-type']).toContain('text/event-stream');
       expect(response.text).toContain('You are a strong fit.');
 
-      const [fitScore] = await getTestDatabase()
-        .collection('fit-scores')
-        .find({ session: new Types.ObjectId(id) })
-        .toArray();
-
-      expect(fitScore.overall).toBeCloseTo(85.85, 5);
-
       const session = await findSession(id);
 
       expect(session).toMatchObject({
@@ -486,17 +477,9 @@ describe('Sessions (integration)', () => {
           toolCallId: 'toolu_fit',
           state: 'output-available',
           input: fitScoreInput,
-          toolMetadata: SAVE_FIT_SCORE_METADATA,
-          output: {
-            document: {
-              kind: 'fit-score',
-              id: fitScore._id.toHexString(),
-              name: 'First read',
-              score: 86,
-              label: 'strong-fit',
-            },
-            meta: '86%',
-          },
+          output: expect.objectContaining({
+            document: expect.objectContaining({ kind: 'fit-score' }),
+          }),
         }),
         { type: 'step-start' },
         expect.objectContaining({
@@ -567,12 +550,13 @@ describe('Sessions (integration)', () => {
             icon: 'globe',
             active: 'Reading the job post',
             done: 'Read the job post',
+            failed: "Couldn't read the job post",
           },
           output: expect.objectContaining({
             ok: true,
             source: 'greenhouse',
             description: 'Build payments in Go.',
-            meta: 'Greenhouse',
+            note: 'Greenhouse',
           }),
         }),
       );
@@ -608,6 +592,19 @@ describe('Sessions (integration)', () => {
       expect(JSON.stringify(toolResult)).toContain('blocked-site');
       expect(JSON.stringify(toolResult)).toContain('askForPaste');
       expect((await findSession(created.body.id))?.job).toEqual({ url: link });
+
+      const [, assistant] = await findMessages(created.body.id);
+      expect(assistant.parts).toContainEqual(
+        expect.objectContaining({
+          type: 'tool-get_job_description',
+          state: 'output-available',
+          output: expect.objectContaining({
+            ok: false,
+            reason: 'blocked-site',
+            note: 'LinkedIn blocks us',
+          }),
+        }),
+      );
     });
 
     it('asks Sonnet with medium effort, cached system messages, the tools and compaction at 100k', async () => {
@@ -623,6 +620,7 @@ describe('Sessions (integration)', () => {
       expect(sent.output_config?.effort).toBe('medium');
       expect(sent.system).toHaveLength(2);
       expect(sent.system?.[1].text).toContain('"name":"Ada Obi"');
+      expect(sent.system?.[1].text).not.toContain(UNREVIEWED_RESUME_NOTE);
 
       for (const block of sent.system ?? []) {
         expect(block.cache_control).toEqual({ type: 'ephemeral' });
@@ -643,6 +641,42 @@ describe('Sessions (integration)', () => {
         }),
       ]);
       expect(fakeAnthropicApi.betas[0]).toContain('compact-2026-01-12');
+    });
+
+    it('works from an unreviewed primary resume and tells the agent so', async () => {
+      const { cookie, userId } = await signUp(app);
+      await seedOnboarded(userId, 'unreviewed');
+      const id = await startPasted(cookie);
+      fakeAnthropicApi.reply(textReply('Hello.'));
+
+      expect((await turn(cookie, id)).status).toBe(200);
+
+      const [sent] = fakeAnthropicApi.requests;
+      expect(sent.system?.[1].text).toContain(UNREVIEWED_RESUME_NOTE);
+    });
+
+    it('refuses a turn with a 409 and stores nothing while the primary resume is being read again', async () => {
+      const { cookie, userId } = await onboardedUser();
+      const id = await startPasted(cookie);
+      await getTestDatabase()
+        .collection('resumes')
+        .updateOne(
+          { user: new Types.ObjectId(userId), kind: 'primary' },
+          { $set: { parseStatus: 'parsing' } },
+        );
+
+      const response = await turn(cookie, id, {
+        message: { id: 'msg-1', text: 'Tailor my resume.' },
+      });
+
+      expect(response.status).toBe(409);
+      expect(response.body.code).toBe('primary-resume-not-ready');
+      expect(await findMessages(id)).toHaveLength(1);
+      expect(await findSession(id)).toMatchObject({
+        userMessageCount: 1,
+        turnStartedAt: null,
+      });
+      expect(fakeAnthropicApi.requests).toHaveLength(0);
     });
 
     it('resends the stored history unchanged on the next turn', async () => {
@@ -925,96 +959,6 @@ describe('Sessions (integration)', () => {
       );
 
       expect((await findSession(id))?.turnStartedAt).toBeNull();
-    });
-  });
-
-  describe('documents', () => {
-    const fitReport = async () => {
-      const user = await onboardedUser();
-      const created = await api('post', '/sessions', user.cookie).send({
-        jobDescription: 'A job',
-      });
-      const id = created.body.id as string;
-
-      fakeAnthropicApi.reply(...fitReportReplies());
-      await api('post', `/sessions/${id}/turns`, user.cookie).send({});
-
-      const fitScore = await getTestDatabase()
-        .collection('fit-scores')
-        .findOne({ session: new Types.ObjectId(id) });
-
-      return { ...user, id, documentId: fitScore!._id.toHexString() };
-    };
-
-    it('returns a fit report rounded, labelled and out of 100', async () => {
-      const { cookie, id, documentId } = await fitReport();
-
-      const response = await api(
-        'get',
-        `/sessions/${id}/documents/fit-score/${documentId}`,
-        cookie,
-      );
-
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual({
-        id: documentId,
-        kind: 'fit-score',
-        name: 'First read',
-        role: 'Senior Backend Engineer',
-        company: 'Moniepoint',
-        overall: 86,
-        label: 'strong-fit',
-        dimensions: {
-          requirements: { score: 79, detail: '5 of 7 met, 1 partial' },
-          skills: { score: 89, detail: 'Strong overlap' },
-          seniority: { score: 85, detail: 'Senior, matches' },
-          domain: { score: 100, detail: 'Payments' },
-        },
-        strengths: ['Six years in payments.'],
-        gaps: ['No Kafka.'],
-        createdAt: expect.any(String),
-      });
-
-      const listed = await api('get', '/sessions', cookie);
-      expect(listed.body.items[0]).toMatchObject({
-        fitScore: 86,
-        fitLabel: 'strong-fit',
-      });
-    });
-
-    it("refuses an unknown kind and hides another user's document", async () => {
-      const { cookie, id, documentId } = await fitReport();
-      const other = await onboardedUser('bola@example.com');
-
-      expect(
-        (
-          await api(
-            'get',
-            `/sessions/${id}/documents/essay/${documentId}`,
-            cookie,
-          )
-        ).status,
-      ).toBe(400);
-
-      expect(
-        (
-          await api(
-            'get',
-            `/sessions/${id}/documents/fit-score/${documentId}`,
-            other.cookie,
-          )
-        ).status,
-      ).toBe(404);
-
-      expect(
-        (
-          await api(
-            'get',
-            `/sessions/${id}/documents/fit-score/${new Types.ObjectId().toHexString()}`,
-            cookie,
-          )
-        ).status,
-      ).toBe(404);
     });
   });
 });

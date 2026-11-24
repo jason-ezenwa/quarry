@@ -1,16 +1,15 @@
 import {
   fitLabelFor,
+  mapFitDimensions,
   type CoverLetterDocumentResponse,
-  type ExportFormat,
   type FitScoreDocumentResponse,
+  type FitScoreRef,
   type SavedDocumentRef,
 } from '@quarry/contracts';
 import type { ResumeDocument } from '../resume/resume.schema';
 import { tailoredTitleOf } from '../resume/resume.utils';
 import type { CoverLetterDocument } from './cover-letter.schema';
-import type { ExportableDocument } from './documents.types';
-import { EXPORT_FALLBACK_FILE_NAME } from './documents.constants';
-import type { FitScoreDimension, FitScoreDocument } from './fit-score.schema';
+import type { FitScoreDocument } from './fit-score.schema';
 
 // The fit report as the user sees it: rounded, each dimension out of 100.
 export function toFitScoreResponse(
@@ -18,17 +17,10 @@ export function toFitScoreResponse(
 ): FitScoreDocumentResponse {
   const { dimensions } = fitScore.toObject();
 
-  const outOf100 = ({ score, detail }: FitScoreDimension) => ({
-    score: Math.round(score * 10),
-    detail,
-  });
-
-  const shown = {
-    requirements: outOf100(dimensions.requirements),
-    skills: outOf100(dimensions.skills),
-    seniority: outOf100(dimensions.seniority),
-    domain: outOf100(dimensions.domain),
-  };
+  const shown = mapFitDimensions((key) => ({
+    score: Math.round(dimensions[key].score * 10),
+    detail: dimensions[key].detail,
+  }));
 
   return {
     id: fitScore._id.toHexString(),
@@ -45,7 +37,7 @@ export function toFitScoreResponse(
   };
 }
 
-export function toFitScoreRef(fitScore: FitScoreDocument): SavedDocumentRef {
+export function toFitScoreRef(fitScore: FitScoreDocument): FitScoreRef {
   return {
     kind: 'fit-score',
     id: fitScore._id.toHexString(),
@@ -88,23 +80,4 @@ export function toCoverLetterResponse(
     signOff: coverLetter.signOff,
     createdAt: coverLetter.createdAt.toISOString(),
   };
-}
-
-// A download name safe in any header: "Lead with payments" for Ada Obi
-// becomes "ada-obi-lead-with-payments.pdf".
-export function exportFileName(
-  document: ExportableDocument,
-  format: ExportFormat,
-): string {
-  const person =
-    document.kind === 'resume' ? document.resume.name : document.header.name;
-
-  const slug = `${person} ${document.name}`
-    .normalize('NFKD')
-    .replace(/\p{M}/gu, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-
-  return `${slug || EXPORT_FALLBACK_FILE_NAME}.${format}`;
 }

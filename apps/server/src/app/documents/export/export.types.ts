@@ -14,5 +14,6 @@ export type ExportSection = {
 
 export type ExportedFile = {
   content: Buffer;
+  contentType: string;
   fileName: string;
 };

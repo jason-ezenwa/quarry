@@ -17,6 +17,7 @@ type SessionChatProps = {
   working: boolean
   error: ChatErrorCode | null
   composer: ComposerState
+  messageLimit: number
   unsent: UnsentDraft | null
   activeDocumentId: string | null
   onOpenDocument: (document: DocumentAnnouncement) => void
@@ -65,6 +66,7 @@ export function SessionChat({
   working,
   error,
   composer,
+  messageLimit,
   unsent,
   activeDocumentId,
   onOpenDocument,
@@ -117,7 +119,7 @@ export function SessionChat({
       </div>
       <div className="flex justify-center px-3 pt-2 pb-4 md:px-7 md:pt-3 md:pb-5">
         <div className="w-full max-w-145">
-          <Composer key={unsent?.key} state={composer} draft={unsent?.text} onSend={onSend} />
+          <Composer key={unsent?.key} state={composer} messageLimit={messageLimit} draft={unsent?.text} onSend={onSend} />
         </div>
       </div>
     </section>

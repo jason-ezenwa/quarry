@@ -7,16 +7,12 @@ import {
   StreamableFile,
   UseGuards,
 } from '@nestjs/common';
-import {
-  DOCUMENT_KINDS,
-  type DocumentKind,
-  type DocumentResponse,
-} from '@quarry/contracts';
+import { isExportableKind, type DocumentResponse } from '@quarry/contracts';
 import type { SessionUser } from '../common/common.types';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequireProfileGuard } from '../profile/require-profile.guard';
-import { EXPORT_CONTENT_TYPES } from './documents.constants';
 import { DocumentsService } from './documents.service';
+import { DocumentParamsDto } from './dto/document-params.dto';
 import { ExportDocumentDto } from './dto/export-document.dto';
 import { ExportService } from './export/export.service';
 
@@ -33,13 +29,11 @@ export class DocumentsController {
   @Get(':kind/:documentId')
   async getOne(
     @CurrentUser() user: SessionUser,
-    @Param('sessionId') sessionId: string,
-    @Param('kind') kind: string,
-    @Param('documentId') documentId: string,
+    @Param() { sessionId, kind, documentId }: DocumentParamsDto,
   ): Promise<DocumentResponse> {
     return this.documentsService.getDocument(
       { userId: user.id, sessionId },
-      this.toKind(kind),
+      kind,
       documentId,
     );
   }
@@ -48,43 +42,29 @@ export class DocumentsController {
   @Get(':kind/:documentId/export')
   async export(
     @CurrentUser() user: SessionUser,
-    @Param('sessionId') sessionId: string,
-    @Param('kind') kind: string,
-    @Param('documentId') documentId: string,
+    @Param() { sessionId, kind, documentId }: DocumentParamsDto,
     @Query() { format }: ExportDocumentDto,
   ): Promise<StreamableFile> {
-    const documentKind = this.toKind(kind);
-
-    if (documentKind === 'fit-score') {
+    if (!isExportableKind(kind)) {
       throw new BadRequestException('Fit reports cannot be exported');
     }
 
     const document = await this.documentsService.getExportable(
       { userId: user.id, sessionId },
-      documentKind,
+      kind,
       documentId,
     );
 
-    const { content, fileName } = await this.exportService.render(
+    const { content, contentType, fileName } = await this.exportService.render(
       document,
       format,
     );
 
     // The name is limited to a-z, 0-9 and hyphens, so it needs no escaping.
     return new StreamableFile(content, {
-      type: EXPORT_CONTENT_TYPES[format],
+      type: contentType,
       disposition: `attachment; filename="${fileName}"`,
       length: content.length,
     });
-  }
-
-  private toKind(kind: string): DocumentKind {
-    if (!(DOCUMENT_KINDS as readonly string[]).includes(kind)) {
-      throw new BadRequestException(
-        `kind must be one of ${DOCUMENT_KINDS.join(', ')}`,
-      );
-    }
-
-    return kind as DocumentKind;
   }
 }

@@ -15,10 +15,12 @@ function Notice({ children }: { children: ReactNode }) {
 // a reply is written, when the session is archived, or at the message limit.
 export function Composer({
   state,
+  messageLimit,
   draft = '',
   onSend,
 }: {
   state: ComposerState
+  messageLimit: number
   // Text to start with, such as a message the server refused.
   draft?: string
   onSend: (text: string) => void
@@ -46,7 +48,7 @@ export function Composer({
       {state === 'archived' ? <Notice>This application is archived. Unarchive it from the menu to keep working.</Notice> : null}
       {state === 'limit' ? (
         <Notice>
-          This application has used its {SESSION_LIMITS.userMessagesPerSession} messages.{' '}
+          This application has used its {messageLimit} messages.{' '}
           <Link to={PATHS.home} className="text-foreground underline underline-offset-3">
             Start a new application
           </Link>{' '}

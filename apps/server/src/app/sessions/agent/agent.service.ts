@@ -18,6 +18,7 @@ import {
 } from 'ai';
 import type { ServerResponse } from 'node:http';
 import { ANTHROPIC } from '../../ai/ai.constants';
+import { errorName } from '../../common/error-name';
 import { ProfileService } from '../../profile/profile.service';
 import { ResumeService } from '../../resume/resume.service';
 import { MessageUsage } from '../message.schema';
@@ -73,8 +74,7 @@ export class AgentService {
     try {
       this.logger.log('Agent turn started', context);
 
-      const { messages: history } =
-        await this.sessionsService.loadTurnSession(turn);
+      const history = await this.sessionsService.turnHistory(turn);
       const tools = this.agentToolsFactory.build(context);
 
       const result = streamText({
@@ -116,7 +116,7 @@ export class AgentService {
         onError: (error) => {
           this.logger.error('Agent turn stream failed', {
             ...context,
-            error: error instanceof Error ? error.name : 'unknown',
+            error: errorName(error),
           });
 
           return 'Something went wrong writing this reply. Try again.';
@@ -139,7 +139,7 @@ export class AgentService {
     } catch (error) {
       this.logger.error('Agent turn crashed', {
         ...context,
-        error: error instanceof Error ? error.name : 'unknown',
+        error: errorName(error),
         durationMs: Date.now() - startedAt,
       });
 
@@ -206,11 +206,11 @@ export class AgentService {
   private async systemMessages(userId: string): Promise<SystemModelMessage[]> {
     const [profile, resume] = await Promise.all([
       this.profileService.findByUserId(userId),
-      this.resumeService.findReviewedPrimaryContent(userId),
+      this.resumeService.findPrimaryContent(userId),
     ]);
 
     if (!profile || !resume) {
-      throw new Error('Profile or reviewed primary resume missing');
+      throw new Error('Profile or parsed primary resume missing');
     }
 
     return [

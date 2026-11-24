@@ -1,7 +1,9 @@
-import type { Resume } from '@quarry/contracts';
+import type { ExportFormat, Resume } from '@quarry/contracts';
 import { format, parse } from 'date-fns';
+import type { ExportableDocument } from '../documents.types';
 import {
   CONTACT_SEPARATOR,
+  EXPORT_FALLBACK_FILE_NAME,
   HTTP_PROTOCOL_PREFIX,
   PRESENT_LABEL,
   RESUME_HEADINGS,
@@ -106,4 +108,23 @@ export function resumeSections(resume: Resume): ExportSection[] {
   return sections.filter(
     ({ paragraphs, entries }) => paragraphs.length > 0 || entries.length > 0,
   );
+}
+
+// A download name safe in any header: "Lead with payments" for Ada Obi
+// becomes "ada-obi-lead-with-payments.pdf".
+export function exportFileName(
+  document: ExportableDocument,
+  format: ExportFormat,
+): string {
+  const person =
+    document.kind === 'resume' ? document.resume.name : document.header.name;
+
+  const slug = `${person} ${document.name}`
+    .normalize('NFKD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  return `${slug || EXPORT_FALLBACK_FILE_NAME}.${format}`;
 }

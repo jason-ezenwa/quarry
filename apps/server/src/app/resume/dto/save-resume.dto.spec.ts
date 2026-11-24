@@ -3,7 +3,7 @@ import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { describe, expect, it } from 'vitest';
 import { resumeSchema } from '@quarry/contracts';
-import { isHttpUrl } from './is-http-url.decorator';
+import { isHttpUrl } from '../../common/is-http-url.decorator';
 import { SaveResumeDto } from './save-resume.dto';
 
 const experience = {

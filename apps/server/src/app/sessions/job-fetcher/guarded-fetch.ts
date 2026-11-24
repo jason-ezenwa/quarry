@@ -2,6 +2,7 @@ import http, { type IncomingMessage } from 'node:http';
 import https from 'node:https';
 import { lookup as dnsLookup } from 'node:dns/promises';
 import { isIP, type LookupFunction } from 'node:net';
+import { HTTP_PROTOCOLS } from '../../common/common.constants';
 import { isPublicAddress } from './address.utils';
 
 export type HostAddress = { address: string; family: 4 | 6 };
@@ -53,8 +54,6 @@ export class GuardedFetchError extends Error {
     this.name = 'GuardedFetchError';
   }
 }
-
-const HTTP_PROTOCOLS = new Set(['http:', 'https:']);
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; QuarryJobFetcher/1.0)';
 

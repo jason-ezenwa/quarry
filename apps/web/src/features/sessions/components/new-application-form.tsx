@@ -1,6 +1,6 @@
 import { FileTextIcon } from '@phosphor-icons/react/dist/csr/FileText'
 import { LinkSimpleIcon } from '@phosphor-icons/react/dist/csr/LinkSimple'
-import { SESSION_LIMITS, type CreateSessionRequest } from '@quarry/contracts'
+import { SESSION_LIMITS, type CreateSessionRequest, type MonthlySessionLimitError } from '@quarry/contracts'
 import { useId, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { Button } from '@/components/ui/button'
@@ -40,10 +40,12 @@ function requestFor(mode: Mode, value: string): CreateSessionRequest | string {
 
 function SubmitError({ error }: { error: unknown }) {
   if (error instanceof ApiError && error.code === 'monthly-session-limit') {
-    const resetsAt = typeof error.body?.resetsAt === 'string' ? error.body.resetsAt : null
+    const body: Partial<Record<keyof MonthlySessionLimitError, unknown>> = error.body ?? {}
+    const limit = typeof body.limit === 'number' ? body.limit : SESSION_LIMITS.sessionsPerMonth
+    const resetsAt = typeof body.resetsAt === 'string' ? body.resetsAt : null
     return (
       <p role="alert" className="text-small text-destructive-ink">
-        You've used all {SESSION_LIMITS.sessionsPerMonth} applications this month.
+        You've used all {limit} applications this month.
         {resetsAt ? ` More on ${formatResetDate(resetsAt)}.` : null}
       </p>
     )
@@ -52,9 +54,9 @@ function SubmitError({ error }: { error: unknown }) {
   if (error instanceof ApiError && error.code === 'primary-resume-not-ready') {
     return (
       <p role="alert" className="text-small text-destructive-ink">
-        Your resume needs a review first.{' '}
+        Your resume isn't ready yet: it's still being read, or it couldn't be read.{' '}
         <Link to={PATHS.resume} className="underline underline-offset-3">
-          Review your resume
+          Check your resume
         </Link>
       </p>
     )

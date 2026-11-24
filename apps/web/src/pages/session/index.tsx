@@ -93,6 +93,7 @@ function SessionView({ session, fresh }: { session: SessionDetail; fresh: boolea
           working={working}
           error={chat.error}
           composer={composerState(session, working)}
+          messageLimit={session.messageLimit}
           unsent={chat.unsent}
           activeDocumentId={showing ? (documents[tab]?.id ?? null) : null}
           onOpenDocument={openDocument}
@@ -129,7 +130,7 @@ export function SessionPage() {
   if (session) return <SessionView key={session.id} session={session} fresh={isFetchedAfterMount} />
 
   if (error) {
-    const missing = error instanceof ApiError && (error.status === 404 || error.status === 400)
+    const missing = error instanceof ApiError && error.status === 404
     return (
       <>
         <PageHeader title="Application" crumbs={CRUMBS} />

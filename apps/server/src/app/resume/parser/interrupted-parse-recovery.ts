@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { STALE_PARSE_AFTER_MS } from './parser.constants';
+import { errorName } from '../../common/error-name';
 import { ResumeService } from '../resume.service';
 
 // Re-runs parses a restart cut off; failed parses are left alone.
@@ -13,7 +14,7 @@ export class InterruptedParseRecovery implements OnApplicationBootstrap {
   onApplicationBootstrap(): void {
     this.recover().catch((error: unknown) => {
       this.logger.error('Interrupted parse recovery failed', {
-        error: error instanceof Error ? error.name : 'unknown',
+        error: errorName(error),
       });
     });
   }

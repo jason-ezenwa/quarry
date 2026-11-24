@@ -135,11 +135,18 @@ describe('Session page (integration)', () => {
     const recorded = serveSession(detail())
     renderRoute(SESSION_PATH)
 
-    await userEvent.type(await screen.findByRole('textbox', { name: 'Message' }), 'Lead with the agent work{Enter}')
+    const composer = await screen.findByRole('textbox', { name: 'Message' })
+    await waitFor(() => expect(recorded.documentReads).toHaveLength(1))
+    const sessionReads = recorded.sessionReads
+    await userEvent.type(composer, 'Lead with the agent work{Enter}')
 
     await waitFor(() => expect(screen.getAllByText('You line up well. Go is the main gap.')).toHaveLength(2))
     expect(recorded.turns).toEqual([{ message: { id: expect.any(String), text: 'Lead with the agent work' } }])
     expect(screen.getByText('Lead with the agent work')).toBeInTheDocument()
+    // Refreshing the session after the turn leaves documents already fetched alone.
+    await waitFor(() => expect(recorded.sessionReads).toBeGreaterThan(sessionReads))
+    await waitFor(() => expect(within(screen.getByRole('complementary', { name: 'Output' })).getByText('86%')).toBeInTheDocument())
+    expect(recorded.documentReads).toEqual([...new Set(recorded.documentReads)])
   })
 
   it('draws the reply Markdown instead of showing its symbols', async () => {
@@ -162,14 +169,15 @@ describe('Session page (integration)', () => {
     expect(recorded.turns).toEqual([])
   })
 
-  it('draws tool steps from their metadata, and falls back to the gear without it', async () => {
+  it('draws tool steps from their metadata, refusals with their failed text, and falls back to the gear without metadata', async () => {
     signInAs()
     const reply = {
       id: 'msg-reply',
       role: 'assistant' as const,
       parts: [
-        { type: 'tool-get_job_description', toolCallId: 'a', state: 'output-available', input: {}, output: { meta: 'Ashby' }, toolMetadata: { icon: 'globe', active: 'Reading the job post', done: 'Read the job post' } },
+        { type: 'tool-get_job_description', toolCallId: 'a', state: 'output-available', input: {}, output: { note: 'Ashby' }, toolMetadata: { icon: 'globe', active: 'Reading the job post', done: 'Read the job post', failed: "Couldn't read the job post" } },
         { type: 'tool-mystery', toolCallId: 'b', state: 'output-available', input: {}, output: {} },
+        { type: 'tool-get_job_description', toolCallId: 'd', state: 'output-available', input: {}, output: { ok: false, note: 'LinkedIn blocks us' }, toolMetadata: { icon: 'globe', active: 'Reading the job post', done: 'Read the job post', failed: "Couldn't read the job post" } },
         { type: 'tool-odd_icon', toolCallId: 'c', state: 'output-available', input: {}, output: {}, toolMetadata: { icon: 'not-an-icon', active: 'Doing', done: 'Did' } },
         { type: 'text', text: 'Done.' },
       ],
@@ -177,10 +185,12 @@ describe('Session page (integration)', () => {
     serveSession(detail({ messages: [userMessage('msg-1', 'Hi'), reply] }))
     renderRoute(SESSION_PATH)
 
-    await userEvent.click(await screen.findByRole('button', { name: '3 steps' }))
+    await userEvent.click(await screen.findByRole('button', { name: '4 steps' }))
 
     expect(screen.getByText('Read the job post')).toBeInTheDocument()
     expect(screen.getByText('Ashby')).toBeInTheDocument()
+    expect(screen.getByText("Couldn't read the job post")).toBeInTheDocument()
+    expect(screen.getByText('LinkedIn blocks us')).toBeInTheDocument()
     expect(screen.getAllByText('Worked')).toHaveLength(2)
     expect(screen.queryByText('Did')).not.toBeInTheDocument()
   })
@@ -318,12 +328,15 @@ describe('Session page (integration)', () => {
     expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument()
   })
 
-  it('puts a refused message back in the composer', async () => {
+  it.each([
+    ['turn-running', "Your message wasn't sent. Try sending it again."],
+    ['primary-resume-not-ready', "Your resume is being read or couldn't be read. Check it on the Resume page, then send your message again."],
+  ])('puts a message refused with %s back in the composer and says why', async (code, explanation) => {
     signInAs()
     serveSession(detail())
     server.use(
       http.post(apiUrl(`/api/sessions/${SESSION_ID}/turns`), () =>
-        HttpResponse.json({ statusCode: 409, code: 'turn-running', message: 'A turn is running' }, { status: 409 }),
+        HttpResponse.json({ statusCode: 409, code, message: 'Refused' }, { status: 409 }),
       ),
     )
     renderRoute(SESSION_PATH)
@@ -331,7 +344,7 @@ describe('Session page (integration)', () => {
     const composer = await screen.findByRole('textbox', { name: 'Message' })
     await userEvent.type(composer, 'Lead with the agent work{Enter}')
 
-    expect(await screen.findByText("Your message wasn't sent. Try sending it again.")).toBeInTheDocument()
+    expect(await screen.findByText(explanation)).toBeInTheDocument()
     expect(screen.getByRole('textbox', { name: 'Message' })).toHaveValue('Lead with the agent work')
     expect(screen.queryByText('Lead with the agent work', { selector: 'p' })).not.toBeInTheDocument()
   })

@@ -1,18 +1,22 @@
-import type { DocumentKind, SavedDocumentRef } from '@quarry/contracts'
+import type { DocumentKind, SavedDocumentRef, SessionErrorCode } from '@quarry/contracts'
+import type { VariantProps } from 'class-variance-authority'
 import type { ComponentType, SVGProps } from 'react'
-import type { CHAT_ERRORS, SESSION_ERROR_CODES } from './sessions.constants'
+import type { badgeVariants } from '@/components/ui/badge'
+import type { CHAT_ERRORS } from './sessions.constants'
 
 export type IconComponent = ComponentType<SVGProps<SVGSVGElement>>
 
-export type BadgeVariant = 'ready' | 'drafting' | 'interview' | 'neutral'
+export type BadgeVariant = NonNullable<VariantProps<typeof badgeVariants>['variant']>
 
 // One tool call, as the chat draws it.
 export type ToolStep = {
   id: string
   icon: IconComponent
   label: string
-  meta: string | null
+  note: string | null
   running: boolean
+  // Errored, or cut off when its reply stopped.
+  unfinished: boolean
 }
 
 // A run of consecutive parts in one assistant message.
@@ -23,7 +27,8 @@ export type DocumentAnnouncement = SavedDocumentRef & { messageId: string }
 
 export type OpenDocument = { kind: DocumentKind; id: string }
 
-export type SessionErrorCode = (typeof SESSION_ERROR_CODES)[number]
+// The server's codes, plus `failed` for anything else.
+export type TurnErrorCode = SessionErrorCode | 'failed'
 
 export type ChatErrorCode = keyof typeof CHAT_ERRORS
 

@@ -2,6 +2,7 @@ import type { Resume } from '@quarry/contracts';
 import { delay, http, HttpResponse } from 'msw';
 import { ANTHROPIC_BASE_URL } from '../../src/app/ai/ai.constants';
 import { RESUME_PARSE_MODEL } from '../../src/app/resume/parser/parser.constants';
+import { AGENT_MODEL } from '../../src/app/sessions/agent/agent.constants';
 
 export const ANTHROPIC_MESSAGES_URL = `${ANTHROPIC_BASE_URL}/messages`;
 
@@ -74,8 +75,6 @@ type ContentBlock =
   | { type: 'tool_use'; id: string; name: string; input: object };
 
 const DEFAULT_USAGE = { input_tokens: 1200, output_tokens: 400 };
-
-const AGENT_TEST_MODEL = 'claude-sonnet-5-5';
 
 // The provider asks for structured output either natively or, for larger
 // schemas, through a forced tool named `json`; replies answer in kind.
@@ -159,7 +158,7 @@ function streamed({
           id: 'msg_test',
           type: 'message',
           role: 'assistant',
-          model: AGENT_TEST_MODEL,
+          model: AGENT_MODEL,
           content: [],
           stop_reason: null,
           stop_sequence: null,
