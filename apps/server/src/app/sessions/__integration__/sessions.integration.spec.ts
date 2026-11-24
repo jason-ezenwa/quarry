@@ -629,7 +629,10 @@ describe('Sessions (integration)', () => {
       }
 
       expect(sent.tools?.map(({ name }) => name).sort()).toEqual([
+        'create_tailored_resume',
+        'edit_tailored_resume',
         'get_job_description',
+        'save_cover_letter',
         'save_fit_score',
       ]);
       expect(sent.tool_choice).toEqual({ type: 'auto' });
