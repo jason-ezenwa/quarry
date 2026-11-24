@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { SIDEBAR_STORAGE_KEY } from './app-frame.constants'
 
 // Storage can be missing or throw, as in a private window; the sidebar then starts open and isn't remembered.
@@ -23,11 +23,10 @@ function writeHidden(hidden: boolean) {
 export function useSidebarOpen() {
   const [open, setOpen] = useState(() => !readHidden())
 
-  return [
-    open,
-    (next: boolean) => {
-      setOpen(next)
-      writeHidden(!next)
-    },
-  ] as const
+  const setSidebarOpen = useCallback((next: boolean) => {
+    setOpen(next)
+    writeHidden(!next)
+  }, [])
+
+  return [open, setSidebarOpen] as const
 }

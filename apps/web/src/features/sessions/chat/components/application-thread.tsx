@@ -93,7 +93,7 @@ export function ApplicationThread({
       )}
       {waitingForReply ? <AgentSteps steps={[]} working /> : null}
       {error ? <TurnError error={error} onRetry={onRetry} /> : null}
-      <SessionThreadFollow value={sentCount} />
+      <SessionThreadFollow resetKey={sentCount} />
     </SessionThread>
   )
 }

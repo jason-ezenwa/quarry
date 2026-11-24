@@ -44,14 +44,14 @@ function SessionThread({ className, children, jumpLabel = 'Jump to latest', ...p
   )
 }
 
-// Scrolls to the bottom and follows again whenever `value` changes, such as when the reader sends a message.
-function SessionThreadFollow({ value }: { value: unknown }) {
+// Scrolls to the bottom and follows again whenever `resetKey` changes, such as when the reader sends a message.
+function SessionThreadFollow({ resetKey }: { resetKey: number }) {
   const { actions } = useSessionThread()
   const { jumpToBottom } = actions
 
   useEffect(() => {
     jumpToBottom('instant')
-  }, [value, jumpToBottom])
+  }, [resetKey, jumpToBottom])
 
   return null
 }
