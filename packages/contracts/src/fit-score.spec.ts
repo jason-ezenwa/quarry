@@ -92,12 +92,12 @@ describe("fitScoreInputSchema", () => {
     }
   });
 
-  it("refuses a detail longer than 30 characters", () => {
+  it("refuses a detail longer than 60 characters", () => {
     const input = {
       ...validInput,
       dimensions: {
         ...validInput.dimensions,
-        domain: { score: 5, detail: "x".repeat(31) },
+        domain: { score: 5, detail: "x".repeat(61) },
       },
     };
 
