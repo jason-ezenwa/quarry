@@ -134,9 +134,6 @@ export class AgentService {
           anthropic: {
             effort: AGENT_EFFORT,
             sendReasoning: true,
-            // A request Claude's safety checks decline is answered by the
-            // recommended fallback model instead.
-            fallbacks: 'default',
             contextManagement: {
               edits: [
                 {

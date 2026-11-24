@@ -663,9 +663,6 @@ describe('Sessions (integration)', () => {
       ]);
 
       expect(fakeAnthropicApi.betas[0]).toContain('compact-2026-01-12');
-      expect(fakeAnthropicApi.betas[0]).toContain(
-        'server-side-fallback-2026-07-01',
-      );
     });
 
     it('works from an unreviewed primary resume and tells the agent so', async () => {
