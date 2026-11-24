@@ -1,7 +1,6 @@
 import {
   fitLabelFor,
   type CoverLetterDocumentResponse,
-  type DocumentHeader,
   type ExportFormat,
   type FitScoreDocumentResponse,
   type SavedDocumentRef,
@@ -76,8 +75,9 @@ export function toCoverLetterRef(
 
 export function toCoverLetterResponse(
   coverLetter: CoverLetterDocument,
-  header: DocumentHeader,
 ): CoverLetterDocumentResponse {
+  const { header } = coverLetter.toObject();
+
   return {
     id: coverLetter._id.toHexString(),
     kind: 'cover-letter',

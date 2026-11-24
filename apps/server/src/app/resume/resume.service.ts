@@ -11,7 +11,6 @@ import type {
   EditTailoredResumeInput,
   PrimaryResumeResponse,
   Resume as ResumeContent,
-  TailoredResumeContent,
   TailoredResumeDocumentResponse,
   UploadedFileRef,
 } from '@quarry/contracts';
@@ -31,7 +30,6 @@ import {
   toPrimaryResumeResponse,
   toResumeContent,
   toResumeContentUpdate,
-  toTailoredResumeContent,
   toTailoredResumeResponse,
 } from './resume.utils';
 
@@ -95,8 +93,8 @@ export class ResumeService {
     return resume ? toResumeContent(resume) : null;
   }
 
-  // The header of every tailored resume and letter, read on each use. A
-  // re-upload clears the review but keeps the last parse, so that's used.
+  // The default header for a new cover letter. A re-upload clears the review
+  // but keeps the last parse, so that's used.
   async findHeader(userId: string): Promise<DocumentHeader> {
     const resume = await this.resumeModel.findOne(
       this.primaryFilter(userId, { parsedAt: { $ne: null } }),
@@ -129,7 +127,7 @@ export class ResumeService {
     return this.saveTailored(
       owner,
       name,
-      replaceSections(toTailoredResumeContent(source), sections),
+      replaceSections(toResumeContent(source), sections),
       source._id,
     );
   }
@@ -141,10 +139,7 @@ export class ResumeService {
     const resume = await this.findTailored(owner, resumeId);
     if (!resume) throw documentNotFound();
 
-    return toTailoredResumeResponse(
-      resume,
-      await this.findHeader(owner.userId),
-    );
+    return toTailoredResumeResponse(resume);
   }
 
   async getPrimary(userId: string): Promise<PrimaryResumeResponse> {
@@ -274,7 +269,7 @@ export class ResumeService {
   private async saveTailored(
     { userId, sessionId }: SessionContext,
     title: string,
-    content: TailoredResumeContent,
+    content: ResumeContent,
     sourceResume?: Types.ObjectId,
   ): Promise<ResumeDocument> {
     const resume = new Resume();
@@ -283,6 +278,8 @@ export class ResumeService {
     resume.session = new Types.ObjectId(sessionId);
     resume.title = title;
     resume.sourceResume = sourceResume;
+    resume.name = content.name;
+    resume.contact = content.contact;
     resume.summary = content.summary;
     resume.experience = content.experience;
     resume.education = content.education;

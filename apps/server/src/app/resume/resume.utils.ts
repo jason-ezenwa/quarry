@@ -1,9 +1,7 @@
 import type {
-  DocumentHeader,
   PrimaryResumeResponse,
   Resume as ResumeContent,
   ResumeSections,
-  TailoredResumeContent,
   TailoredResumeDocumentResponse,
 } from '@quarry/contracts';
 import type { UpdateQuery } from 'mongoose';
@@ -71,23 +69,14 @@ export function toPrimaryResumeResponse(
 
 // A copy of `source` with each given section replaced whole.
 export function replaceSections(
-  source: TailoredResumeContent,
+  source: ResumeContent,
   sections: ResumeSections,
-): TailoredResumeContent {
+): ResumeContent {
   const given = Object.fromEntries(
     Object.entries(sections).filter(([, value]) => value !== undefined),
   );
 
   return structuredClone({ ...source, ...given });
-}
-
-// The body only: a tailored resume's header is always the primary's.
-export function toTailoredResumeContent(
-  resume: ResumeDocument,
-): TailoredResumeContent {
-  const { name: _name, contact: _contact, ...body } = toResumeContent(resume);
-
-  return body;
 }
 
 // A tailored resume's name, which every save sets.
@@ -101,13 +90,12 @@ export function tailoredTitleOf(resume: ResumeDocument): string {
 
 export function toTailoredResumeResponse(
   resume: ResumeDocument,
-  header: DocumentHeader,
 ): TailoredResumeDocumentResponse {
   return {
     id: resume._id.toHexString(),
     kind: 'resume',
     name: tailoredTitleOf(resume),
-    resume: { ...header, ...toTailoredResumeContent(resume) },
+    resume: toResumeContent(resume),
     sourceResumeId: resume.sourceResume?.toHexString() ?? null,
     createdAt: resume.createdAt.toISOString(),
   };

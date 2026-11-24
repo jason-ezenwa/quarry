@@ -1,9 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import type {
-  CoverLetterInput,
-  Resume,
-  TailoredResumeContent,
-} from '@quarry/contracts';
+import type { CoverLetterInput, Resume } from '@quarry/contracts';
 import mammoth from 'mammoth';
 import { Types } from 'mongoose';
 import request from 'supertest';
@@ -25,7 +21,13 @@ import {
   seedOnboarded,
 } from '../../sessions/__integration__/session-fixtures';
 
-const tailoredBody: TailoredResumeContent = {
+// Its own contact line: the agent may add a link the primary resume lacks.
+const tailoredResume: Resume = {
+  name: primaryResume.name,
+  contact: {
+    ...primaryResume.contact,
+    links: [{ label: 'Portfolio', url: 'https://ada.dev' }],
+  },
   summary: 'Payments engineer who ships settlement systems.',
   experience: [
     {
@@ -40,13 +42,6 @@ const tailoredBody: TailoredResumeContent = {
   skills: [{ name: 'Go' }, { name: 'TypeScript' }],
   projects: [],
   certifications: [],
-};
-
-// As read back: the header is always the primary resume's.
-const tailoredResume: Resume = {
-  name: primaryResume.name,
-  contact: primaryResume.contact,
-  ...tailoredBody,
 };
 
 const coverLetter: CoverLetterInput = {
@@ -192,7 +187,7 @@ describe('Documents (integration)', () => {
     await runTools(cookie, sessionId, [
       {
         name: 'create_tailored_resume',
-        input: { name: 'Payments focus', resume: tailoredBody },
+        input: { name: 'Payments focus', resume: tailoredResume },
       },
     ]);
 
@@ -251,6 +246,7 @@ describe('Documents (integration)', () => {
             sourceResumeId: sourceId,
             name: 'One page, Kafka first',
             sections: {
+              contact: { email: 'ada@work.dev', links: [] },
               summary: 'Kafka and payments.',
               skills: [{ name: 'Kafka' }],
             },
@@ -284,6 +280,7 @@ describe('Documents (integration)', () => {
         sourceResumeId: sourceId,
         resume: {
           ...tailoredResume,
+          contact: { email: 'ada@work.dev', links: [] },
           summary: 'Kafka and payments.',
           skills: [{ name: 'Kafka' }],
         },
@@ -357,7 +354,7 @@ describe('Documents (integration)', () => {
   });
 
   describe('cover letters', () => {
-    it('saves a cover letter and reads it back with the profile header', async () => {
+    it("saves a cover letter and reads it back under the primary resume's header", async () => {
       const { cookie } = await onboardedUser();
       const sessionId = await startSession(cookie);
 
@@ -396,6 +393,30 @@ describe('Documents (integration)', () => {
         signOff: coverLetter.signOff,
         createdAt: expect.any(String),
       });
+    });
+
+    it('keeps a header the user asked for on that letter', async () => {
+      const { cookie } = await onboardedUser();
+      const sessionId = await startSession(cookie);
+      const header = {
+        name: 'Ada Obi',
+        contact: {
+          email: 'ada@work.dev',
+          links: [{ label: 'GitHub', url: 'https://github.com/ada' }],
+        },
+      };
+
+      await runTools(cookie, sessionId, [
+        { name: 'save_cover_letter', input: { ...coverLetter, header } },
+      ]);
+
+      const [saved] = await coverLetters(sessionId);
+      const response = await get(
+        `/sessions/${sessionId}/documents/cover-letter/${saved._id.toHexString()}`,
+        cookie,
+      );
+
+      expect(response.body.header).toEqual(header);
     });
 
     it.each([2, 6])(
@@ -528,7 +549,7 @@ describe('Documents (integration)', () => {
       }
     });
 
-    it('downloads a cover letter as a PDF and a DOCX under the profile header', async () => {
+    it('downloads a cover letter as a PDF and a DOCX under its header', async () => {
       const { cookie, coverLetterPath } = await exported();
 
       const pdf = await download(`${coverLetterPath}?format=pdf`, cookie);
@@ -553,22 +574,39 @@ describe('Documents (integration)', () => {
       }
     });
 
-    it("renders the primary resume's current header in any Latin script", async () => {
-      const { cookie, resumePath, coverLetterPath } = await exported();
+    it('renders names in any Latin script', async () => {
+      const { cookie } = await onboardedUser();
+      const sessionId = await startSession(cookie);
+      const name = 'Chídí Ọkọ';
 
-      await getTestDatabase()
-        .collection('resumes')
-        .updateOne(
-          { kind: 'primary' },
-          {
-            $set: {
-              name: 'Chídí Ọkọ',
+      await runTools(cookie, sessionId, [
+        {
+          name: 'create_tailored_resume',
+          input: {
+            name: 'Yoruba name',
+            resume: { ...tailoredResume, name },
+          },
+        },
+        {
+          name: 'save_cover_letter',
+          input: {
+            ...coverLetter,
+            header: {
+              name,
               contact: { email: 'chidi@example.com', links: [] },
             },
           },
-        );
+        },
+      ]);
 
-      for (const path of [resumePath, coverLetterPath]) {
+      const [resume] = await tailoredResumes(sessionId);
+      const [letter] = await coverLetters(sessionId);
+      const documents = `/sessions/${sessionId}/documents`;
+
+      for (const path of [
+        `${documents}/resume/${resume._id.toHexString()}/export`,
+        `${documents}/cover-letter/${letter._id.toHexString()}/export`,
+      ]) {
         const pdf = await download(`${path}?format=pdf`, cookie);
         const docx = await download(`${path}?format=docx`, cookie);
 
@@ -576,9 +614,7 @@ describe('Documents (integration)', () => {
           await pdfText(pdf.body),
           await docxText(docx.body),
         ]) {
-          expect(text).toContain('Chídí Ọkọ');
-          expect(text).toContain('chidi@example.com');
-          expect(text).not.toContain('ada@example.com');
+          expect(text).toContain(name);
         }
       }
     });

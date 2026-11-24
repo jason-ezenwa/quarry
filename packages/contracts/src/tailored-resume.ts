@@ -2,20 +2,13 @@ import { z } from "zod";
 import { documentNameSchema } from "./document-name.js";
 import { resumeSchema } from "./resume.js";
 
-// A tailored resume's body. The name and contact details at the top always
-// come from the primary resume, so a resume and a cover letter share them.
-export const tailoredResumeContentSchema = resumeSchema.omit({
-  name: true,
-  contact: true,
-});
-
-export type TailoredResumeContent = z.infer<typeof tailoredResumeContentSchema>;
-
-const sections = tailoredResumeContentSchema.shape;
+const sections = resumeSchema.shape;
 
 // Each given section replaces the source's whole; an unknown one is refused.
+// The person's name stays with the source.
 export const resumeSectionsSchema = z
   .strictObject({
+    contact: sections.contact.optional(),
     summary: sections.summary,
     experience: sections.experience.optional(),
     education: sections.education.optional(),
@@ -31,8 +24,8 @@ export type ResumeSections = z.infer<typeof resumeSectionsSchema>;
 
 export const createTailoredResumeInputSchema = z.object({
   name: documentNameSchema,
-  resume: tailoredResumeContentSchema.describe(
-    "The whole tailored resume, without the person's name and contact details",
+  resume: resumeSchema.describe(
+    "The whole tailored resume. Start the name and contact details from the primary resume and change them only when the user asks.",
   ),
 });
 

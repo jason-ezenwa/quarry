@@ -112,7 +112,7 @@ export class AgentToolsFactory {
 
       create_tailored_resume: tool({
         description:
-          "Saves a new resume tailored to this job, written whole from the user's primary resume. Leave out the name and contact details: the primary resume's are added for you. Use it for the first tailored resume; revise it later with edit_tailored_resume.",
+          "Saves a new resume tailored to this job, written whole from the user's primary resume. Use it for the first tailored resume; revise it later with edit_tailored_resume.",
         inputSchema: createTailoredResumeInputSchema,
         metadata: display({
           icon: 'file-text',
@@ -163,7 +163,7 @@ export class AgentToolsFactory {
 
       save_cover_letter: tool({
         description:
-          "Saves a cover letter for this job: a greeting, 3 to 5 paragraphs and a sign-off. The user's name and contact details are added above it and below the sign-off for you, so leave them out. Every save is a new letter.",
+          "Saves a cover letter for this job: a greeting, 3 to 5 paragraphs and a sign-off. The user's name and contact details from the primary resume go above it and below the sign-off for you; give a header only when the user wants different ones on this letter. Every save is a new letter.",
         inputSchema: coverLetterInputSchema,
         metadata: display({
           icon: 'envelope',

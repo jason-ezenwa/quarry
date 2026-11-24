@@ -96,6 +96,8 @@ export class DocumentsService {
     coverLetter.user = new Types.ObjectId(userId);
     coverLetter.session = new Types.ObjectId(sessionId);
     coverLetter.title = input.name;
+    coverLetter.header =
+      input.header ?? (await this.resumeService.findHeader(userId));
     coverLetter.greeting = input.greeting;
     coverLetter.paragraphs = input.paragraphs;
     coverLetter.signOff = input.signOff;
@@ -120,10 +122,7 @@ export class DocumentsService {
 
     if (!coverLetter) throw documentNotFound();
 
-    return toCoverLetterResponse(
-      coverLetter,
-      await this.resumeService.findHeader(owner.userId),
-    );
+    return toCoverLetterResponse(coverLetter);
   }
 
   // The overall is computed here; the model never gives it.

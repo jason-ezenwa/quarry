@@ -1,8 +1,10 @@
-import type { TailoredResumeContent } from '@quarry/contracts';
+import type { Resume } from '@quarry/contracts';
 import { describe, expect, it } from 'vitest';
 import { replaceSections } from './resume.utils';
 
-const source: TailoredResumeContent = {
+const source: Resume = {
+  name: 'Ada Obi',
+  contact: { email: 'ada@example.com', links: [] },
   summary: 'Backend engineer.',
   experience: [
     {
@@ -20,13 +22,19 @@ const source: TailoredResumeContent = {
 describe('replaceSections', () => {
   it('replaces the given sections whole and keeps the rest', () => {
     const edited = replaceSections(source, {
-      summary: 'Payments engineer.',
+      contact: {
+        email: 'ada@work.dev',
+        links: [{ label: 'Site', url: 'https://ada.dev' }],
+      },
       skills: [{ name: 'Go' }, { name: 'Kafka' }],
     });
 
     expect(edited).toEqual({
       ...source,
-      summary: 'Payments engineer.',
+      contact: {
+        email: 'ada@work.dev',
+        links: [{ label: 'Site', url: 'https://ada.dev' }],
+      },
       skills: [{ name: 'Go' }, { name: 'Kafka' }],
     });
   });

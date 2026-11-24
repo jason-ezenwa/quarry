@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { documentNameSchema } from "./document-name.js";
+import { resumeSchema } from "./resume.js";
 
 export const COVER_LETTER_LIMITS = {
   minParagraphs: 3,
@@ -10,8 +11,13 @@ export const COVER_LETTER_LIMITS = {
 
 const requiredText = z.string().trim().min(1);
 
-// The writer's name and contact details come from their primary resume when
-// the letter is shown or exported, never from the model.
+// The name and contact details above a letter. Left out, they're copied from
+// the primary resume when the letter is saved.
+export const coverLetterHeaderSchema = z.object({
+  name: resumeSchema.shape.name,
+  contact: resumeSchema.shape.contact,
+});
+
 export const coverLetterInputSchema = z.object({
   name: documentNameSchema,
   greeting: requiredText
@@ -27,6 +33,11 @@ export const coverLetterInputSchema = z.object({
   signOff: requiredText
     .max(COVER_LETTER_LIMITS.lineMaxLength)
     .describe('For example "Kind regards,"; the name is added for you'),
+  header: coverLetterHeaderSchema
+    .optional()
+    .describe(
+      "Only when the user wants different name or contact details on this letter; otherwise the primary resume's are used",
+    ),
 });
 
 export type CoverLetterInput = z.infer<typeof coverLetterInputSchema>;

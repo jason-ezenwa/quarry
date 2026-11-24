@@ -4,9 +4,22 @@ import {
   DOCUMENT_NAME_MAX_LENGTH,
 } from '@quarry/contracts';
 import { HydratedDocument, Types } from 'mongoose';
+import { ResumeContactEntry } from '../resume/resume.schema';
 
-// The writer's name and contact details aren't stored: they come from the
-// primary resume whenever the letter is shown or exported.
+@Schema({ _id: false })
+export class CoverLetterHeader {
+  @Prop({ required: true, type: String })
+  name: string;
+
+  @Prop({
+    required: true,
+    type: SchemaFactory.createForClass(ResumeContactEntry),
+  })
+  contact: ResumeContactEntry;
+}
+
+// Each letter keeps the header it was saved with, the primary resume's
+// unless the user asked for something else.
 @Schema({
   timestamps: { createdAt: true, updatedAt: false },
   collection: 'cover-letters',
@@ -21,6 +34,12 @@ export class CoverLetter {
   // The document's name.
   @Prop({ required: true, type: String, maxlength: DOCUMENT_NAME_MAX_LENGTH })
   title: string;
+
+  @Prop({
+    required: true,
+    type: SchemaFactory.createForClass(CoverLetterHeader),
+  })
+  header: CoverLetterHeader;
 
   @Prop({ required: true, type: String })
   greeting: string;

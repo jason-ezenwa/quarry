@@ -32,8 +32,7 @@ export type FitScoreDocumentResponse = {
   createdAt: string;
 };
 
-// The name and contact details at the top of a tailored resume or a cover
-// letter, always from the writer's primary resume.
+// The name and contact details at the top of a cover letter.
 export type DocumentHeader = {
   name: string;
   contact: Resume["contact"];
@@ -43,7 +42,6 @@ export type TailoredResumeDocumentResponse = {
   id: string;
   kind: "resume";
   name: string;
-  // Its name and contact are the primary resume's, as on the cover letter.
   resume: Resume;
   // The resume this one was edited from; null when it was written whole.
   sourceResumeId: string | null;
