@@ -272,6 +272,36 @@ describe('Session page (integration)', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
 
+  it('opens the outputs from the page header on a phone, without a card, showing the latest document', async () => {
+    setViewport('phone')
+    signInAs()
+    serveSession(detail())
+    renderRoute(SESSION_PATH)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Open panel' }))
+
+    const dialog = await screen.findByRole('dialog', { name: 'Halden' })
+    expect(within(dialog).getByRole('tab', { name: 'Fit report' })).toHaveAttribute('aria-selected', 'true')
+    expect(await within(dialog).findByText('86%')).toBeInTheDocument()
+  })
+
+  it('closes the panel beside the chat and opens it again from the page header', async () => {
+    setViewport('desktop')
+    signInAs()
+    serveSession(detail())
+    renderRoute(SESSION_PATH)
+
+    const panel = await screen.findByRole('complementary', { name: 'Output' })
+    expect(screen.queryByRole('button', { name: 'Open panel' })).not.toBeInTheDocument()
+
+    await userEvent.click(within(panel).getByRole('button', { name: 'Close panel' }))
+    expect(screen.queryByRole('complementary', { name: 'Output' })).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Open panel' }))
+    expect(await screen.findByRole('complementary', { name: 'Output' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Open panel' })).not.toBeInTheDocument()
+  })
+
   it('opens each resume and cover letter from its own card, and a revision takes over the Resume tab as it streams in', async () => {
     setViewport('desktop')
     signInAs()

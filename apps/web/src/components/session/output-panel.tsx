@@ -1,3 +1,4 @@
+import { SidebarSimpleIcon } from '@phosphor-icons/react/dist/csr/SidebarSimple'
 import { XIcon } from '@phosphor-icons/react/dist/csr/X'
 import type { ComponentProps } from 'react'
 import { Button } from '@/components/ui/button'
@@ -28,6 +29,15 @@ function OutputPanelTabs(props: ComponentProps<typeof TabsList>) {
 
 function OutputPanelTab(props: ComponentProps<typeof TabsTrigger>) {
   return <TabsTrigger data-slot="output-panel-tab" {...props} />
+}
+
+// Opens the outputs from the page header: the panel beside the chat, or the sheet over the page on phones.
+function OutputPanelOpen(props: Omit<ComponentProps<typeof Button>, 'children'>) {
+  return (
+    <Button data-slot="output-panel-open" variant="ghost" size="icon" aria-label="Open panel" {...props}>
+      <SidebarSimpleIcon aria-hidden="true" />
+    </Button>
+  )
 }
 
 function OutputPanelClose({ className, ...props }: Omit<ComponentProps<typeof Button>, 'children'>) {
@@ -100,6 +110,7 @@ export {
   OutputPanelBar,
   OutputPanelTabs,
   OutputPanelTab,
+  OutputPanelOpen,
   OutputPanelClose,
   OutputPanelToolbar,
   OutputPanelName,

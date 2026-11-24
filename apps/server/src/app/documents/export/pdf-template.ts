@@ -86,8 +86,7 @@ const styles = StyleSheet.create({
 const text = (style: TextProps['style'], content: ReactNode) =>
   h(Text, { style } satisfies TextProps, content);
 
-// Email, phone and links are clickable, as they are on the web sheet. Each
-// part keeps to one line with the separator after it, so a line never breaks
+// Each part stays whole with its separator after it: a line never breaks
 // inside a link or starts with a separator.
 function contactLine(parts: ContactPart[]): ReactElement {
   return h(

@@ -39,6 +39,8 @@ const buttonVariants = cva(
       },
     },
     compoundVariants: [
+      // Icons in the phone top bar read in ink, as the only controls there.
+      { variant: "ghost", size: "icon-touch", className: "text-foreground" },
       // Sizes add side padding and height, but a link sits flush with the text around it.
       { variant: "link", className: "h-auto px-0" },
       // Start aligned, the icon and label line up with the nav items below: 16px icon, 9px gap, 10px in from the edge.

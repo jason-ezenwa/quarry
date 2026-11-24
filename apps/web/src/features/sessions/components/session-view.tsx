@@ -1,8 +1,7 @@
-import { SidebarSimpleIcon } from '@phosphor-icons/react/dist/csr/SidebarSimple'
 import type { SessionDetail } from '@quarry/contracts'
 import { useState } from 'react'
 import { PageHeader } from '@/components/app-frame/page-header'
-import { OutputPanelClose } from '@/components/session/output-panel'
+import { OutputPanelClose, OutputPanelOpen } from '@/components/session/output-panel'
 import { SessionChat, SessionChatFooter } from '@/components/session/session-chat'
 import {
   OutputSheet,
@@ -14,7 +13,6 @@ import {
   SessionBody,
   SessionFrame,
 } from '@/components/session/session-layout'
-import { Button } from '@/components/ui/button'
 import { useMediaQuery } from '@/hooks/use-media-query'
 import { WIDE_SCREEN_QUERY } from '@/hooks/use-media-query.constants'
 import { ApplicationComposer } from '../chat/components/application-composer'
@@ -41,16 +39,19 @@ export function SessionView({ session, fresh }: { session: SessionDetail; fresh:
   const wide = useMediaQuery(WIDE_SCREEN_QUERY)
   const outputs = useOpenDocuments(chat.messages)
 
-  // Open by default beside the chat on wide screens; elsewhere a card opens it over the page.
+  // Open by default beside the chat on wide screens; elsewhere a card or the header's button opens it over the page.
   const [panelOpen, setPanelOpen] = useState(true)
   const [sheetOpen, setSheetOpen] = useState(false)
   const showing = wide ? panelOpen : sheetOpen
 
-  function openDocument(document: DocumentAnnouncement) {
-    outputs.open(document)
-
+  function openPanel() {
     if (wide) setPanelOpen(true)
     else setSheetOpen(true)
+  }
+
+  function openDocument(document: DocumentAnnouncement) {
+    outputs.open(document)
+    openPanel()
   }
 
   const working = chat.busy || chat.waiting
@@ -72,11 +73,7 @@ export function SessionView({ session, fresh }: { session: SessionDetail; fresh:
         crumbs={CRUMBS}
         actions={
           <>
-            {wide && !panelOpen ? (
-              <Button variant="ghost" size="icon" aria-label="Open panel" onClick={() => setPanelOpen(true)}>
-                <SidebarSimpleIcon aria-hidden="true" />
-              </Button>
-            ) : null}
+            {showing ? null : <OutputPanelOpen onClick={openPanel} />}
             <SessionMenu sessionId={session.id} archived={Boolean(session.archivedAt)} />
           </>
         }

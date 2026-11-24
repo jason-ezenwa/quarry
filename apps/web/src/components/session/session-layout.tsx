@@ -14,12 +14,13 @@ function SessionBody({ className, ...props }: ComponentProps<'div'>) {
   return <div data-slot="session-body" className={cn('flex min-h-0 flex-1', className)} {...props} />
 }
 
-// The outputs beside the chat on wide screens.
+// The outputs beside the chat on wide screens. A share of the width, so the chat and the outputs both
+// gain room when the app sidebar is hidden.
 function SessionAside({ className, ...props }: ComponentProps<'aside'>) {
   return (
     <aside
       data-slot="session-aside"
-      className={cn('flex w-125 shrink-0 flex-col border-l border-border-soft bg-background texture-plaster 2xl:w-140', className)}
+      className={cn('flex w-[45%] max-w-200 min-w-125 shrink-0 flex-col border-l border-border-soft bg-background texture-plaster', className)}
       {...props}
     />
   )
