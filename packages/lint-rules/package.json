@@ -2,6 +2,7 @@
   "name": "@quarry/lint-rules",
   "version": "0.0.1",
   "private": true,
+  "license": "AGPL-3.0-only",
   "description": "Custom lint rules shared across the monorepo apps, loaded through oxlint's JS plugin support.",
   "type": "module",
   "main": "./src/index.js",

@@ -79,3 +79,15 @@ See that package's README for which app runs which rule.
 The web app's tokens live in `apps/web/src/index.css` and every primitive is
 shown on the `/design-system` page of the dev server. See
 [apps/web/AGENTS.md](apps/web/AGENTS.md) for how to build UI with them.
+
+## License
+
+Copyright (C) 2026 Chukwuemelie Ezenwa.
+
+Quarry is free software, licensed under the
+[GNU Affero General Public License v3.0](LICENSE) (`AGPL-3.0-only`). If you run
+a modified version as a network service, you must offer its users the source
+of your version under the same license.
+
+The bundled fonts in `apps/web/src/assets/fonts` keep their own SIL Open Font
+License (see the OFL files beside them).
