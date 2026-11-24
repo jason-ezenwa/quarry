@@ -4,6 +4,7 @@ import {
   coverLetterInputSchema,
   createTailoredResumeInputSchema,
   editTailoredResumeInputSchema,
+  FIT_LABEL_TEXT,
   fitScoreInputSchema,
   JOB_SOURCE_LABELS,
   type ToolDisplayMetadata,
@@ -107,6 +108,21 @@ export class AgentToolsFactory {
 
             return { document, note: `${document.score}%` };
           }),
+        // The agent reads the label as the user sees it, "Weak fit", so it
+        // never repeats the raw "weak-fit".
+        toModelOutput: ({ output }) => ({
+          type: 'json',
+          value:
+            'document' in output
+              ? {
+                  ...output,
+                  document: {
+                    ...output.document,
+                    label: FIT_LABEL_TEXT[output.document.label],
+                  },
+                }
+              : output,
+        }),
       }),
 
       create_tailored_resume: tool({

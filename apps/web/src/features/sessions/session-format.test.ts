@@ -11,6 +11,10 @@ describe('jobLine', () => {
   it('joins what is known and leaves out the rest', () => {
     expect(jobLine(['Halden', null, 'Ashby'])).toBe('Halden  ·  Ashby')
   })
+
+  it('leaves out a part that repeats an earlier one, ignoring case', () => {
+    expect(jobLine(['Ashby', 'Remote', 'ashby'])).toBe('Ashby  ·  Remote')
+  })
 })
 
 describe('attachmentFileName', () => {

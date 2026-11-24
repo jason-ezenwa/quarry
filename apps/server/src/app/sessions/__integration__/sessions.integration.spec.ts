@@ -748,6 +748,11 @@ describe('Sessions (integration)', () => {
         }),
       ]);
 
+      // The agent reads the fit label as the user sees it.
+      expect(JSON.stringify(sent.messages[2].content)).toContain(
+        String.raw`\"label\":\"Strong fit\"`,
+      );
+
       expect(sent.messages[4].content).toEqual([
         expect.objectContaining({ type: 'text', text: 'Thanks' }),
       ]);

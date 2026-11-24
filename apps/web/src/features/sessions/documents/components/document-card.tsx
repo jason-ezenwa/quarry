@@ -6,7 +6,8 @@ import {
   OutputCardText,
   OutputCardTitle,
 } from '@/components/session/output-card'
-import { DOCUMENT_KIND_DISPLAY, FIT_LABEL_TEXT } from '../documents.constants'
+import { FIT_LABEL_TEXT } from '@quarry/contracts'
+import { DOCUMENT_KIND_DISPLAY } from '../documents.constants'
 import type { DocumentAnnouncement } from '../../sessions.types'
 import { jobLine } from '../../session-format'
 
