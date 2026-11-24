@@ -43,14 +43,22 @@ export function toolStepFor(part: ToolPart, live: boolean): ToolStep {
   }
 }
 
-// Text parts become messages; consecutive tool calls share one list of steps.
-// Reasoning, step boundaries and anything else are left out. `live`: the reply is still streaming.
+// Text parts become messages; consecutive tool calls share one list of steps, followed by the documents
+// they saved, in the order written. Reasoning and the rest are left out. `live`: the reply is streaming.
 export function messageBlocks(message: UIMessage, live = false): MessageBlock[] {
   const blocks: MessageBlock[] = []
+  let saved: DocumentAnnouncement[] = []
+
+  const flushDocuments = (index: number) => {
+    if (saved.length === 0) return
+    blocks.push({ kind: 'documents', key: `${message.id}-${index}-documents`, documents: saved })
+    saved = []
+  }
 
   message.parts.forEach((part, index) => {
     if (isTextUIPart(part)) {
       if (!isCompaction(part) && part.text.trim()) {
+        flushDocuments(index)
         blocks.push({ kind: 'text', key: `${message.id}-${index}`, text: part.text })
       }
 
@@ -64,9 +72,23 @@ export function messageBlocks(message: UIMessage, live = false): MessageBlock[] 
 
     if (last?.kind === 'steps') last.steps.push(step)
     else blocks.push({ kind: 'steps', key: `${message.id}-${index}`, steps: [step] })
+
+    const document = documentFrom(part)
+    if (document) saved.push({ ...document, messageId: message.id })
   })
 
+  flushDocuments(message.parts.length)
   return blocks
+}
+
+// A live reply with nothing moving on screen: no text arriving and no step running, as while
+// the agent thinks before its first words or between steps.
+export function replyIsThinking(message: UIMessage, live: boolean): boolean {
+  if (!live) return false
+  const last = message.parts.findLast((part) => isTextUIPart(part) || isToolUIPart(part))
+  if (!last) return true
+  if (isTextUIPart(last)) return last.state !== 'streaming' || isCompaction(last) || !last.text.trim()
+  return !RUNNING_STATES.has(last.state)
 }
 
 // Any tool output carrying a `document` announces a saved document, whatever the tool.
@@ -83,7 +105,7 @@ export function documentFrom(part: Part): SavedDocumentRef | null {
   return { kind, id, name, score, label }
 }
 
-export function messageDocuments(message: UIMessage): DocumentAnnouncement[] {
+function messageDocuments(message: UIMessage): DocumentAnnouncement[] {
   return message.parts.flatMap((part) => {
     const document = documentFrom(part)
     return document ? [{ ...document, messageId: message.id }] : []

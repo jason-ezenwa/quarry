@@ -73,6 +73,16 @@ const fitReportReplies = (): AnthropicReply[] => [
   },
 ];
 
+// The reply's text as the client assembles it, since the stream sends it a word at a time.
+const streamedText = (body: string) =>
+  body
+    .split('\n')
+    .filter((line) => line.startsWith('data: {'))
+    .map((line) => JSON.parse(line.slice(6)) as { type: string; delta?: string })
+    .filter((chunk) => chunk.type === 'text-delta')
+    .map((chunk) => chunk.delta)
+    .join('');
+
 // The provider adds a custom part per step; stored like every other part.
 const withoutCustomParts = (parts: { type: string }[]) =>
   parts.filter(({ type }) => type !== 'custom');
@@ -457,7 +467,7 @@ describe('Sessions (integration)', () => {
 
       expect(response.status).toBe(200);
       expect(response.headers['content-type']).toContain('text/event-stream');
-      expect(response.text).toContain('You are a strong fit.');
+      expect(streamedText(response.text)).toContain('You are a strong fit.');
 
       const session = await findSession(id);
 
@@ -948,7 +958,7 @@ describe('Sessions (integration)', () => {
       fakeAnthropicApi.reply(textReply('Here is your fit.'));
       const retried = await turn(cookie, id);
 
-      expect(retried.text).toContain('Here is your fit.');
+      expect(streamedText(retried.text)).toContain('Here is your fit.');
       expect(await findMessages(id)).toHaveLength(2);
     });
 
@@ -979,7 +989,7 @@ describe('Sessions (integration)', () => {
         message: { id: 'msg-next', text: 'Thanks' },
       });
 
-      expect(next.text).toContain('Sure.');
+      expect(streamedText(next.text)).toContain('Sure.');
 
       const sent = fakeAnthropicApi.requests.at(-1);
 

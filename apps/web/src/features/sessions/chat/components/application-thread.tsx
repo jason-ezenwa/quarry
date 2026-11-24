@@ -4,38 +4,42 @@ import { OutputCardList } from '@/components/session/output-card'
 import { SessionThread, SessionThreadFollow } from '@/components/session/session-chat'
 import { Button } from '@/components/ui/button'
 import { Callout, CalloutActions, CalloutContent, CalloutTitle } from '@/components/ui/callout'
-import { messageBlocks, messageDocuments, messageText } from '../../session-parts'
+import { messageBlocks, messageText, replyIsThinking } from '../../session-parts'
 import { CHAT_ERRORS, RETRYABLE_CHAT_ERRORS } from '../chat.constants'
 import type { ChatErrorCode, DocumentCardProps } from '../chat.types'
-import { AgentSteps } from './agent-steps'
+import { AgentSteps, AgentThinking } from './agent-steps'
 import { DocumentCard } from '../../documents/components/document-card'
 
+// Blocks in the order they were written: steps, the cards for what they saved, then text. While
+// the agent thinks with nothing else moving, a thinking line shows where its next words will land.
 function AgentReply({ message, live, activeDocumentId, onOpenDocument }: DocumentCardProps & { message: UIMessage; live: boolean }) {
-  const documents = messageDocuments(message)
-
   return (
     <AgentTurn>
-      {messageBlocks(message, live).map((block) =>
-        block.kind === 'steps' ? (
-          <AgentSteps key={block.key} steps={block.steps} />
-        ) : (
+      {messageBlocks(message, live).map((block) => {
+        if (block.kind === 'steps') return <AgentSteps key={block.key} steps={block.steps} />
+
+        if (block.kind === 'documents') {
+          return (
+            <OutputCardList key={block.key}>
+              {block.documents.map((document) => (
+                <DocumentCard
+                  key={document.id}
+                  document={document}
+                  active={document.id === activeDocumentId}
+                  onOpen={() => onOpenDocument(document)}
+                />
+              ))}
+            </OutputCardList>
+          )
+        }
+
+        return (
           <AgentMessage key={block.key}>
             <MessageMarkdown>{block.text}</MessageMarkdown>
           </AgentMessage>
-        ),
-      )}
-      {documents.length > 0 ? (
-        <OutputCardList>
-          {documents.map((document) => (
-            <DocumentCard
-              key={document.id}
-              document={document}
-              active={document.id === activeDocumentId}
-              onOpen={() => onOpenDocument(document)}
-            />
-          ))}
-        </OutputCardList>
-      ) : null}
+        )
+      })}
+      {replyIsThinking(message, live) ? <AgentThinking /> : null}
     </AgentTurn>
   )
 }
@@ -91,7 +95,7 @@ export function ApplicationThread({
           />
         ),
       )}
-      {waitingForReply ? <AgentSteps steps={[]} working /> : null}
+      {waitingForReply ? <AgentThinking /> : null}
       {error ? <TurnError error={error} onRetry={onRetry} /> : null}
       <SessionThreadFollow resetKey={sentCount} />
     </SessionThread>

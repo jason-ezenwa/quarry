@@ -22,13 +22,22 @@ function AgentStep({ step }: { step: ToolStepData }) {
   )
 }
 
+// While a reply is on its way with nothing else moving yet.
+export function AgentThinking() {
+  return (
+    <ToolSteps running>
+      <ToolStepsWorking>Thinking</ToolStepsWorking>
+    </ToolSteps>
+  )
+}
+
 // One step shows as it is. More: while one runs, a spinner, "Working" and the steps so far; once settled,
 // "N steps", folded away until opened.
-export function AgentSteps({ steps, working = false }: { steps: ToolStepData[]; working?: boolean }) {
-  const running = working || steps.some((step) => step.running)
+export function AgentSteps({ steps }: { steps: ToolStepData[] }) {
+  const running = steps.some((step) => step.running)
   const [only] = steps
 
-  if (only && steps.length === 1 && !working) {
+  if (only && steps.length === 1) {
     return (
       <ToolStepSingle>
         <AgentStep step={only} />

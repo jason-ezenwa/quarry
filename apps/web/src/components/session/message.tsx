@@ -1,4 +1,4 @@
-import type { ComponentProps, ReactNode } from 'react'
+import { memo, type ComponentProps, type ReactNode } from 'react'
 import Markdown, { type Components } from 'react-markdown'
 import { cn } from '@/lib/utils'
 
@@ -47,13 +47,13 @@ const COMPONENTS: Components = {
   h4: Heading,
 }
 
-// Agents write Markdown.
-function MessageMarkdown({ children }: { children: string }) {
+// Agents write Markdown. Memoised, so a streaming reply re-parses only the text that changed, not the whole thread.
+const MessageMarkdown = memo(function MessageMarkdown({ children }: { children: string }) {
   return (
     <Markdown components={COMPONENTS} disallowedElements={['img']} unwrapDisallowed>
       {children}
     </Markdown>
   )
-}
+})
 
 export { UserMessage, AgentTurn, AgentMessage, MessageMarkdown }

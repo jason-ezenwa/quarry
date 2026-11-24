@@ -10,6 +10,7 @@ import {
   isStepCount,
   isToolUIPart,
   pipeUIMessageStreamToResponse,
+  smoothStream,
   readUIMessageStream,
   streamText,
   toUIMessageStream,
@@ -127,6 +128,8 @@ export class AgentService {
         toolChoice: 'auto',
         stopWhen: isStepCount(AGENT_MAX_STEPS),
         abortSignal: stop.signal,
+        // Evens out the model's bursts into a steady word-by-word stream.
+        experimental_transform: smoothStream(),
         onStepEnd: (step) => {
           stopReason = step.rawFinishReason;
         },

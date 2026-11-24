@@ -108,7 +108,8 @@ export function useSessionChat(session: SessionDetail, fresh: boolean) {
     return created
   })
 
-  const chat = useChat<UIMessage>({ chat: instance })
+  // Draws the streaming reply at most every other frame, so a long thread stays smooth.
+  const chat = useChat<UIMessage>({ chat: instance, throttle: 32 })
 
   const idle = (chat.status === 'ready' || chat.status === 'error') && stopState !== 'stopping'
   const { messages, regenerate, setMessages, clearError } = chat

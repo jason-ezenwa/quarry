@@ -17,11 +17,14 @@ export type ToolStep = {
   unfinished: boolean
 }
 
-// A run of consecutive parts in one assistant message.
-export type MessageBlock = { kind: 'text'; key: string; text: string } | { kind: 'steps'; key: string; steps: ToolStep[] }
-
 // A saved document announced in a tool output, with where it was announced.
 export type DocumentAnnouncement = SavedDocumentRef & { messageId: string }
+
+// A run of consecutive parts in one assistant message. The documents a run of steps saved follow it.
+export type MessageBlock =
+  | { kind: 'text'; key: string; text: string }
+  | { kind: 'steps'; key: string; steps: ToolStep[] }
+  | { kind: 'documents'; key: string; documents: DocumentAnnouncement[] }
 
 export type Part = UIMessage['parts'][number]
 export type ToolPart = Extract<Part, { toolCallId: string }>

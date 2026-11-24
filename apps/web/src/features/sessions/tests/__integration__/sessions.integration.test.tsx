@@ -507,9 +507,9 @@ describe('Session page (integration)', () => {
     let turnsSent = 0
     renderRoute(SESSION_PATH)
 
-    expect(await screen.findByText('Working')).toBeInTheDocument()
+    expect(await screen.findByText('Thinking')).toBeInTheDocument()
     expect(await screen.findByText('You line up well. Go is the main gap.', {}, { timeout: 5000 })).toBeInTheDocument()
-    expect(screen.queryByText('Working')).not.toBeInTheDocument()
+    expect(screen.queryByText('Thinking')).not.toBeInTheDocument()
     expect(turnsSent).toBe(0)
   })
 
