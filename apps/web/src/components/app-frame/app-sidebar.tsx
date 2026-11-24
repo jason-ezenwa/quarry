@@ -1,8 +1,12 @@
 import { HouseIcon } from '@phosphor-icons/react/dist/csr/House'
 import { PlusIcon } from '@phosphor-icons/react/dist/csr/Plus'
+import { StackIcon } from '@phosphor-icons/react/dist/csr/Stack'
 import { UserCircleIcon } from '@phosphor-icons/react/dist/csr/UserCircle'
+import { Link } from 'react-router'
 import { Wordmark } from '@/components/brand/wordmark'
 import { Button } from '@/components/ui/button'
+import { RecentSessions } from '@/features/sessions/components/recent-sessions'
+import { UsageMeter } from '@/features/sessions/components/usage-meter'
 import { PATHS } from '@/lib/auth/auth.constants'
 import { AccountMenu } from './account-menu'
 import { NavItem } from './nav-item'
@@ -14,20 +18,26 @@ export function AppSidebar() {
       <div className="flex h-8 items-center px-1.5">
         <Wordmark />
       </div>
-      {/* Applications come in a later release; the button holds their place. */}
-      <Button disabled align="start" className="w-full">
-        <PlusIcon data-icon="inline-start" aria-hidden="true" />
-        New application
+      <Button asChild align="start" className="w-full">
+        <Link to={PATHS.home}>
+          <PlusIcon data-icon="inline-start" aria-hidden="true" />
+          New application
+        </Link>
       </Button>
       <nav aria-label="Main" className="flex flex-col gap-px">
         <NavItem to={PATHS.home} icon={HouseIcon} end>
           Home
         </NavItem>
+        <NavItem to={PATHS.applications} icon={StackIcon}>
+          Applications
+        </NavItem>
         <NavItem to={PATHS.profile} icon={UserCircleIcon}>
           Profile
         </NavItem>
       </nav>
-      <div className="mt-auto">
+      <RecentSessions />
+      <div className="mt-auto flex flex-col gap-3">
+        <UsageMeter />
         <AccountMenu />
       </div>
     </div>

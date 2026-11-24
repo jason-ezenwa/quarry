@@ -1,12 +1,19 @@
 import { API_BASE_URL } from './base-url'
 
+export type ApiErrorBody = { message?: string; code?: string } & Record<string, unknown>
+
 export class ApiError extends Error {
   readonly status: number
+  // The server's error code, such as `monthly-session-limit`, when it sends one.
+  readonly code: string | null
+  readonly body: ApiErrorBody | null
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, body: ApiErrorBody | null = null) {
     super(message)
     this.name = 'ApiError'
     this.status = status
+    this.code = typeof body?.code === 'string' ? body.code : null
+    this.body = body
   }
 }
 
@@ -22,8 +29,8 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   })
 
   if (!response.ok) {
-    const body = (await response.json().catch(() => null)) as { message?: string } | null
-    throw new ApiError(response.status, body?.message ?? response.statusText)
+    const body = (await response.json().catch(() => null)) as ApiErrorBody | null
+    throw new ApiError(response.status, body?.message ?? response.statusText, body)
   }
 
   // A 202 or 204 can come back with no body at all.

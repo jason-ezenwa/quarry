@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ChipInput } from '@/components/ui/chip-input'
 import { ChoiceChips } from '@/components/ui/choice-chips'
@@ -106,6 +107,15 @@ function ProfileControls() {
           <Field>
             <FieldLabel id="ds-choices-label">Work setup</FieldLabel>
             <ChoiceChips aria-labelledby="ds-choices-label" options={SPECIMEN_CHOICES} value={setups} onChange={setSetups} />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="ds-job-link">Large field (the job link on Home)</FieldLabel>
+            <InputGroup size="lg">
+              <InputGroupInput id="ds-job-link" type="url" placeholder="Paste a job link" />
+              <Button variant="primary" size="lg">
+                Start
+              </Button>
+            </InputGroup>
           </Field>
           <Field>
             <FieldLabel htmlFor="ds-salary">Salary floor</FieldLabel>

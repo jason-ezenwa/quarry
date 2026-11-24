@@ -17,6 +17,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['src/test/setup.ts'],
+    // Behind UTC, so a date read in local time shows the day before.
+    env: { TZ: 'America/Los_Angeles' },
     projects: [
       {
         extends: true,

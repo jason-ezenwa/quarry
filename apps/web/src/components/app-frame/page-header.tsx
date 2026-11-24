@@ -6,7 +6,7 @@ import { SheetTrigger } from '@/components/ui/sheet'
 import type { PageHeaderProps } from './app-frame.types'
 
 // The top of the main panel. On phones it is the top bar: the menu button, a centred title and the actions.
-export function PageHeader({ title, crumbs = [], actions }: PageHeaderProps) {
+export function PageHeader({ title, sub, badge, crumbs = [], actions }: PageHeaderProps) {
   return (
     <header className="flex h-14 shrink-0 items-center gap-1 px-1.5 md:h-12 md:gap-2.5 md:border-b md:border-border-soft md:px-4">
       <SheetTrigger asChild>
@@ -27,7 +27,11 @@ export function PageHeader({ title, crumbs = [], actions }: PageHeaderProps) {
             ))}
           </nav>
         ) : null}
-        <h1 className="truncate text-ui-strong">{title}</h1>
+        <div className="flex min-w-0 flex-col items-center md:flex-row md:items-baseline md:gap-2">
+          <h1 className="max-w-full truncate text-ui-strong">{title}</h1>
+          {sub ? <p className="max-w-full truncate text-small text-muted-foreground">{sub}</p> : null}
+        </div>
+        {badge ? <span className="hidden shrink-0 md:flex">{badge}</span> : null}
       </div>
       <div className="flex min-w-11 items-center justify-end gap-1.5 md:min-w-0">{actions}</div>
     </header>
