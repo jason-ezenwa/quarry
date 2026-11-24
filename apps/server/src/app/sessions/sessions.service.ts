@@ -31,8 +31,8 @@ import { JobFetcherService } from './job-fetcher/job-fetcher.service';
 import type { JobFetchOutcome } from './job-fetcher/job-fetcher.types';
 import { Message, MessageDocument, MessageUsage } from './message.schema';
 import {
-  ApplicationSession,
-  ApplicationSessionDocument,
+  AgentSession,
+  AgentSessionDocument,
   SessionJob,
 } from './session.schema';
 import { DEFAULT_SESSION_TITLE } from './sessions.constants';
@@ -66,8 +66,8 @@ export class SessionsService {
   private readonly logger = new Logger(SessionsService.name);
 
   constructor(
-    @InjectModel(ApplicationSession.name)
-    private readonly sessionModel: Model<ApplicationSessionDocument>,
+    @InjectModel(AgentSession.name)
+    private readonly sessionModel: Model<AgentSessionDocument>,
     @InjectModel(Message.name)
     private readonly messageModel: Model<MessageDocument>,
     @InjectConnection() private readonly connection: Connection,
@@ -84,7 +84,7 @@ export class SessionsService {
     await this.assertPrimaryResumeReady(userId);
     await this.assertUnderMonthlyCap(userId);
 
-    const session = new ApplicationSession();
+    const session = new AgentSession();
     session.user = new Types.ObjectId(userId);
     session.title = DEFAULT_SESSION_TITLE;
     session.userMessageCount = 1;
@@ -116,7 +116,7 @@ export class SessionsService {
       return saved;
     });
 
-    this.logger.log('Application session created', {
+    this.logger.log('Agent session created', {
       userId,
       sessionId: created.id,
       source: created.job?.source ?? 'link',
@@ -499,7 +499,7 @@ export class SessionsService {
   private async findOwned(
     userId: string,
     sessionId: string,
-  ): Promise<ApplicationSessionDocument> {
+  ): Promise<AgentSessionDocument> {
     const id = parseObjectId(sessionId);
 
     const session =
