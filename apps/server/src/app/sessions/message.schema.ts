@@ -31,7 +31,7 @@ export class MessageUsage {
   minimize: false,
 })
 export class Message {
-  @Prop({ required: true, type: Types.ObjectId, ref: 'ApplicationSession' })
+  @Prop({ required: true, type: Types.ObjectId, ref: 'AgentSession' })
   session: Types.ObjectId;
 
   // The AI SDK message id.

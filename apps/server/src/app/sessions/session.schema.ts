@@ -23,9 +23,9 @@ export class SessionJob {
   fetchedAt?: Date;
 }
 
-// `sessions` is Better Auth's, so application sessions have their own name.
+// `sessions` is Better Auth's, so agent sessions have their own name.
 @Schema({ timestamps: true, collection: 'agent-sessions' })
-export class ApplicationSession {
+export class AgentSession {
   @Prop({ required: true, type: Types.ObjectId, ref: 'User' })
   user: Types.ObjectId;
 
@@ -52,7 +52,7 @@ export class ApplicationSession {
   updatedAt: Date;
 }
 
-export type ApplicationSessionDocument = HydratedDocument<ApplicationSession>;
+export type AgentSessionDocument = HydratedDocument<AgentSession>;
 
-export const ApplicationSessionSchema =
-  SchemaFactory.createForClass(ApplicationSession);
+export const AgentSessionSchema =
+  SchemaFactory.createForClass(AgentSession);

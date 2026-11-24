@@ -192,8 +192,8 @@ export class Resume {
   })
   certifications: ResumeCertificationEntry[];
 
-  // Tailored resumes only: the application session it was written in.
-  @Prop({ type: Types.ObjectId, ref: 'ApplicationSession' })
+  // Tailored resumes only: the agent session it was written in.
+  @Prop({ type: Types.ObjectId, ref: 'AgentSession' })
   session?: Types.ObjectId;
 
   // Tailored resumes only: the document's name. `name` is the person's.

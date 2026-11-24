@@ -41,7 +41,7 @@ export class FitScore {
   @Prop({ required: true, type: Types.ObjectId, ref: 'User' })
   user: Types.ObjectId;
 
-  @Prop({ required: true, type: Types.ObjectId, ref: 'ApplicationSession' })
+  @Prop({ required: true, type: Types.ObjectId, ref: 'AgentSession' })
   session: Types.ObjectId;
 
   // The document's name.

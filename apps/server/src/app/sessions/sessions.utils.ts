@@ -9,7 +9,7 @@ import {
 import type { UIMessage } from 'ai';
 import { addMonths, startOfMonth } from 'date-fns';
 import type { CreateSessionDto } from './dto/create-session.dto';
-import type { ApplicationSessionDocument } from './session.schema';
+import type { AgentSessionDocument } from './session.schema';
 import { FIRST_MESSAGE_PREFIX } from './sessions.constants';
 import type { MonthlyPeriod } from './sessions.types';
 
@@ -35,12 +35,12 @@ export function isCompactionPart(part: UIMessage['parts'][number]): boolean {
   );
 }
 
-function statusOf(session: ApplicationSessionDocument): SessionStatus {
+function statusOf(session: AgentSessionDocument): SessionStatus {
   return session.turnStartedAt ? 'drafting' : 'ready';
 }
 
 export function toSessionSummary(
-  session: ApplicationSessionDocument,
+  session: AgentSessionDocument,
   fitOverall: number | null,
 ): SessionSummary {
   return {
@@ -57,7 +57,7 @@ export function toSessionSummary(
 }
 
 export function toSessionDetail(
-  session: ApplicationSessionDocument,
+  session: AgentSessionDocument,
   messages: UIMessage[],
 ): SessionDetail {
   return {
