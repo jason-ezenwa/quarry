@@ -18,8 +18,8 @@ export class CoverLetterHeader {
   contact: ResumeContactEntry;
 }
 
-// Each letter keeps the header it was saved with, the primary resume's
-// unless the user asked for something else.
+// Each letter keeps the header it was saved with: by default the latest
+// tailored resume's in the session, else the primary resume's.
 @Schema({
   timestamps: { createdAt: true, updatedAt: false },
   collection: 'cover-letters',

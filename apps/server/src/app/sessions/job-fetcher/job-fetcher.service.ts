@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { BlockedJobSite } from '@quarry/contracts';
+import { errorName } from '../../common/error-name';
 import {
   GuardedFetchError,
   guardedFetch,
@@ -77,7 +78,7 @@ export class JobFetcherService {
 
       return {
         outcome: failure('fetch-failed'),
-        detail: error instanceof Error ? error.name : 'unknown',
+        detail: errorName(error),
       };
     }
   }

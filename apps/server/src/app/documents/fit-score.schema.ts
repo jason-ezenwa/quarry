@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { FIT_SCORE_LIMITS } from '@quarry/contracts';
+import { DOCUMENT_NAME_MAX_LENGTH } from '@quarry/contracts';
 import { HydratedDocument, Types } from 'mongoose';
 
 @Schema({ _id: false })
@@ -45,11 +45,7 @@ export class FitScore {
   session: Types.ObjectId;
 
   // The document's name.
-  @Prop({
-    required: true,
-    type: String,
-    maxlength: FIT_SCORE_LIMITS.nameMaxLength,
-  })
+  @Prop({ required: true, type: String, maxlength: DOCUMENT_NAME_MAX_LENGTH })
   title: string;
 
   @Prop({ required: true, type: String })

@@ -1,9 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import type { ExportFormat } from '@quarry/contracts';
 import type { ExportableDocument } from '../documents.types';
-import { exportFileName } from '../documents.utils';
 import { renderDocx } from './docx-template';
+import { EXPORT_CONTENT_TYPES } from './export.constants';
 import type { ExportedFile } from './export.types';
+import { exportFileName } from './export.utils';
 import { renderPdf } from './pdf-template';
 
 const RENDERERS: Record<
@@ -30,6 +31,10 @@ export class ExportService {
       durationMs: Date.now() - startedAt,
     });
 
-    return { content, fileName: exportFileName(document, format) };
+    return {
+      content,
+      contentType: EXPORT_CONTENT_TYPES[format],
+      fileName: exportFileName(document, format),
+    };
   }
 }

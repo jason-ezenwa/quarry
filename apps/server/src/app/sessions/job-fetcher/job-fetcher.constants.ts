@@ -51,5 +51,17 @@ export const JOB_FETCH_FAILURE_MESSAGES: Record<FetchFailureReason, string> = {
     "I couldn't load that page, so paste the job description instead.",
 };
 
+// Short notes shown beside the failed step, after "Couldn't read the job post".
+export const JOB_FETCH_FAILURE_NOTES: Record<FetchFailureReason, string> = {
+  'invalid-url': 'Not a web link',
+  'refused-address': 'Private address',
+  'not-found': 'Job not found',
+  'no-job-text': 'No job text on the page',
+  'fetch-failed': "The page didn't load",
+};
+
+export const blockedSiteNote = (site: BlockedJobSite) =>
+  `${BLOCKED_SITE_NAMES[site]} blocks us`;
+
 export const blockedSiteMessage = (site: BlockedJobSite) =>
   `${BLOCKED_SITE_NAMES[site]} blocks automated access, so paste the description from the ${BLOCKED_SITE_NAMES[site]} page.`;

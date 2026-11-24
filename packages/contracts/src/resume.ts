@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { requiredText } from "./required-text.js";
 import type { UploadMimeType } from "./uploads.js";
 
 // "YYYY" or "YYYY-MM": resumes often give only a year.
@@ -10,7 +11,6 @@ export type ResumeKind = (typeof RESUME_KINDS)[number];
 export const PARSE_STATUSES = ["parsing", "parsed", "failed"] as const;
 export type ParseStatus = (typeof PARSE_STATUSES)[number];
 
-const requiredText = z.string().trim().min(1);
 const partialDate = z.string().regex(PARTIAL_DATE_PATTERN);
 const httpUrl = z.url({ protocol: /^https?$/ });
 

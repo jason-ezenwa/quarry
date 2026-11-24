@@ -1,25 +1,21 @@
 import { Chat, useChat } from '@ai-sdk/react'
-import type { SessionDetail } from '@quarry/contracts'
+import { isOneOf, SESSION_ERROR_CODES, type SessionDetail } from '@quarry/contracts'
 import { useQueryClient } from '@tanstack/react-query'
 import { APICallError, DefaultChatTransport, type UIMessage } from 'ai'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { asUIMessages, hasUnansweredMessage, messageText } from '../session-parts'
 import { sessionQueryOptions, turnsUrl } from '../sessions-api'
-import { REFUSED_TURN_CODES, SESSION_ERROR_CODES, SESSION_QUERY_KEYS } from '../sessions.constants'
-import type { ChatErrorCode, SessionErrorCode, UnsentDraft } from '../sessions.types'
+import { REFUSED_TURN_CODES, SESSION_QUERY_KEYS } from '../sessions.constants'
+import type { ChatErrorCode, TurnErrorCode, UnsentDraft } from '../sessions.types'
 import { useRefreshSessionLists } from './use-sessions'
 
-function isSessionErrorCode(code: unknown): code is SessionErrorCode {
-  return typeof code === 'string' && (SESSION_ERROR_CODES as readonly string[]).includes(code)
-}
-
-function errorCode(error: Error | undefined): SessionErrorCode | null {
+function errorCode(error: Error | undefined): TurnErrorCode | null {
   if (!error) return null
   if (!APICallError.isInstance(error) || !error.responseBody) return 'failed'
 
   try {
     const { code } = JSON.parse(error.responseBody) as { code?: unknown }
-    return isSessionErrorCode(code) ? code : 'failed'
+    return isOneOf(SESSION_ERROR_CODES, code) ? code : 'failed'
   } catch {
     return 'failed'
   }
@@ -27,8 +23,9 @@ function errorCode(error: Error | undefined): SessionErrorCode | null {
 
 // Archived, at the limit or already answered: the composer and the session query show the real state.
 // A turn running elsewhere shows as working; once it has stopped, the refused message is back to send again.
-function visibleError(code: SessionErrorCode | null, drafting: boolean): ChatErrorCode | null {
+function visibleError(code: TurnErrorCode | null, drafting: boolean): ChatErrorCode | null {
   if (code === 'turn-running') return drafting ? null : 'not-sent'
+  if (code === 'primary-resume-not-ready') return 'resume-not-ready'
   return code === 'failed' ? code : null
 }
 

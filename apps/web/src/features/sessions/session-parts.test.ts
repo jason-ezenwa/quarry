@@ -59,16 +59,25 @@ describe('messageBlocks', () => {
 })
 
 describe('toolStepFor', () => {
-  const metadata = { icon: 'globe', active: 'Reading the job', done: 'Read the job' }
-  const step = (state: string) => toolStepFor({ ...toolPart('1', { meta: 'ashby.com' }, state), toolMetadata: metadata } as ToolPart, false)
+  const metadata = { icon: 'globe', active: 'Reading the job', done: 'Read the job', failed: "Couldn't read the job" }
+  const step = (state: string, output: unknown = { note: 'Ashby' }) =>
+    toolStepFor({ ...toolPart('1', output, state), toolMetadata: metadata } as ToolPart, false)
 
-  it('shows a finished step with its done text and meta', () => {
-    expect(step('output-available')).toMatchObject({ label: 'Read the job', meta: 'ashby.com', running: false })
+  it('shows a finished step with its done text and note', () => {
+    expect(step('output-available')).toMatchObject({ label: 'Read the job', note: 'Ashby', running: false, unfinished: false })
+  })
+
+  it('shows a refused step with its failed text and note, not as unfinished', () => {
+    expect(step('output-available', { ok: false, note: 'LinkedIn blocks us' })).toMatchObject({
+      label: "Couldn't read the job",
+      note: 'LinkedIn blocks us',
+      unfinished: false,
+    })
   })
 
   it('marks a step that errored, was denied or was cut off as unfinished', () => {
     for (const state of ['output-error', 'output-denied', 'input-available']) {
-      expect(step(state)).toMatchObject({ label: 'Reading the job', meta: "Didn't finish", running: false })
+      expect(step(state)).toMatchObject({ label: 'Reading the job', note: "Didn't finish", running: false, unfinished: true })
     }
   })
 })

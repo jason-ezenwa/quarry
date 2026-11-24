@@ -2,6 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import {
   computeFitOverall,
+  isExportableKind,
+  mapFitDimensions,
+  type ExportableKind,
+  type FitScoreRef,
   type CoverLetterDocumentResponse,
   type CoverLetterInput,
   type CreateTailoredResumeInput,
@@ -20,10 +24,11 @@ import {
 import type { SessionContext } from '../common/common.types';
 import { ResumeService } from '../resume/resume.service';
 import { CoverLetter, CoverLetterDocument } from './cover-letter.schema';
-import type { ExportableDocument, ExportableKind } from './documents.types';
+import type { ExportableDocument } from './documents.types';
 import {
   toCoverLetterRef,
   toCoverLetterResponse,
+  toFitScoreRef,
   toFitScoreResponse,
   toTailoredResumeRef,
 } from './documents.utils';
@@ -52,9 +57,9 @@ export class DocumentsService {
     kind: DocumentKind,
     documentId: string,
   ): Promise<DocumentResponse> {
-    return kind === 'fit-score'
-      ? this.getFitScore(owner, documentId)
-      : this.getExportable(owner, kind, documentId);
+    return isExportableKind(kind)
+      ? this.getExportable(owner, kind, documentId)
+      : this.getFitScore(owner, documentId);
   }
 
   async getExportable(
@@ -89,15 +94,16 @@ export class DocumentsService {
 
   // Every save is a new letter.
   async createCoverLetter(
-    { userId, sessionId }: SessionContext,
+    owner: SessionContext,
     input: CoverLetterInput,
   ): Promise<SavedDocumentRef> {
+    const { userId, sessionId } = owner;
     const coverLetter = new CoverLetter();
     coverLetter.user = new Types.ObjectId(userId);
     coverLetter.session = new Types.ObjectId(sessionId);
     coverLetter.title = input.name;
     coverLetter.header =
-      input.header ?? (await this.resumeService.findHeader(userId));
+      input.header ?? (await this.resumeService.findHeader(owner));
     coverLetter.greeting = input.greeting;
     coverLetter.paragraphs = input.paragraphs;
     coverLetter.signOff = input.signOff;
@@ -129,7 +135,7 @@ export class DocumentsService {
   async createFitScore(
     { userId, sessionId }: SessionContext,
     input: FitScoreInput,
-  ): Promise<FitScoreDocument> {
+  ): Promise<FitScoreRef> {
     const fitScore = new FitScore();
     fitScore.user = new Types.ObjectId(userId);
     fitScore.session = new Types.ObjectId(sessionId);
@@ -150,7 +156,7 @@ export class DocumentsService {
       overall: Math.round(saved.overall),
     });
 
-    return saved;
+    return toFitScoreRef(saved);
   }
 
   async getFitScore(
@@ -184,20 +190,14 @@ export class DocumentsService {
   }
 
   private toDimensions(input: FitScoreInput['dimensions']): FitScoreDimensions {
-    const toDimension = ({ score, detail }: FitScoreDimension) => {
-      const dimension = new FitScoreDimension();
-      dimension.score = score;
-      dimension.detail = detail;
-
-      return dimension;
-    };
-
-    const dimensions = new FitScoreDimensions();
-    dimensions.requirements = toDimension(input.requirements);
-    dimensions.skills = toDimension(input.skills);
-    dimensions.seniority = toDimension(input.seniority);
-    dimensions.domain = toDimension(input.domain);
-
-    return dimensions;
+    return Object.assign(
+      new FitScoreDimensions(),
+      mapFitDimensions((key) =>
+        Object.assign(new FitScoreDimension(), {
+          score: input[key].score,
+          detail: input[key].detail,
+        }),
+      ),
+    );
   }
 }

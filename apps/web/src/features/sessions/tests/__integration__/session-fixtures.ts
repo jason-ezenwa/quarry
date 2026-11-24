@@ -27,8 +27,8 @@ export function userMessage(id: string, text: string): SessionMessage {
   return { id, role: 'user', parts: [{ type: 'text', text }] }
 }
 
-const FIT_METADATA = { icon: 'gauge', active: 'Scoring your fit', done: 'Scored your fit' }
-const FETCH_METADATA = { icon: 'globe', active: 'Reading the job post', done: 'Read the job post' }
+const FIT_METADATA = { icon: 'gauge', active: 'Scoring your fit', done: 'Scored your fit', failed: "Couldn't score your fit" }
+const FETCH_METADATA = { icon: 'globe', active: 'Reading the job post', done: 'Read the job post', failed: "Couldn't read the job post" }
 
 export function fitDocument(id = FIT_ID, score = 86, name = 'Halden fit') {
   return { kind: 'fit-score', id, name, score, label: score >= 80 ? 'strong-fit' : 'good-fit' } as const
@@ -46,7 +46,7 @@ export function fitReplyMessage(id = 'msg-reply', document = fitDocument()): Ses
         toolCallId: `${id}-fetch`,
         state: 'output-available',
         input: { url: JOB_URL },
-        output: { ok: true, source: 'ashby', meta: 'Ashby' },
+        output: { ok: true, source: 'ashby', note: 'Ashby' },
         toolMetadata: FETCH_METADATA,
       },
       {
@@ -54,7 +54,7 @@ export function fitReplyMessage(id = 'msg-reply', document = fitDocument()): Ses
         toolCallId: `${id}-fit`,
         state: 'output-available',
         input: {},
-        output: { document, meta: `${document.score}%` },
+        output: { document, note: `${document.score}%` },
         toolMetadata: FIT_METADATA,
       },
       { type: 'step-start' },
@@ -106,9 +106,9 @@ export function fitTurnChunks(document = fitDocument(), messageId = 'msg-streame
     { type: 'start', messageId },
     { type: 'start-step' },
     { type: 'tool-input-available', toolCallId: 'call-fetch', toolName: 'get_job_description', input: { url: JOB_URL }, toolMetadata: FETCH_METADATA },
-    { type: 'tool-output-available', toolCallId: 'call-fetch', output: { ok: true, source: 'ashby', meta: 'Ashby' } },
+    { type: 'tool-output-available', toolCallId: 'call-fetch', output: { ok: true, source: 'ashby', note: 'Ashby' } },
     { type: 'tool-input-available', toolCallId: 'call-fit', toolName: 'save_fit_score', input: {}, toolMetadata: FIT_METADATA },
-    { type: 'tool-output-available', toolCallId: 'call-fit', output: { document, meta: `${document.score}%` } },
+    { type: 'tool-output-available', toolCallId: 'call-fit', output: { document, note: `${document.score}%` } },
     { type: 'finish-step' },
     { type: 'start-step' },
     { type: 'text-start', id: 'text-1' },
@@ -135,15 +135,19 @@ export function uiStream(chunks: UIMessageChunk[]) {
   })
 }
 
-type Recorded = { turns: unknown[]; patches: unknown[] }
+// `documentReads` holds the id of every document fetched, in order.
+type Recorded = { turns: unknown[]; patches: unknown[]; sessionReads: number; documentReads: string[] }
 
 // A session API backed by one in-memory session. A turn appends the streamed reply, as the server saves it.
 export function serveSession(initial: SessionDetail, turnChunks: UIMessageChunk[] = fitTurnChunks()): Recorded {
   let session = initial
-  const recorded: Recorded = { turns: [], patches: [] }
+  const recorded: Recorded = { turns: [], patches: [], sessionReads: 0, documentReads: [] }
 
   server.use(
-    http.get(apiUrl(`/api/sessions/${SESSION_ID}`), () => HttpResponse.json(session)),
+    http.get(apiUrl(`/api/sessions/${SESSION_ID}`), () => {
+      recorded.sessionReads += 1
+      return HttpResponse.json(session)
+    }),
     http.get(apiUrl('/api/sessions'), ({ request }) => {
       const archived = new URL(request.url).searchParams.get('archived') === 'true'
       const items = Boolean(session.archivedAt) === archived
@@ -176,9 +180,10 @@ export function serveSession(initial: SessionDetail, turnChunks: UIMessageChunk[
       }
       return uiStream(turnChunks)
     }),
-    http.get(apiUrl(`/api/sessions/${SESSION_ID}/documents/fit-score/:documentId`), ({ params }) =>
-      HttpResponse.json(fitReport({ id: String(params.documentId) })),
-    ),
+    http.get(apiUrl(`/api/sessions/${SESSION_ID}/documents/fit-score/:documentId`), ({ params }) => {
+      recorded.documentReads.push(String(params.documentId))
+      return HttpResponse.json(fitReport({ id: String(params.documentId) }))
+    }),
   )
 
   return recorded

@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { documentNameSchema } from "./document-name.js";
+import { requiredText } from "./required-text.js";
 
 // Each dimension's weight out of 100. The model scores each out of 10.
 export const FIT_DIMENSIONS = {
@@ -9,6 +11,8 @@ export const FIT_DIMENSIONS = {
 } as const;
 
 export type FitDimension = keyof typeof FIT_DIMENSIONS;
+
+export const FIT_DIMENSION_KEYS = Object.keys(FIT_DIMENSIONS) as FitDimension[];
 
 export const FIT_LABELS = ["strong-fit", "good-fit", "weak-fit"] as const;
 export type FitLabel = (typeof FIT_LABELS)[number];
@@ -21,7 +25,6 @@ export const FIT_LABEL_BANDS: readonly { min: number; label: FitLabel }[] = [
 ];
 
 export const FIT_SCORE_LIMITS = {
-  nameMaxLength: 50,
   detailMaxLength: 30,
   roleMaxLength: 120,
   maxScore: 10,
@@ -31,8 +34,6 @@ export const FIT_SCORE_LIMITS = {
 
 // Scores carry one decimal, so they are counted in tenths.
 const TENTHS = 10;
-
-const requiredText = z.string().trim().min(1);
 
 // 0 to 10 with at most one decimal, such as 7.9.
 const dimensionScore = z
@@ -59,20 +60,23 @@ const points = z
   .max(FIT_SCORE_LIMITS.maxPoints)
   .describe(`Up to ${FIT_SCORE_LIMITS.maxPoints} short sentences`);
 
+// One value per dimension, in FIT_DIMENSIONS order.
+export function mapFitDimensions<T>(
+  toValue: (dimension: FitDimension) => T,
+): Record<FitDimension, T> {
+  // Every key is set, so the cast holds.
+  return Object.fromEntries(
+    FIT_DIMENSION_KEYS.map((key) => [key, toValue(key)]),
+  ) as Record<FitDimension, T>;
+}
+
 export const fitScoreInputSchema = z.object({
-  name: requiredText
-    .max(FIT_SCORE_LIMITS.nameMaxLength)
-    .describe("A short name for this fit report"),
+  name: documentNameSchema,
   role: requiredText
     .max(FIT_SCORE_LIMITS.roleMaxLength)
     .describe("The job title, as the posting gives it"),
   company: requiredText.max(FIT_SCORE_LIMITS.roleMaxLength).optional(),
-  dimensions: z.object({
-    requirements: dimension,
-    skills: dimension,
-    seniority: dimension,
-    domain: dimension,
-  }),
+  dimensions: z.object(mapFitDimensions(() => dimension)),
   strengths: points,
   gaps: points,
 });
@@ -84,7 +88,7 @@ export type FitDimensions = FitScoreInput["dimensions"];
 // Summed in whole numbers and divided once, so a score that should end in
 // exactly .5 does, and rounds up.
 export function computeFitOverall(dimensions: FitDimensions): number {
-  const weightedTenths = (Object.keys(FIT_DIMENSIONS) as FitDimension[]).reduce(
+  const weightedTenths = FIT_DIMENSION_KEYS.reduce(
     (total, key) =>
       total + Math.round(dimensions[key].score * TENTHS) * FIT_DIMENSIONS[key],
     0,

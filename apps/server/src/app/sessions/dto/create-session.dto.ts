@@ -8,7 +8,7 @@ import {
   ValidateBy,
   ValidateIf,
 } from 'class-validator';
-import { IsHttpUrl } from '../../resume/dto/is-http-url.decorator';
+import { IsHttpUrl } from '../../common/is-http-url.decorator';
 
 function IsNotSentWith(other: keyof CreateSessionDto): PropertyDecorator {
   return ValidateBy({

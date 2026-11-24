@@ -1,6 +1,6 @@
-import { DOCUMENT_KINDS, type DocumentKind, type FitLabel, type SavedDocumentRef, type SessionMessage } from '@quarry/contracts'
+import { FIT_LABELS, isDocumentKind, isOneOf, TOOL_ICONS, type DocumentKind, type SavedDocumentRef, type SessionMessage } from '@quarry/contracts'
 import { isTextUIPart, isToolUIPart, type UIMessage } from 'ai'
-import { FALLBACK_TOOL_STEP, FIT_LABEL_TEXT, TOOL_ICONS, UNFINISHED_STEP_META } from './sessions.constants'
+import { FALLBACK_TOOL_STEP, TOOL_ICON_COMPONENTS, UNFINISHED_STEP_NOTE } from './sessions.constants'
 import type { DocumentAnnouncement, MessageBlock, ToolStep } from './sessions.types'
 
 type Part = UIMessage['parts'][number]
@@ -17,27 +17,32 @@ function isCompaction(part: Part): boolean {
   return isTextUIPart(part) && part.providerMetadata?.anthropic?.type === 'compaction'
 }
 
-// Drawn only from the tool's own metadata, else the gear with "Working" / "Worked".
-// A step that errored, or was cut off when its reply stopped, shows as unfinished.
+function displayFor(metadata: ToolPart['toolMetadata']) {
+  const { icon, active, done, failed } = metadata ?? {}
+  if (!isOneOf(TOOL_ICONS, icon) || typeof active !== 'string' || typeof done !== 'string' || typeof failed !== 'string') {
+    return FALLBACK_TOOL_STEP
+  }
+  return { icon: TOOL_ICON_COMPONENTS[icon], active, done, failed }
+}
+
+// Drawn only from the tool's metadata, else the gear. An `ok: false` output shows the failed
+// text; only a step that errored or was cut off shows as unfinished.
 export function toolStepFor(part: ToolPart, live: boolean): ToolStep {
   const started = RUNNING_STATES.has(part.state)
   const running = started && live
   const unfinished = (started && !live) || part.state === 'output-error' || part.state === 'output-denied'
-  const metadata = part.toolMetadata
-  const known = typeof metadata?.icon === 'string' ? TOOL_ICONS[metadata.icon] : undefined
-  const { icon, active, done } =
-    known && typeof metadata?.active === 'string' && typeof metadata.done === 'string'
-      ? { icon: known, active: metadata.active, done: metadata.done }
-      : FALLBACK_TOOL_STEP
+  const { icon, active, done, failed } = displayFor(part.toolMetadata)
   const output: unknown = part.state === 'output-available' ? part.output : undefined
-  const meta = isRecord(output) && typeof output.meta === 'string' ? output.meta : null
+  const refused = isRecord(output) && output.ok === false
+  const note = isRecord(output) && typeof output.note === 'string' ? output.note : null
 
   return {
     id: part.toolCallId,
     icon,
-    label: running || unfinished ? active : done,
-    meta: unfinished ? UNFINISHED_STEP_META : meta,
+    label: running || unfinished ? active : refused ? failed : done,
+    note: unfinished ? UNFINISHED_STEP_NOTE : note,
     running,
+    unfinished,
   }
 }
 
@@ -65,14 +70,6 @@ export function messageBlocks(message: UIMessage, live = false): MessageBlock[] 
   return blocks
 }
 
-function isFitLabel(value: unknown): value is FitLabel {
-  return typeof value === 'string' && Object.hasOwn(FIT_LABEL_TEXT, value)
-}
-
-export function isDocumentKind(value: unknown): value is DocumentKind {
-  return typeof value === 'string' && (DOCUMENT_KINDS as readonly string[]).includes(value)
-}
-
 // Any tool output carrying a `document` announces a saved document, whatever the tool.
 export function documentFrom(part: Part): SavedDocumentRef | null {
   if (!isToolUIPart(part) || part.state !== 'output-available') return null
@@ -83,7 +80,7 @@ export function documentFrom(part: Part): SavedDocumentRef | null {
   const { kind, id, name, score, label } = output.document
   if (!isDocumentKind(kind) || typeof id !== 'string' || typeof name !== 'string') return null
   if (kind !== 'fit-score') return { kind, id, name }
-  if (typeof score !== 'number' || !isFitLabel(label)) return null
+  if (typeof score !== 'number' || !isOneOf(FIT_LABELS, label)) return null
   return { kind, id, name, score, label }
 }
 

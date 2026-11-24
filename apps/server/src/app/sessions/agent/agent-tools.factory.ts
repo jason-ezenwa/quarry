@@ -1,31 +1,31 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
+  COVER_LETTER_HEADER_DEFAULT,
   coverLetterInputSchema,
   createTailoredResumeInputSchema,
   editTailoredResumeInputSchema,
   fitScoreInputSchema,
+  JOB_SOURCE_LABELS,
   type ToolDisplayMetadata,
 } from '@quarry/contracts';
 import { tool, type ToolSet } from 'ai';
 import { z } from 'zod';
-import { DocumentsService } from '../../documents/documents.service';
-import { SessionsService } from '../sessions.service';
 import type { SessionContext } from '../../common/common.types';
+import { errorName } from '../../common/error-name';
+import { DocumentsService } from '../../documents/documents.service';
+import {
+  blockedSiteNote,
+  JOB_FETCH_FAILURE_NOTES,
+} from '../job-fetcher/job-fetcher.constants';
+import { SessionsService } from '../sessions.service';
 
-const JOB_SOURCE_LABELS = {
-  greenhouse: 'Greenhouse',
-  lever: 'Lever',
-  ashby: 'Ashby',
-  workable: 'Workable',
-  workday: 'Workday',
-  web: 'Web page',
-} as const;
-
+// `note` is shown beside the failed step; `message` is for the model.
 const TOOL_FAILURE = {
   ok: false,
   reason: 'tool-failed',
   message:
     'That step failed on our side. Tell the user and suggest trying again.',
+  note: 'Something went wrong on our side',
 } as const;
 
 const SOURCE_NOT_FOUND = {
@@ -33,6 +33,7 @@ const SOURCE_NOT_FOUND = {
   reason: 'source-not-found',
   message:
     'No tailored resume in this application has that id. Use the id of a resume saved in this conversation, or write a new one with create_tailored_resume.',
+  note: 'Source resume not found',
 } as const;
 
 const display = (metadata: ToolDisplayMetadata) => metadata;
@@ -60,6 +61,7 @@ export class AgentToolsFactory {
           icon: 'globe',
           active: 'Reading the job post',
           done: 'Read the job post',
+          failed: "Couldn't read the job post",
         }),
         execute: (input) =>
           this.guarded(context, 'get_job_description', async () => {
@@ -72,7 +74,16 @@ export class AgentToolsFactory {
               ...(!outcome.ok && { reason: outcome.reason }),
             });
 
-            if (!outcome.ok) return { ...outcome, askForPaste: true };
+            if (!outcome.ok) {
+              return {
+                ...outcome,
+                askForPaste: true,
+                note:
+                  outcome.reason === 'blocked-site'
+                    ? blockedSiteNote(outcome.site)
+                    : JOB_FETCH_FAILURE_NOTES[outcome.reason],
+              };
+            }
 
             const { url: _link, source, ...job } = outcome.job;
 
@@ -80,7 +91,7 @@ export class AgentToolsFactory {
               ok: true,
               source,
               ...job,
-              meta: JOB_SOURCE_LABELS[source],
+              note: JOB_SOURCE_LABELS[source],
             };
           }),
       }),
@@ -93,20 +104,19 @@ export class AgentToolsFactory {
           icon: 'gauge',
           active: 'Scoring your fit',
           done: 'Scored your fit',
+          failed: "Couldn't score your fit",
         }),
         execute: (input) =>
           this.guarded(context, 'save_fit_score', async () => {
-            const document = await this.sessionsService.saveFitScore(
+            const document = await this.documentsService.createFitScore(
               context,
               input,
             );
+            await this.sessionsService.nameAfterFitScore(context, input);
 
             this.logToolCall(context, 'save_fit_score', true);
 
-            return {
-              document,
-              meta: document.kind === 'fit-score' ? `${document.score}%` : null,
-            };
+            return { document, note: `${document.score}%` };
           }),
       }),
 
@@ -118,6 +128,7 @@ export class AgentToolsFactory {
           icon: 'file-text',
           active: 'Tailoring your resume',
           done: 'Tailored your resume',
+          failed: "Couldn't tailor your resume",
         }),
         execute: (input) =>
           this.guarded(context, 'create_tailored_resume', async () => {
@@ -134,12 +145,13 @@ export class AgentToolsFactory {
 
       edit_tailored_resume: tool({
         description:
-          'Revises a tailored resume from this application. Give only the sections that change, each whole; the rest is copied from the source. Saves the result as a new resume and leaves the source as it was. Put every change for one request in one call.',
+          'Revises a tailored resume from this application. Give only the sections that change, each whole, the name and contact details included; the rest is copied from the source. Saves the result as a new resume and leaves the source as it was. Put every change for one request in one call.',
         inputSchema: editTailoredResumeInputSchema,
         metadata: display({
           icon: 'pencil',
           active: 'Editing your resume',
           done: 'Edited your resume',
+          failed: "Couldn't edit your resume",
         }),
         execute: (input) =>
           this.guarded(context, 'edit_tailored_resume', async () => {
@@ -162,13 +174,13 @@ export class AgentToolsFactory {
       }),
 
       save_cover_letter: tool({
-        description:
-          "Saves a cover letter for this job: a greeting, 3 to 5 paragraphs and a sign-off. The user's name and contact details from the primary resume go above it and below the sign-off for you; give a header only when the user wants different ones on this letter. Every save is a new letter.",
+        description: `Saves a cover letter for this job: a greeting, 3 to 5 paragraphs and a sign-off. The name and contact details go above it and below the sign-off for you; give a header only when the user wants different ones on this letter. ${COVER_LETTER_HEADER_DEFAULT} Every save is a new letter.`,
         inputSchema: coverLetterInputSchema,
         metadata: display({
           icon: 'envelope',
           active: 'Writing your cover letter',
           done: 'Wrote your cover letter',
+          failed: "Couldn't write your cover letter",
         }),
         execute: (input) =>
           this.guarded(context, 'save_cover_letter', async () => {
@@ -197,7 +209,7 @@ export class AgentToolsFactory {
     } catch (error) {
       this.logToolCall(context, toolName, false, {
         reason: 'tool-failed',
-        error: error instanceof Error ? error.name : 'unknown',
+        error: errorName(error),
       });
 
       return TOOL_FAILURE;

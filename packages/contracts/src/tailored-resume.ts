@@ -5,9 +5,9 @@ import { resumeSchema } from "./resume.js";
 const sections = resumeSchema.shape;
 
 // Each given section replaces the source's whole; an unknown one is refused.
-// The person's name stays with the source.
 export const resumeSectionsSchema = z
   .strictObject({
+    name: sections.name.optional(),
     contact: sections.contact.optional(),
     summary: sections.summary,
     experience: sections.experience.optional(),
@@ -39,7 +39,7 @@ export const editTailoredResumeInputSchema = z.object({
     .describe("The id of the tailored resume in this session to start from"),
   name: documentNameSchema,
   sections: resumeSectionsSchema.describe(
-    "Only the sections that change, each given whole. Every other section is copied from the source.",
+    "Only the sections that change, each given whole, including the name or contact details when the user asks to change them. Every other section is copied from the source.",
   ),
 });
 

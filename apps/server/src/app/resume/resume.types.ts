@@ -6,6 +6,12 @@ export type CreatePrimaryResumeInput = {
   file: StoredFile;
 };
 
+// The primary resume's content, and whether the user has checked it.
+export type PrimaryContent = {
+  content: ResumeContent;
+  reviewed: boolean;
+};
+
 export type ResumeContact = ResumeContent['contact'];
 export type ResumeLink = ResumeContact['links'][number];
 export type ResumeExperience = ResumeContent['experience'][number];

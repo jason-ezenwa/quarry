@@ -12,6 +12,17 @@ export const JOB_SOURCES = [
 ] as const;
 export type JobSource = (typeof JOB_SOURCES)[number];
 
+// How a source reads beside a job, in lists and in the tool step.
+export const JOB_SOURCE_LABELS: Record<JobSource, string> = {
+  greenhouse: "Greenhouse",
+  lever: "Lever",
+  ashby: "Ashby",
+  workable: "Workable",
+  workday: "Workday",
+  web: "Web",
+  pasted: "Pasted",
+};
+
 // Sites that block automated access, so the job tool never tries them.
 export const BLOCKED_JOB_SITES = ["linkedin", "glassdoor", "indeed"] as const;
 export type BlockedJobSite = (typeof BLOCKED_JOB_SITES)[number];

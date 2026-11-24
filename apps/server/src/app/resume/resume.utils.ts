@@ -1,4 +1,5 @@
 import type {
+  DocumentHeader,
   PrimaryResumeResponse,
   Resume as ResumeContent,
   ResumeSections,
@@ -7,13 +8,11 @@ import type {
 import type { UpdateQuery } from 'mongoose';
 import type { Resume, ResumeDocument } from './resume.schema';
 
-// Unsets optional fields the new content leaves out, so nothing old survives.
-export function toResumeContentUpdate(
+// Every content field but the optional summary, as a resume stores them.
+export function requiredContentFields(
   content: ResumeContent,
-  fields: Partial<Resume>,
-): UpdateQuery<Resume> {
-  const $set = {
-    ...fields,
+): Omit<ResumeContent, 'summary'> {
+  return {
     name: content.name,
     contact: content.contact,
     experience: content.experience,
@@ -22,6 +21,14 @@ export function toResumeContentUpdate(
     projects: content.projects,
     certifications: content.certifications,
   };
+}
+
+// Unsets optional fields the new content leaves out, so nothing old survives.
+export function toResumeContentUpdate(
+  content: ResumeContent,
+  fields: Partial<Resume>,
+): UpdateQuery<Resume> {
+  const $set = { ...fields, ...requiredContentFields(content) };
 
   if (content.summary === undefined) {
     return { $set, $unset: { summary: 1 } };
@@ -88,6 +95,13 @@ export function tailoredTitleOf(resume: ResumeDocument): string {
   return resume.title;
 }
 
+export function toDocumentHeader({
+  name,
+  contact,
+}: ResumeContent): DocumentHeader {
+  return { name, contact };
+}
+
 export function toTailoredResumeResponse(
   resume: ResumeDocument,
 ): TailoredResumeDocumentResponse {
@@ -96,7 +110,7 @@ export function toTailoredResumeResponse(
     kind: 'resume',
     name: tailoredTitleOf(resume),
     resume: toResumeContent(resume),
-    sourceResumeId: resume.sourceResume?.toHexString() ?? null,
+    sourceResume: resume.sourceResume?.toHexString() ?? null,
     createdAt: resume.createdAt.toISOString(),
   };
 }

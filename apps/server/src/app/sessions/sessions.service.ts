@@ -12,7 +12,6 @@ import {
   type CreateSessionResponse,
   type FitScoreInput,
   type MonthlySessionLimitError,
-  type SavedDocumentRef,
   type SessionDetail,
   type SessionErrorCode,
   type SessionPage,
@@ -24,7 +23,6 @@ import { ClientSession, Connection, Model, Types } from 'mongoose';
 import { parseObjectId } from '../common/object-id';
 import { isDuplicateKeyError } from '../../lib/mongo-errors/mongo-errors';
 import { DocumentsService } from '../documents/documents.service';
-import { toFitScoreRef } from '../documents/documents.utils';
 import { ResumeService } from '../resume/resume.service';
 import type { CreateSessionDto } from './dto/create-session.dto';
 import type { ListSessionsDto } from './dto/list-sessions.dto';
@@ -83,14 +81,7 @@ export class SessionsService {
     userId: string,
     dto: CreateSessionDto,
   ): Promise<CreateSessionResponse> {
-    if (!(await this.resumeService.findReviewedPrimaryContent(userId))) {
-      throw sessionError(
-        HttpStatus.CONFLICT,
-        'primary-resume-not-ready',
-        'Review your primary resume before starting an application',
-      );
-    }
-
+    await this.assertPrimaryResumeReady(userId);
     await this.assertUnderMonthlyCap(userId);
 
     const session = new ApplicationSession();
@@ -187,17 +178,9 @@ export class SessionsService {
     sessionId: string,
     archived: boolean,
   ): Promise<SessionSummary> {
-    const id = parseObjectId(sessionId);
-
-    const updated =
-      id &&
-      (await this.sessionModel.findOneAndUpdate(
-        { _id: id, ...this.ownedBy(userId) },
-        { $set: { archivedAt: archived ? new Date() : null } },
-        { returnDocument: 'after' },
-      ));
-
-    if (!updated) throw new NotFoundException('Session not found');
+    const updated = await this.findOwned(userId, sessionId);
+    updated.archivedAt = archived ? new Date() : null;
+    await updated.save();
 
     const overalls = await this.documentsService.latestFitOveralls([
       updated._id,
@@ -225,8 +208,8 @@ export class SessionsService {
     sessionId: string,
     sent: TurnMessageDto | undefined,
   ): Promise<ClaimedTurn> {
-    const id = parseObjectId(sessionId);
-    if (!id) throw new NotFoundException('Session not found');
+    const { _id: id } = await this.findOwned(userId, sessionId);
+    await this.assertPrimaryResumeReady(userId);
 
     // A retried request runs on the message it already stored, so the
     // message is never stored or counted twice.
@@ -273,7 +256,9 @@ export class SessionsService {
         throw error;
       });
 
-    if (!claimed) return this.throwTurnRefusal(userId, id, Boolean(message));
+    if (!claimed) {
+      return this.throwTurnRefusal(userId, sessionId, Boolean(message));
+    }
 
     const turn: ClaimedTurn = { userId, sessionId: claimed.id, startedAt };
 
@@ -307,13 +292,8 @@ export class SessionsService {
     return modifiedCount;
   }
 
-  async loadTurnSession(
-    turn: ClaimedTurn,
-  ): Promise<{ session: ApplicationSessionDocument; messages: UIMessage[] }> {
-    const session = await this.sessionModel.findById(turn.sessionId);
-    if (!session) throw new NotFoundException('Session not found');
-
-    return { session, messages: await this.history(session._id) };
+  async turnHistory({ sessionId }: ClaimedTurn): Promise<UIMessage[]> {
+    return this.history(new Types.ObjectId(sessionId));
   }
 
   // Appended once, never edited afterwards.
@@ -363,27 +343,37 @@ export class SessionsService {
     return outcome;
   }
 
-  // Names the session after the role when nothing has named it yet.
-  async saveFitScore(
-    owner: SessionContext,
-    input: FitScoreInput,
-  ): Promise<SavedDocumentRef> {
-    const fitScore = await this.documentsService.createFitScore(owner, input);
-    const sessionId = new Types.ObjectId(owner.sessionId);
+  // Names the session after a fit report's role and company when nothing
+  // has named it yet.
+  async nameAfterFitScore(
+    { sessionId: id }: SessionContext,
+    { role, company }: Pick<FitScoreInput, 'role' | 'company'>,
+  ): Promise<void> {
+    const sessionId = new Types.ObjectId(id);
 
     await this.sessionModel.updateOne(
       { _id: sessionId, title: DEFAULT_SESSION_TITLE },
-      { $set: { title: input.role } },
+      { $set: { title: role } },
     );
 
-    if (input.company) {
+    if (company) {
       await this.sessionModel.updateOne(
         { _id: sessionId, company: { $exists: false } },
-        { $set: { company: input.company } },
+        { $set: { company } },
       );
     }
+  }
 
-    return toFitScoreRef(fitScore);
+  // An unparsed or failed primary resume can't be worked from. An unreviewed
+  // one can; the agent says so.
+  private async assertPrimaryResumeReady(userId: string): Promise<void> {
+    if (await this.resumeService.isPrimaryReady(userId)) return;
+
+    throw sessionError(
+      HttpStatus.CONFLICT,
+      'primary-resume-not-ready',
+      'Upload your resume and wait for it to be read before working on an application',
+    );
   }
 
   private async assertUnderMonthlyCap(userId: string): Promise<void> {
@@ -421,15 +411,10 @@ export class SessionsService {
   // the claim still reads as a running turn, which the client can retry.
   private async throwTurnRefusal(
     userId: string,
-    id: Types.ObjectId,
+    sessionId: string,
     countsMessage: boolean,
   ): Promise<never> {
-    const session = await this.sessionModel.findOne({
-      _id: id,
-      ...this.ownedBy(userId),
-    });
-
-    if (!session) throw new NotFoundException('Session not found');
+    const session = await this.findOwned(userId, sessionId);
 
     if (session.archivedAt) {
       throw sessionError(

@@ -1,6 +1,6 @@
 import type { FitScoreInput, Resume } from '@quarry/contracts';
 import { Types } from 'mongoose';
-import { getTestDatabase } from '../../../../test/integration/database';
+import { getTestDatabase } from './database';
 
 export const primaryResume: Resume = {
   name: 'Ada Obi',
@@ -34,7 +34,15 @@ export const fitScoreInput: FitScoreInput = {
   gaps: ['No Kafka.'],
 };
 
-type ResumeState = 'reviewed' | 'unreviewed';
+// `parsing` is a resume being read again after a re-upload.
+type ResumeState = 'reviewed' | 'unreviewed' | 'parsing' | 'failed';
+
+const PARSE_STATUS: Record<ResumeState, string> = {
+  reviewed: 'parsed',
+  unreviewed: 'parsed',
+  parsing: 'parsing',
+  failed: 'failed',
+};
 
 // What onboarding leaves behind, written straight to the database so these
 // specs don't depend on uploads and parsing.
@@ -70,7 +78,7 @@ export async function seedOnboarded(
         originalName: 'cv.pdf',
         size: 10,
       },
-      parseStatus: 'parsed',
+      parseStatus: PARSE_STATUS[resumeState],
       parsedAt: now,
       parseError: null,
       parseUsage: null,

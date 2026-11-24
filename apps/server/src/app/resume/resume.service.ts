@@ -16,6 +16,7 @@ import type {
 } from '@quarry/contracts';
 import { ClientSession, Model, type QueryFilter, Types } from 'mongoose';
 import type { SessionContext } from '../common/common.types';
+import { errorName } from '../common/error-name';
 import {
   documentNotFound,
   ownedDocumentFilter,
@@ -24,9 +25,11 @@ import { StorageService } from '../storage/storage.service';
 import type { StoredFile } from '../storage/storage.types';
 import { ResumeParserService } from './parser/parser.service';
 import { Resume, ResumeDocument, ResumeFile } from './resume.schema';
-import type { CreatePrimaryResumeInput } from './resume.types';
+import type { CreatePrimaryResumeInput, PrimaryContent } from './resume.types';
 import {
   replaceSections,
+  requiredContentFields,
+  toDocumentHeader,
   toPrimaryResumeResponse,
   toResumeContent,
   toResumeContentUpdate,
@@ -74,38 +77,48 @@ export class ResumeService {
     } catch (error) {
       this.logger.error('Resume parse crashed', {
         resumeId,
-        error: error instanceof Error ? error.name : 'unknown',
+        error: errorName(error),
       });
     }
   }
 
-  // The content an agent may work from: parsed and reviewed, else null.
-  async findReviewedPrimaryContent(
-    userId: string,
-  ): Promise<ResumeContent | null> {
+  // The content an agent may work from: parsed, reviewed or not. Null while
+  // it is unparsed, being read again, or failed.
+  async findPrimaryContent(userId: string): Promise<PrimaryContent | null> {
     const resume = await this.resumeModel.findOne(
-      this.primaryFilter(userId, {
-        parsedAt: { $ne: null },
-        reviewedAt: { $ne: null },
-      }),
+      this.primaryFilter(userId, { parseStatus: 'parsed' }),
     );
 
-    return resume ? toResumeContent(resume) : null;
+    return resume
+      ? {
+          content: toResumeContent(resume),
+          reviewed: Boolean(resume.reviewedAt),
+        }
+      : null;
   }
 
-  // The default header for a new cover letter. A re-upload clears the review
-  // but keeps the last parse, so that's used.
-  async findHeader(userId: string): Promise<DocumentHeader> {
-    const resume = await this.resumeModel.findOne(
-      this.primaryFilter(userId, { parsedAt: { $ne: null } }),
+  async isPrimaryReady(userId: string): Promise<boolean> {
+    return (
+      (await this.resumeModel.exists(
+        this.primaryFilter(userId, { parseStatus: 'parsed' }),
+      )) !== null
     );
+  }
 
-    // Unreachable once a session exists, since starting one needs a parse.
-    if (!resume) throw new ConflictException('Primary resume not parsed');
+  // The default header for a new cover letter: the latest tailored resume's
+  // in this session, else the primary resume's.
+  async findHeader(owner: SessionContext): Promise<DocumentHeader> {
+    const [latest] = await this.resumeModel
+      .find(this.tailoredFilter(owner))
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(1);
 
-    const { name, contact } = toResumeContent(resume);
+    if (latest) return toDocumentHeader(toResumeContent(latest));
 
-    return { name, contact };
+    const primary = await this.findPrimaryContent(owner.userId);
+    if (!primary) throw new ConflictException('Primary resume not parsed');
+
+    return toDocumentHeader(primary.content);
   }
 
   async createTailored(
@@ -266,6 +279,17 @@ export class ResumeService {
       : null;
   }
 
+  private tailoredFilter({
+    userId,
+    sessionId,
+  }: SessionContext): QueryFilter<Resume> {
+    return {
+      user: new Types.ObjectId(userId),
+      session: new Types.ObjectId(sessionId),
+      kind: 'tailored',
+    };
+  }
+
   private async saveTailored(
     { userId, sessionId }: SessionContext,
     title: string,
@@ -278,14 +302,8 @@ export class ResumeService {
     resume.session = new Types.ObjectId(sessionId);
     resume.title = title;
     resume.sourceResume = sourceResume;
-    resume.name = content.name;
-    resume.contact = content.contact;
+    Object.assign(resume, requiredContentFields(content));
     resume.summary = content.summary;
-    resume.experience = content.experience;
-    resume.education = content.education;
-    resume.skills = content.skills;
-    resume.projects = content.projects;
-    resume.certifications = content.certifications;
 
     const saved = await new this.resumeModel(resume).save();
 
