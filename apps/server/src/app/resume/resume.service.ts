@@ -6,17 +6,35 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import type {
+  CreateTailoredResumeInput,
+  DocumentHeader,
+  EditTailoredResumeInput,
   PrimaryResumeResponse,
   Resume as ResumeContent,
+  TailoredResumeDocumentResponse,
   UploadedFileRef,
 } from '@quarry/contracts';
 import { ClientSession, Model, type QueryFilter, Types } from 'mongoose';
+import type { SessionContext } from '../common/common.types';
+import { errorName } from '../common/error-name';
+import {
+  documentNotFound,
+  ownedDocumentFilter,
+} from '../common/owned-document';
 import { StorageService } from '../storage/storage.service';
 import type { StoredFile } from '../storage/storage.types';
 import { ResumeParserService } from './parser/parser.service';
 import { Resume, ResumeDocument, ResumeFile } from './resume.schema';
-import type { CreatePrimaryResumeInput } from './resume.types';
-import { toPrimaryResumeResponse, toResumeContentUpdate } from './resume.utils';
+import type { CreatePrimaryResumeInput, PrimaryContent } from './resume.types';
+import {
+  replaceSections,
+  requiredContentFields,
+  toDocumentHeader,
+  toPrimaryResumeResponse,
+  toResumeContent,
+  toResumeContentUpdate,
+  toTailoredResumeResponse,
+} from './resume.utils';
 
 @Injectable()
 export class ResumeService {
@@ -59,9 +77,82 @@ export class ResumeService {
     } catch (error) {
       this.logger.error('Resume parse crashed', {
         resumeId,
-        error: error instanceof Error ? error.name : 'unknown',
+        error: errorName(error),
       });
     }
+  }
+
+  // The content an agent may work from: parsed, reviewed or not. Null while
+  // it is unparsed, being read again, or failed.
+  async findPrimaryContent(userId: string): Promise<PrimaryContent | null> {
+    const resume = await this.resumeModel.findOne(
+      this.primaryFilter(userId, { parseStatus: 'parsed' }),
+    );
+
+    return resume
+      ? {
+          content: toResumeContent(resume),
+          reviewed: Boolean(resume.reviewedAt),
+        }
+      : null;
+  }
+
+  async isPrimaryReady(userId: string): Promise<boolean> {
+    return (
+      (await this.resumeModel.exists(
+        this.primaryFilter(userId, { parseStatus: 'parsed' }),
+      )) !== null
+    );
+  }
+
+  // The default header for a new cover letter: the latest tailored resume's
+  // in this session, else the primary resume's.
+  async findHeader(owner: SessionContext): Promise<DocumentHeader> {
+    const [latest] = await this.resumeModel
+      .find(this.tailoredFilter(owner))
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(1);
+
+    if (latest) return toDocumentHeader(toResumeContent(latest));
+
+    const primary = await this.findPrimaryContent(owner.userId);
+    if (!primary) throw new ConflictException('Primary resume not parsed');
+
+    return toDocumentHeader(primary.content);
+  }
+
+  async createTailored(
+    owner: SessionContext,
+    { name, resume }: CreateTailoredResumeInput,
+  ): Promise<ResumeDocument> {
+    return this.saveTailored(owner, name, resume);
+  }
+
+  // Saves an edited copy; the source is never changed. Null when the source
+  // isn't a tailored resume in this session.
+  async editTailored(
+    owner: SessionContext,
+    { sourceResumeId, name, sections }: EditTailoredResumeInput,
+  ): Promise<ResumeDocument | null> {
+    const source = await this.findTailored(owner, sourceResumeId);
+    if (!source) return null;
+
+    return this.saveTailored(
+      owner,
+      name,
+      replaceSections(toResumeContent(source), sections),
+      source._id,
+    );
+  }
+
+  async getTailored(
+    owner: SessionContext,
+    resumeId: string,
+  ): Promise<TailoredResumeDocumentResponse> {
+    const resume = await this.findTailored(owner, resumeId);
+    if (!resume) throw documentNotFound();
+
+    return toTailoredResumeResponse(resume);
   }
 
   async getPrimary(userId: string): Promise<PrimaryResumeResponse> {
@@ -175,6 +266,55 @@ export class ResumeService {
     }
 
     return resume;
+  }
+
+  private async findTailored(
+    owner: SessionContext,
+    resumeId: string,
+  ): Promise<ResumeDocument | null> {
+    const owned = ownedDocumentFilter(owner, resumeId);
+
+    return owned
+      ? this.resumeModel.findOne({ ...owned, kind: 'tailored' })
+      : null;
+  }
+
+  private tailoredFilter({
+    userId,
+    sessionId,
+  }: SessionContext): QueryFilter<Resume> {
+    return {
+      user: new Types.ObjectId(userId),
+      session: new Types.ObjectId(sessionId),
+      kind: 'tailored',
+    };
+  }
+
+  private async saveTailored(
+    { userId, sessionId }: SessionContext,
+    title: string,
+    content: ResumeContent,
+    sourceResume?: Types.ObjectId,
+  ): Promise<ResumeDocument> {
+    const resume = new Resume();
+    resume.user = new Types.ObjectId(userId);
+    resume.kind = 'tailored';
+    resume.session = new Types.ObjectId(sessionId);
+    resume.title = title;
+    resume.sourceResume = sourceResume;
+    Object.assign(resume, requiredContentFields(content));
+    resume.summary = content.summary;
+
+    const saved = await new this.resumeModel(resume).save();
+
+    this.logger.log('Tailored resume saved', {
+      userId,
+      sessionId,
+      documentId: saved.id,
+      edited: Boolean(sourceResume),
+    });
+
+    return saved;
   }
 
   // Moves parseStartedAt to now in the same write, so no one else claims it.

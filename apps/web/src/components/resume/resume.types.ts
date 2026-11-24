@@ -1,5 +1,6 @@
 import type { Resume } from "@quarry/contracts"
-import type { ReactNode } from "react"
+import type { ComponentProps, ReactNode } from "react"
+import type { ResumeRoot } from "./resume"
 
 // A path into the draft, such as ['experience', 0, 'bullets', 2].
 export type ResumeFieldPath = readonly (string | number)[]
@@ -32,7 +33,8 @@ export type ResumeEditorContextValue = {
   meta: ResumeEditorMeta
 }
 
-export type ResumeVariant = "sheet" | "editor"
+// sheet: a page of its own. inset: the same page set inside another sheet, such as a document in the output panel. editor: form sections.
+export type ResumeVariant = "sheet" | "inset" | "editor"
 
 export type Draft = Record<string | number, unknown>
 
@@ -61,4 +63,9 @@ export type ResumeEditorEntryProps = {
   meta?: string
   defaultOpen?: boolean
   children: ReactNode
+}
+
+export type ResumeDocumentProps = Omit<ComponentProps<typeof ResumeRoot>, 'variant' | 'children'> & {
+  resume: Resume
+  variant?: Exclude<ResumeVariant, 'editor'>
 }

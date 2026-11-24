@@ -1,0 +1,2 @@
+export const RECENT_SESSIONS_LIMIT = 4
+export const HOME_RECENT_SESSIONS_LIMIT = 5

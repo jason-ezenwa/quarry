@@ -1,0 +1,563 @@
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectConnection, InjectModel } from '@nestjs/mongoose';
+import {
+  SESSION_LIMITS,
+  type CreateSessionResponse,
+  type FitScoreInput,
+  type MonthlySessionLimitError,
+  type SessionDetail,
+  type SessionErrorCode,
+  type SessionPage,
+  type SessionSummary,
+  type UsageResponse,
+} from '@quarry/contracts';
+import { generateId, type UIMessage } from 'ai';
+import { ClientSession, Connection, Model, Types } from 'mongoose';
+import { parseObjectId } from '../common/object-id';
+import { isDuplicateKeyError } from '../../lib/mongo-errors/mongo-errors';
+import { DocumentsService } from '../documents/documents.service';
+import { ResumeService } from '../resume/resume.service';
+import type { CreateSessionDto } from './dto/create-session.dto';
+import type { ListSessionsDto } from './dto/list-sessions.dto';
+import type { TurnMessageDto } from './dto/run-turn.dto';
+import { JobFetcherService } from './job-fetcher/job-fetcher.service';
+import type { JobFetchOutcome } from './job-fetcher/job-fetcher.types';
+import { Message, MessageDocument, MessageUsage } from './message.schema';
+import {
+  AgentSession,
+  AgentSessionDocument,
+  SessionJob,
+} from './session.schema';
+import { DEFAULT_SESSION_TITLE } from './sessions.constants';
+import type { SessionContext } from '../common/common.types';
+import type { ClaimedTurn } from './sessions.types';
+import {
+  firstMessageText,
+  monthlyPeriod,
+  toSessionDetail,
+  toSessionSummary,
+} from './sessions.utils';
+
+function sessionError(
+  status: HttpStatus,
+  code: SessionErrorCode,
+  message: string,
+): HttpException {
+  return new HttpException({ statusCode: status, code, message }, status);
+}
+
+function turnRunningError(): HttpException {
+  return sessionError(
+    HttpStatus.CONFLICT,
+    'turn-running',
+    'A reply is still being written',
+  );
+}
+
+@Injectable()
+export class SessionsService {
+  private readonly logger = new Logger(SessionsService.name);
+
+  constructor(
+    @InjectModel(AgentSession.name)
+    private readonly sessionModel: Model<AgentSessionDocument>,
+    @InjectModel(Message.name)
+    private readonly messageModel: Model<MessageDocument>,
+    @InjectConnection() private readonly connection: Connection,
+    private readonly resumeService: ResumeService,
+    private readonly documentsService: DocumentsService,
+    private readonly jobFetcherService: JobFetcherService,
+  ) {}
+
+  // Counts against the monthly cap from here, even if the job never loads.
+  async create(
+    userId: string,
+    dto: CreateSessionDto,
+  ): Promise<CreateSessionResponse> {
+    await this.assertPrimaryResumeReady(userId);
+    await this.assertUnderMonthlyCap(userId);
+
+    const session = new AgentSession();
+    session.user = new Types.ObjectId(userId);
+    session.title = DEFAULT_SESSION_TITLE;
+    session.userMessageCount = 1;
+    session.turnStartedAt = null;
+    session.archivedAt = null;
+
+    if (dto.jobDescription !== undefined) {
+      const job = new SessionJob();
+      job.source = 'pasted';
+      job.description = dto.jobDescription;
+      session.job = job;
+    } else if (dto.jobUrl !== undefined) {
+      const job = new SessionJob();
+      job.url = dto.jobUrl;
+      session.job = job;
+    }
+
+    const created = await this.connection.transaction(async (transaction) => {
+      const saved = await new this.sessionModel(session).save({
+        session: transaction,
+      });
+
+      await this.insertUserMessage(
+        saved._id,
+        { id: generateId(), text: firstMessageText(dto) },
+        transaction,
+      );
+
+      return saved;
+    });
+
+    this.logger.log('Agent session created', {
+      userId,
+      sessionId: created.id,
+      source: created.job?.source ?? 'link',
+    });
+
+    return { id: created.id };
+  }
+
+  // Newest first; ties on createdAt fall back to the id, so pages never
+  // skip or repeat a session.
+  async list(userId: string, query: ListSessionsDto): Promise<SessionPage> {
+    const limit = query.limit ?? SESSION_LIMITS.sessionsPageSize;
+
+    const sessions = await this.sessionModel
+      .find({
+        ...this.ownedBy(userId),
+        archivedAt: query.archived ? { $ne: null } : null,
+        ...(query.cursor ? await this.afterCursor(userId, query.cursor) : {}),
+      })
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(limit + 1);
+
+    const page = sessions.slice(0, limit);
+
+    const overalls = await this.documentsService.latestFitOveralls(
+      page.map((session) => session._id),
+    );
+
+    return {
+      items: page.map((session) =>
+        toSessionSummary(session, overalls.get(session.id) ?? null),
+      ),
+      nextCursor: sessions.length > limit ? page[page.length - 1].id : null,
+    };
+  }
+
+  private async afterCursor(userId: string, cursor: string) {
+    const last = await this.sessionModel
+      .findOne({ _id: cursor, ...this.ownedBy(userId) })
+      .select('createdAt');
+
+    if (!last) throw new BadRequestException('Unknown cursor');
+
+    return {
+      $or: [
+        { createdAt: { $lt: last.createdAt } },
+        { createdAt: last.createdAt, _id: { $lt: last._id } },
+      ],
+    };
+  }
+
+  async get(userId: string, sessionId: string): Promise<SessionDetail> {
+    const session = await this.findOwned(userId, sessionId);
+
+    return toSessionDetail(session, await this.history(session._id));
+  }
+
+  // 404 unless the session is the user's.
+  async assertOwned(userId: string, sessionId: string): Promise<void> {
+    await this.findOwned(userId, sessionId);
+  }
+
+  // Archiving never gives back a slot in the monthly cap.
+  async setArchived(
+    userId: string,
+    sessionId: string,
+    archived: boolean,
+  ): Promise<SessionSummary> {
+    const updated = await this.findOwned(userId, sessionId);
+    updated.archivedAt = archived ? new Date() : null;
+    await updated.save();
+
+    const overalls = await this.documentsService.latestFitOveralls([
+      updated._id,
+    ]);
+
+    return toSessionSummary(updated, overalls.get(updated.id) ?? null);
+  }
+
+  async usage(userId: string): Promise<UsageResponse> {
+    const { start, resetsAt } = monthlyPeriod(new Date());
+
+    return {
+      sessions: {
+        used: await this.countCreatedSince(userId, start),
+        limit: SESSION_LIMITS.sessionsPerMonth,
+        resetsAt: resetsAt.toISOString(),
+      },
+    };
+  }
+
+  // One atomic update takes the lock, so of two overlapping turns only one
+  // runs. With a message, the same transaction counts and stores it.
+  async claimTurn(
+    userId: string,
+    sessionId: string,
+    sent: TurnMessageDto | undefined,
+  ): Promise<ClaimedTurn> {
+    const { _id: id } = await this.findOwned(userId, sessionId);
+    await this.assertPrimaryResumeReady(userId);
+
+    // A retried request runs on the message it already stored, so the
+    // message is never stored or counted twice.
+    const message =
+      sent &&
+      !(await this.messageModel.exists({
+        session: id,
+        uiId: sent.id,
+        role: 'user',
+      }))
+        ? sent
+        : undefined;
+
+    const startedAt = new Date();
+
+    const claimed = await this.connection
+      .transaction(async (transaction) => {
+        const session = await this.sessionModel.findOneAndUpdate(
+          {
+            _id: id,
+            ...this.ownedBy(userId),
+            turnStartedAt: null,
+            archivedAt: null,
+            ...(message && {
+              userMessageCount: { $lt: SESSION_LIMITS.userMessagesPerSession },
+            }),
+          },
+          {
+            $set: { turnStartedAt: startedAt },
+            ...(message && { $inc: { userMessageCount: 1 } }),
+          },
+          { returnDocument: 'after', session: transaction },
+        );
+
+        if (session && message) {
+          await this.insertUserMessage(session._id, message, transaction);
+        }
+
+        return session;
+      })
+      .catch((error: unknown) => {
+        // The same message, sent twice at once: the other request has it.
+        if (isDuplicateKeyError(error)) throw turnRunningError();
+        throw error;
+      });
+
+    if (!claimed) {
+      return this.throwTurnRefusal(userId, sessionId, Boolean(message));
+    }
+
+    if (message) {
+      return {
+        userId,
+        sessionId: claimed.id,
+        startedAt,
+        messageId: message.id,
+      };
+    }
+
+    try {
+      const messageId = await this.unansweredMessageId(claimed._id);
+      return { userId, sessionId: claimed.id, startedAt, messageId };
+    } catch (error) {
+      await this.releaseTurn({ sessionId: claimed.id, startedAt });
+      throw error;
+    }
+  }
+
+  // Only this turn's own stamp is cleared, never a later turn's.
+  async releaseTurn({
+    sessionId,
+    startedAt,
+  }: Pick<ClaimedTurn, 'sessionId' | 'startedAt'>): Promise<void> {
+    await this.sessionModel.updateOne(
+      { _id: new Types.ObjectId(sessionId), turnStartedAt: startedAt },
+      { $set: { turnStartedAt: null } },
+    );
+  }
+
+  // A restart kills any running turn. Assumes a single server instance.
+  async clearTurnLocks(): Promise<number> {
+    const { modifiedCount } = await this.sessionModel.updateMany(
+      { turnStartedAt: { $ne: null } },
+      { $set: { turnStartedAt: null } },
+    );
+
+    return modifiedCount;
+  }
+
+  async turnHistory({ sessionId }: ClaimedTurn): Promise<UIMessage[]> {
+    return this.history(new Types.ObjectId(sessionId));
+  }
+
+  // Appended once, never edited afterwards.
+  async appendAssistantMessage(
+    turn: ClaimedTurn,
+    message: UIMessage,
+    usage: MessageUsage,
+  ): Promise<void> {
+    const stored = new Message();
+    stored.session = new Types.ObjectId(turn.sessionId);
+    stored.uiId = message.id;
+    stored.role = 'assistant';
+    stored.parts = message.parts;
+    stored.usage = usage;
+
+    await new this.messageModel(stored).save();
+  }
+
+  // Takes back and uncounts the message a turn holding the lock answers,
+  // unless it is the session's first. True when it was taken back.
+  async withdrawUserMessage({
+    sessionId,
+    messageId,
+  }: ClaimedTurn): Promise<boolean> {
+    const session = new Types.ObjectId(sessionId);
+
+    const first = await this.messageModel
+      .findOne({ session })
+      .sort({ createdAt: 1, _id: 1 })
+      .select('uiId');
+
+    if (!first || first.uiId === messageId) return false;
+
+    return this.connection.transaction(async (transaction) => {
+      const { deletedCount } = await this.messageModel.deleteOne(
+        { session, uiId: messageId, role: 'user' },
+        { session: transaction },
+      );
+
+      if (deletedCount === 0) return false;
+
+      await this.sessionModel.updateOne(
+        { _id: session },
+        { $inc: { userMessageCount: -1 } },
+        { session: transaction },
+      );
+
+      return true;
+    });
+  }
+
+  // Saves the job on the session, so later turns and mock interviews have it.
+  async fetchJob(
+    { userId, sessionId }: SessionContext,
+    url: string,
+    abortSignal?: AbortSignal,
+  ): Promise<JobFetchOutcome> {
+    const outcome = await this.jobFetcherService.fetch(url);
+    // A turn stopped mid-fetch keeps nothing from it.
+    if (!outcome.ok || abortSignal?.aborted) return outcome;
+
+    const { job } = outcome;
+
+    const sessionJob = new SessionJob();
+    sessionJob.url = job.url;
+    sessionJob.source = job.source;
+    sessionJob.location = job.location;
+    sessionJob.description = job.description;
+    sessionJob.fetchedAt = new Date();
+
+    await this.sessionModel.updateOne(
+      { _id: new Types.ObjectId(sessionId), ...this.ownedBy(userId) },
+      {
+        $set: {
+          job: sessionJob,
+          ...(job.title && { title: job.title }),
+          ...(job.company && { company: job.company }),
+        },
+      },
+    );
+
+    return outcome;
+  }
+
+  // Names the session after a fit report's role and company when nothing
+  // has named it yet.
+  async nameAfterFitScore(
+    { sessionId: id }: SessionContext,
+    { role, company }: Pick<FitScoreInput, 'role' | 'company'>,
+  ): Promise<void> {
+    const sessionId = new Types.ObjectId(id);
+
+    await this.sessionModel.updateOne(
+      { _id: sessionId, title: DEFAULT_SESSION_TITLE },
+      { $set: { title: role } },
+    );
+
+    if (company) {
+      await this.sessionModel.updateOne(
+        { _id: sessionId, company: { $exists: false } },
+        { $set: { company } },
+      );
+    }
+  }
+
+  // An unparsed or failed primary resume can't be worked from. An unreviewed
+  // one can; the agent says so.
+  private async assertPrimaryResumeReady(userId: string): Promise<void> {
+    if (await this.resumeService.isPrimaryReady(userId)) return;
+
+    throw sessionError(
+      HttpStatus.CONFLICT,
+      'primary-resume-not-ready',
+      'Upload your resume and wait for it to be read before working on an application',
+    );
+  }
+
+  private async assertUnderMonthlyCap(userId: string): Promise<void> {
+    const { start, resetsAt } = monthlyPeriod(new Date());
+    const used = await this.countCreatedSince(userId, start);
+    const limit = SESSION_LIMITS.sessionsPerMonth;
+
+    if (used < limit) return;
+
+    this.logger.warn('Monthly session limit reached', { userId, used, limit });
+
+    const body: MonthlySessionLimitError = {
+      code: 'monthly-session-limit',
+      message: 'You have used every application for this month',
+      used,
+      limit,
+      resetsAt: resetsAt.toISOString(),
+    };
+
+    throw new HttpException(
+      { statusCode: HttpStatus.TOO_MANY_REQUESTS, ...body },
+      HttpStatus.TOO_MANY_REQUESTS,
+    );
+  }
+
+  // Archived sessions count: archiving never gives back a slot.
+  private countCreatedSince(userId: string, start: Date): Promise<number> {
+    return this.sessionModel.countDocuments({
+      ...this.ownedBy(userId),
+      createdAt: { $gte: start },
+    });
+  }
+
+  // The claim matched nothing; the session says why. A lock released since
+  // the claim still reads as a running turn, which the client can retry.
+  private async throwTurnRefusal(
+    userId: string,
+    sessionId: string,
+    countsMessage: boolean,
+  ): Promise<never> {
+    const session = await this.findOwned(userId, sessionId);
+
+    if (session.archivedAt) {
+      throw sessionError(
+        HttpStatus.CONFLICT,
+        'session-archived',
+        'Unarchive this application to keep working on it',
+      );
+    }
+
+    const atLimit =
+      countsMessage &&
+      session.userMessageCount >= SESSION_LIMITS.userMessagesPerSession;
+
+    if (!atLimit) throw turnRunningError();
+
+    this.logger.warn('Session message limit reached', {
+      userId,
+      sessionId: session.id,
+    });
+
+    throw sessionError(
+      HttpStatus.TOO_MANY_REQUESTS,
+      'session-message-limit',
+      'This application has reached its message limit. Start a new application to keep going',
+    );
+  }
+
+  // The uiId of the last message, which must be the user's.
+  private async unansweredMessageId(
+    sessionId: Types.ObjectId,
+  ): Promise<string> {
+    const last = await this.messageModel
+      .findOne({ session: sessionId })
+      .sort({ createdAt: -1, _id: -1 });
+
+    if (last?.role !== 'user') {
+      throw sessionError(
+        HttpStatus.BAD_REQUEST,
+        'nothing-to-answer',
+        'Send a message to run a turn',
+      );
+    }
+
+    return last.uiId;
+  }
+
+  private async insertUserMessage(
+    sessionId: Types.ObjectId,
+    { id, text }: TurnMessageDto,
+    transaction?: ClientSession,
+  ): Promise<void> {
+    const message = new Message();
+    message.session = sessionId;
+    message.uiId = id;
+    message.role = 'user';
+    message.parts = [{ type: 'text', text }];
+    message.usage = null;
+
+    await new this.messageModel(message).save({ session: transaction });
+  }
+
+  private ownedBy(userId: string): { user: Types.ObjectId } {
+    return { user: new Types.ObjectId(userId) };
+  }
+
+  private async findOwned(
+    userId: string,
+    sessionId: string,
+  ): Promise<AgentSessionDocument> {
+    const id = parseObjectId(sessionId);
+
+    const session =
+      id &&
+      (await this.sessionModel.findOne({
+        _id: id,
+        ...this.ownedBy(userId),
+      }));
+
+    if (!session) throw new NotFoundException('Session not found');
+
+    return session;
+  }
+
+  // Oldest first, as stored.
+  private async history(sessionId: Types.ObjectId): Promise<UIMessage[]> {
+    const messages = await this.messageModel
+      .find({ session: sessionId })
+      .sort({ createdAt: 1, _id: 1 })
+      .lean();
+
+    return messages.map(({ uiId, role, parts }) => ({
+      id: uiId,
+      role,
+      parts,
+    }));
+  }
+}

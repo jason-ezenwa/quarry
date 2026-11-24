@@ -6,7 +6,7 @@ import { Section, Specimen } from './section.tsx'
 
 const variants = ['primary', 'secondary', 'ghost', 'destructive', 'link'] as const
 const sizes = ['sm', 'default', 'lg'] as const
-const iconSizes = ['icon-sm', 'icon', 'icon-lg', 'icon-touch'] as const
+const iconSizes = ['icon-sm', 'icon', 'icon-lg', 'icon-touch', 'icon-float'] as const
 
 export function ButtonSection() {
   return (

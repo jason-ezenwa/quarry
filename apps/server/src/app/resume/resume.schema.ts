@@ -5,6 +5,7 @@ import type {
   UploadMimeType,
 } from '@quarry/contracts';
 import {
+  DOCUMENT_NAME_MAX_LENGTH,
   UPLOAD_MIME_TYPES,
   PARSE_STATUSES,
   RESUME_KINDS,
@@ -190,6 +191,18 @@ export class Resume {
     default: [],
   })
   certifications: ResumeCertificationEntry[];
+
+  // Tailored resumes only: the agent session it was written in.
+  @Prop({ type: Types.ObjectId, ref: 'AgentSession' })
+  session?: Types.ObjectId;
+
+  // Tailored resumes only: the document's name. `name` is the person's.
+  @Prop({ type: String, maxlength: DOCUMENT_NAME_MAX_LENGTH })
+  title?: string;
+
+  // Tailored resumes only: the resume an edit was copied from.
+  @Prop({ type: Types.ObjectId, ref: 'Resume' })
+  sourceResume?: Types.ObjectId;
 
   // Primary resumes only, from here down.
   @Prop({ type: SchemaFactory.createForClass(ResumeFile) })

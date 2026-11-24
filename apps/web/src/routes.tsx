@@ -9,6 +9,7 @@ import {
   requireSession,
   sequence,
 } from './lib/auth/session-loaders.ts'
+import { ApplicationsPage } from './pages/applications/index.tsx'
 import { EmailVerifiedPage } from './pages/email-verified/index.tsx'
 import { ForgotPasswordPage } from './pages/forgot-password/index.tsx'
 import { HomePage } from './pages/home/index.tsx'
@@ -16,6 +17,7 @@ import { OnboardingPage } from './pages/onboarding/index.tsx'
 import { ProfilePage } from './pages/profile/index.tsx'
 import { ResetPasswordPage } from './pages/reset-password/index.tsx'
 import { ResumePage } from './pages/resume/index.tsx'
+import { SessionPage } from './pages/session/index.tsx'
 import { SignInPage } from './pages/sign-in/index.tsx'
 import { SignUpPage } from './pages/sign-up/index.tsx'
 import { VerifyEmailPage } from './pages/verify-email/index.tsx'
@@ -44,6 +46,8 @@ export const routes: RouteObject[] = [
           { path: PATHS.home, Component: HomePage },
           { path: PATHS.profile, Component: ProfilePage },
           { path: PATHS.resume, Component: ResumePage },
+          { path: PATHS.applications, Component: ApplicationsPage },
+          { path: PATHS.session, Component: SessionPage },
         ],
       },
       { path: PATHS.onboarding, loader: sequence(requireSession, requireNoProfile), Component: OnboardingPage },

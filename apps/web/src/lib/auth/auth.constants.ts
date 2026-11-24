@@ -12,11 +12,17 @@ export const PATHS = {
   onboarding: '/onboarding',
   profile: '/profile',
   resume: '/profile/resume',
+  applications: '/applications',
+  session: '/applications/:sessionId',
   verifyEmail: '/verify-email',
   emailVerified: '/email-verified',
   forgotPassword: '/forgot-password',
   resetPassword: '/reset-password',
 } as const
+
+export function sessionPath(sessionId: string): string {
+  return `${PATHS.applications}/${encodeURIComponent(sessionId)}`
+}
 
 export const SIGN_UP_ERRORS: Record<number, string> = {
   [TOO_MANY_REQUESTS_STATUS]: RATE_LIMITED_MESSAGE,

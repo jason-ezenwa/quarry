@@ -1,0 +1,16 @@
+import type { SessionContext } from '../common/common.types';
+import type { MESSAGE_ROLES } from './sessions.constants';
+
+export type MonthlyPeriod = {
+  start: Date;
+  resetsAt: Date;
+};
+
+// A turn holding the session's lock, identified by its own stamp.
+// `messageId`: the user message it answers.
+export type ClaimedTurn = SessionContext & {
+  startedAt: Date;
+  messageId: string;
+};
+
+export type MessageRole = (typeof MESSAGE_ROLES)[number];

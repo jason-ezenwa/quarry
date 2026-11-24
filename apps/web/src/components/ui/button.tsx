@@ -29,6 +29,8 @@ const buttonVariants = cva(
         "icon-lg": "size-control-lg",
         // The 44px touch target in the phone top bar.
         "icon-touch": "size-11 [&_svg:not([class*='size-'])]:size-5",
+        // A round button floating over content, such as the chat's jump to the latest message.
+        "icon-float": "size-control rounded-full shadow-sheet",
       },
       // start: a full-width button at the top of a list, such as New application in the sidebar.
       align: {
@@ -37,6 +39,8 @@ const buttonVariants = cva(
       },
     },
     compoundVariants: [
+      // Icons in the phone top bar read in ink, as the only controls there.
+      { variant: "ghost", size: "icon-touch", className: "text-foreground" },
       // Sizes add side padding and height, but a link sits flush with the text around it.
       { variant: "link", className: "h-auto px-0" },
       // Start aligned, the icon and label line up with the nav items below: 16px icon, 9px gap, 10px in from the edge.

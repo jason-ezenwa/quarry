@@ -1,7 +1,7 @@
 import { createAnthropic, type AnthropicProvider } from '@ai-sdk/anthropic';
 import type { FactoryProvider } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ANTHROPIC, ANTHROPIC_BASE_URL } from './parser.constants';
+import { ANTHROPIC, ANTHROPIC_BASE_URL } from './ai.constants';
 
 export const anthropicProvider: FactoryProvider<AnthropicProvider> = {
   provide: ANTHROPIC,

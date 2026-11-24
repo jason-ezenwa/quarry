@@ -4,12 +4,15 @@ import { cn } from "@/lib/utils"
 
 import { Input } from "@/components/ui/input"
 
-function InputGroup({ className, ...props }: React.ComponentProps<"div">) {
+// lg: the one large field a page leads with, such as the job link on Home.
+function InputGroup({ className, size = "default", ...props }: React.ComponentProps<"div"> & { size?: "default" | "lg" }) {
   return (
     <div
       data-slot="input-group"
+      data-size={size}
       role="group"
       className={cn(
+        "data-[size=lg]:h-field-lg data-[size=lg]:rounded-lg data-[size=lg]:pr-2 data-[size=lg]:shadow-panel data-[size=lg]:[&>[data-align=inline-start]]:pl-4",
         "group/input-group relative flex h-field w-full min-w-0 items-center rounded-md border border-input bg-card transition-colors outline-none hover:border-border-strong has-disabled:opacity-45 has-[[data-slot=input-group-control]:focus-visible]:border-border-strong has-[[data-slot=input-group-control]:focus-visible]:outline-2 has-[[data-slot=input-group-control]:focus-visible]:outline-offset-2 has-[[data-slot=input-group-control]:focus-visible]:outline-ring has-[[data-slot][aria-invalid=true]]:border-destructive has-[[data-slot][aria-invalid=true]]:ring-3 has-[[data-slot][aria-invalid=true]]:ring-destructive-tint has-[>[data-align=inline-end]]:[&>input]:pr-1.5 has-[>[data-align=inline-start]]:[&>input]:pl-1.5",
         className
       )}

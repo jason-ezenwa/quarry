@@ -14,10 +14,10 @@ import {
 import mammoth from 'mammoth';
 import { Model } from 'mongoose';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { ANTHROPIC } from '../../ai/ai.constants';
 import { StorageObjectNotFoundError } from '../../storage/storage-bucket';
 import { StorageService } from '../../storage/storage.service';
 import {
-  ANTHROPIC,
   PARSE_MAX_OUTPUT_TOKENS,
   PARSE_RETRY_DELAYS_MS,
   PARSE_TIMEOUT_MS,

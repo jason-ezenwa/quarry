@@ -1,6 +1,5 @@
 import { PARTIAL_DATE_PATTERN, type Resume } from '@quarry/contracts';
 import { Transform, Type } from 'class-transformer';
-import { IsHttpUrl } from './is-http-url.decorator';
 import {
   IsArray,
   IsNotEmpty,
@@ -10,6 +9,8 @@ import {
   Matches,
   ValidateNested,
 } from 'class-validator';
+import { IsHttpUrl } from '../../common/is-http-url.decorator';
+import { trim } from '../../common/transforms';
 import { DATE_MESSAGE } from '../resume.constants';
 import type {
   ResumeCertification,
@@ -20,9 +21,6 @@ import type {
   ResumeProject,
   ResumeSkill,
 } from '../resume.types';
-
-const trim = ({ value }: { value: unknown }) =>
-  typeof value === 'string' ? value.trim() : value;
 
 export class ResumeLinkDto implements ResumeLink {
   @Transform(trim)
