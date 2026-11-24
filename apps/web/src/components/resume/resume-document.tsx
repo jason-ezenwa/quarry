@@ -5,9 +5,8 @@ import {
   linkText,
   RESUME_SEPARATOR,
   type DocumentHeader,
-  type Resume,
 } from '@quarry/contracts'
-import type { ComponentProps, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import {
   ResumeBullet,
   ResumeBullets,
@@ -25,7 +24,7 @@ import {
   ResumeSkillList,
   ResumeSummary,
 } from './resume'
-import type { ResumeVariant } from './resume.types'
+import type { ResumeDocumentProps } from './resume.types'
 
 function EntryTop({ heading, meta }: { heading: ReactNode; meta?: string }) {
   return (
@@ -70,11 +69,6 @@ export function ResumeDocumentHeader({ header }: { header: DocumentHeader }) {
       ) : null}
     </ResumeHeader>
   )
-}
-
-type ResumeDocumentProps = Omit<ComponentProps<typeof ResumeRoot>, 'variant' | 'children'> & {
-  resume: Resume
-  variant?: Exclude<ResumeVariant, 'editor'>
 }
 
 // A resume to read, as a page of its own or set inside another sheet. Empty sections are left out.

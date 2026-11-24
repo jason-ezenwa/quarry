@@ -26,7 +26,7 @@ import type {
   JobFetchLimits,
   JobFetchOutcome,
 } from './job-fetcher.types';
-import { extractMainText, htmlToText } from './job-fetcher.utils';
+import { extractMainText, htmlToText } from './page-text/page-text.utils';
 
 @Injectable()
 export class JobFetcherService {
@@ -177,6 +177,7 @@ export class JobFetcherService {
       maxRedirects: this.limits.maxRedirects,
       refuseUrl: (hop) => findBlockedSite(hop) !== undefined,
     });
+
     const statusFailure = failureForStatus(response.status);
 
     if (statusFailure) {

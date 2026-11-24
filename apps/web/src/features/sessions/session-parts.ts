@@ -61,6 +61,7 @@ export function messageBlocks(message: UIMessage, live = false): MessageBlock[] 
 
     const last = blocks.at(-1)
     const step = toolStepFor(part, live)
+
     if (last?.kind === 'steps') last.steps.push(step)
     else blocks.push({ kind: 'steps', key: `${message.id}-${index}`, steps: [step] })
   })

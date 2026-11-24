@@ -131,6 +131,7 @@ export function setSession(sessionId: string, fields: Record<string, unknown>) {
 
 export function deferred(): { promise: Promise<void>; resolve: () => void } {
   let resolve!: () => void;
+
   const promise = new Promise<void>((done) => {
     resolve = done;
   });

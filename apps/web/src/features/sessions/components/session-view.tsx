@@ -48,6 +48,7 @@ export function SessionView({ session, fresh }: { session: SessionDetail; fresh:
 
   function openDocument(document: DocumentAnnouncement) {
     outputs.open(document)
+
     if (wide) setPanelOpen(true)
     else setSheetOpen(true)
   }

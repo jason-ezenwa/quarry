@@ -7,7 +7,7 @@ import {
   LINE_TAGS,
   PARAGRAPH_TAGS,
   SKIPPED_TAGS,
-} from './job-fetcher.constants';
+} from './page-text.constants';
 
 // HTML is parsed without running scripts or loading anything.
 export function htmlToText(html: string): string {
