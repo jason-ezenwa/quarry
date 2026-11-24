@@ -5,13 +5,14 @@ function distanceFromBottom(element: HTMLElement): number {
   return element.scrollHeight - element.scrollTop - element.clientHeight
 }
 
-// Keeps a scroller at its bottom as its content grows, while the reader is within FOLLOW_THRESHOLD_PX of it.
-// Scrolling further up stops following; jumpToBottom scrolls back down and follows again.
+// Keeps a scroller at its bottom as its content grows. Scrolling up stops following, and coming back
+// within FOLLOW_THRESHOLD_PX of the bottom, or jumpToBottom, follows again.
 export function useFollowBottom(scroller: RefObject<HTMLElement | null>, content: RefObject<HTMLElement | null>) {
   const [following, setFollowing] = useState(true)
   const followingRef = useRef(true)
   // Set while a smooth jump runs, so its own scroll events don't stop following.
   const jumping = useRef(false)
+  const lastTop = useRef(0)
 
   const follow = useCallback((next: boolean) => {
     followingRef.current = next
@@ -50,14 +51,19 @@ export function useFollowBottom(scroller: RefObject<HTMLElement | null>, content
     const element = scroller.current
     if (!element) return
 
-    const near = distanceFromBottom(element) <= FOLLOW_THRESHOLD_PX
+    // Only the reader moves scrollTop up. Content growing under a pinned scroller never does.
+    const scrolledUp = element.scrollTop < lastTop.current
+    lastTop.current = element.scrollTop
+    const distance = distanceFromBottom(element)
+    const near = distance <= FOLLOW_THRESHOLD_PX
 
     if (jumping.current) {
       if (near) jumping.current = false
       return
     }
 
-    if (near !== followingRef.current) follow(near)
+    if (followingRef.current && scrolledUp && distance > 1) follow(false)
+    else if (!followingRef.current && near) follow(true)
   }, [scroller, follow])
 
   const jumpToBottom = useCallback(
