@@ -13,8 +13,9 @@ import {
   type FitScoreInput,
   type MonthlySessionLimitError,
   type SessionDetail,
-  type SessionErrorCode,
+  type SessionKind,
   type SessionPage,
+  type SessionParent,
   type SessionSummary,
   type UsageResponse,
 } from '@quarry/contracts';
@@ -37,7 +38,14 @@ import {
 } from './session.schema';
 import { DEFAULT_SESSION_TITLE } from './sessions.constants';
 import type { SessionContext } from '../common/common.types';
-import type { ClaimedTurn } from './sessions.types';
+import { Interview, InterviewDocument } from './interviews/interview.schema';
+import {
+  interviewEndedError,
+  notAnApplicationError,
+  sessionError,
+  turnRunningError,
+} from './session-errors';
+import type { ClaimedLock, ClaimedTurn } from './sessions.types';
 import {
   firstMessageText,
   monthlyPeriod,
@@ -45,20 +53,12 @@ import {
   toSessionSummary,
 } from './sessions.utils';
 
-function sessionError(
-  status: HttpStatus,
-  code: SessionErrorCode,
-  message: string,
-): HttpException {
-  return new HttpException({ statusCode: status, code, message }, status);
-}
-
-function turnRunningError(): HttpException {
-  return sessionError(
-    HttpStatus.CONFLICT,
-    'turn-running',
-    'A reply is still being written',
-  );
+export function toSessionParent(parent: AgentSessionDocument): SessionParent {
+  return {
+    id: parent.id,
+    title: parent.title,
+    company: parent.company ?? null,
+  };
 }
 
 @Injectable()
@@ -70,6 +70,8 @@ export class SessionsService {
     private readonly sessionModel: Model<AgentSessionDocument>,
     @InjectModel(Message.name)
     private readonly messageModel: Model<MessageDocument>,
+    @InjectModel(Interview.name)
+    private readonly interviewModel: Model<InterviewDocument>,
     @InjectConnection() private readonly connection: Connection,
     private readonly resumeService: ResumeService,
     private readonly documentsService: DocumentsService,
@@ -86,6 +88,7 @@ export class SessionsService {
 
     const session = new AgentSession();
     session.user = new Types.ObjectId(userId);
+    session.kind = 'application';
     session.title = DEFAULT_SESSION_TITLE;
     session.userMessageCount = 1;
     session.turnStartedAt = null;
@@ -128,11 +131,34 @@ export class SessionsService {
   // Newest first; ties on createdAt fall back to the id, so pages never
   // skip or repeat a session.
   async list(userId: string, query: ListSessionsDto): Promise<SessionPage> {
+    const { sessions, nextCursor } = await this.page(
+      userId,
+      query,
+      'application',
+    );
+    const overalls = await this.documentsService.latestFitOveralls(
+      sessions.map((session) => session._id),
+    );
+
+    return {
+      items: sessions.map((session) =>
+        toSessionSummary(session, overalls.get(session.id) ?? null),
+      ),
+      nextCursor,
+    };
+  }
+
+  async page(
+    userId: string,
+    query: ListSessionsDto,
+    kind: SessionKind,
+  ): Promise<{ sessions: AgentSessionDocument[]; nextCursor: string | null }> {
     const limit = query.limit ?? SESSION_LIMITS.sessionsPageSize;
 
     const sessions = await this.sessionModel
       .find({
         ...this.ownedBy(userId),
+        kind,
         archivedAt: query.archived ? { $ne: null } : null,
         ...(query.cursor ? await this.afterCursor(userId, query.cursor) : {}),
       })
@@ -141,14 +167,8 @@ export class SessionsService {
 
     const page = sessions.slice(0, limit);
 
-    const overalls = await this.documentsService.latestFitOveralls(
-      page.map((session) => session._id),
-    );
-
     return {
-      items: page.map((session) =>
-        toSessionSummary(session, overalls.get(session.id) ?? null),
-      ),
+      sessions: page,
       nextCursor: sessions.length > limit ? page[page.length - 1].id : null,
     };
   }
@@ -186,6 +206,8 @@ export class SessionsService {
     archived: boolean,
   ): Promise<SessionSummary> {
     const updated = await this.findOwned(userId, sessionId);
+    if (updated.kind !== 'application') throw notAnApplicationError();
+
     updated.archivedAt = archived ? new Date() : null;
     await updated.save();
 
@@ -199,10 +221,20 @@ export class SessionsService {
   async usage(userId: string): Promise<UsageResponse> {
     const { start, resetsAt } = monthlyPeriod(new Date());
 
+    const [sessions, interviews] = await Promise.all([
+      this.countCreatedSince(userId, start, 'application'),
+      this.countCreatedSince(userId, start, 'interview'),
+    ]);
+
     return {
       sessions: {
-        used: await this.countCreatedSince(userId, start),
+        used: sessions,
         limit: SESSION_LIMITS.sessionsPerMonth,
+        resetsAt: resetsAt.toISOString(),
+      },
+      interviews: {
+        used: interviews,
+        limit: SESSION_LIMITS.interviewsPerMonth,
         resetsAt: resetsAt.toISOString(),
       },
     };
@@ -251,6 +283,17 @@ export class SessionsService {
           { returnDocument: 'after', session: transaction },
         );
 
+        // Ending holds the lock, so once this turn has it an interview's
+        // end is either written or yet to start.
+        if (
+          session?.kind === 'interview' &&
+          (await this.interviewModel
+            .exists({ session: session._id, endedAt: { $exists: true } })
+            .session(transaction))
+        ) {
+          throw interviewEndedError();
+        }
+
         if (session && message) {
           await this.insertUserMessage(session._id, message, transaction);
         }
@@ -267,10 +310,13 @@ export class SessionsService {
       return this.throwTurnRefusal(userId, sessionId, Boolean(message));
     }
 
+    const { kind } = claimed;
+
     if (message) {
       return {
         userId,
         sessionId: claimed.id,
+        kind,
         startedAt,
         messageId: message.id,
       };
@@ -278,18 +324,29 @@ export class SessionsService {
 
     try {
       const messageId = await this.unansweredMessageId(claimed._id);
-      return { userId, sessionId: claimed.id, startedAt, messageId };
+      return { userId, sessionId: claimed.id, kind, startedAt, messageId };
     } catch (error) {
       await this.releaseTurn({ sessionId: claimed.id, startedAt });
       throw error;
     }
   }
 
+  // The turn lock for other work, such as ending an interview. 409 while a turn runs.
+  async claimLock(sessionId: Types.ObjectId): Promise<ClaimedLock> {
+    const startedAt = new Date();
+
+    const claimed = await this.sessionModel.updateOne(
+      { _id: sessionId, turnStartedAt: null },
+      { $set: { turnStartedAt: startedAt } },
+    );
+
+    if (claimed.modifiedCount === 0) throw turnRunningError();
+
+    return { sessionId: sessionId.toHexString(), startedAt };
+  }
+
   // Only this turn's own stamp is cleared, never a later turn's.
-  async releaseTurn({
-    sessionId,
-    startedAt,
-  }: Pick<ClaimedTurn, 'sessionId' | 'startedAt'>): Promise<void> {
+  async releaseTurn({ sessionId, startedAt }: ClaimedLock): Promise<void> {
     await this.sessionModel.updateOne(
       { _id: new Types.ObjectId(sessionId), turnStartedAt: startedAt },
       { $set: { turnStartedAt: null } },
@@ -415,7 +472,7 @@ export class SessionsService {
 
   // An unparsed or failed primary resume can't be worked from. An unreviewed
   // one can; the agent says so.
-  private async assertPrimaryResumeReady(userId: string): Promise<void> {
+  async assertPrimaryResumeReady(userId: string): Promise<void> {
     if (await this.resumeService.isPrimaryReady(userId)) return;
 
     throw sessionError(
@@ -427,7 +484,7 @@ export class SessionsService {
 
   private async assertUnderMonthlyCap(userId: string): Promise<void> {
     const { start, resetsAt } = monthlyPeriod(new Date());
-    const used = await this.countCreatedSince(userId, start);
+    const used = await this.countCreatedSince(userId, start, 'application');
     const limit = SESSION_LIMITS.sessionsPerMonth;
 
     if (used < limit) return;
@@ -449,11 +506,19 @@ export class SessionsService {
   }
 
   // Archived sessions count: archiving never gives back a slot.
-  private countCreatedSince(userId: string, start: Date): Promise<number> {
-    return this.sessionModel.countDocuments({
-      ...this.ownedBy(userId),
-      createdAt: { $gte: start },
-    });
+  countCreatedSince(
+    userId: string,
+    start: Date,
+    kind: SessionKind,
+    transaction?: ClientSession,
+  ): Promise<number> {
+    return this.sessionModel
+      .countDocuments({
+        ...this.ownedBy(userId),
+        kind,
+        createdAt: { $gte: start },
+      })
+      .session(transaction ?? null);
   }
 
   // The claim matched nothing; the session says why. A lock released since
@@ -510,7 +575,7 @@ export class SessionsService {
     return last.uiId;
   }
 
-  private async insertUserMessage(
+  async insertUserMessage(
     sessionId: Types.ObjectId,
     { id, text }: TurnMessageDto,
     transaction?: ClientSession,
@@ -529,7 +594,7 @@ export class SessionsService {
     return { user: new Types.ObjectId(userId) };
   }
 
-  private async findOwned(
+  async findOwned(
     userId: string,
     sessionId: string,
   ): Promise<AgentSessionDocument> {
@@ -548,7 +613,7 @@ export class SessionsService {
   }
 
   // Oldest first, as stored.
-  private async history(sessionId: Types.ObjectId): Promise<UIMessage[]> {
+  async history(sessionId: Types.ObjectId): Promise<UIMessage[]> {
     const messages = await this.messageModel
       .find({ session: sessionId })
       .sort({ createdAt: 1, _id: 1 })

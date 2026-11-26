@@ -98,7 +98,10 @@ export function signInAs({
     // No applications yet; tests that need some override these.
     http.get(apiUrl('/api/sessions'), () => HttpResponse.json({ items: [], nextCursor: null })),
     http.get(apiUrl('/api/usage'), () =>
-      HttpResponse.json({ sessions: { used: 0, limit: 10, resetsAt: '2026-12-01T00:00:00.000Z' } }),
+      HttpResponse.json({
+        sessions: { used: 0, limit: 10, resetsAt: '2026-12-01T00:00:00.000Z' },
+        interviews: { used: 0, limit: 10, resetsAt: '2026-12-01T00:00:00.000Z' },
+      }),
     ),
   )
 }

@@ -122,3 +122,42 @@ describe('replyIsThinking', () => {
     expect(replyIsThinking(assistant('m', [saved]), false)).toBe(false)
   })
 })
+
+describe('messageBlocks: interview questions', () => {
+  function askPart(toolCallId: string, question: unknown, output: unknown, state = 'output-available') {
+    return { type: 'tool-ask_interview_question', toolCallId, state, input: question === undefined ? undefined : { question }, output } as unknown as UIMessage['parts'][number]
+  }
+
+  it('draws an asked question as its own numbered block between the steps and text around it', () => {
+    const blocks = messageBlocks(
+      assistant('m', [
+        toolPart('1', {}),
+        askPart('2', 'Tell me about a time you cut scope.', { ok: true, number: 2, totalQuestions: 6 }),
+        { type: 'text', text: 'Take your time.' },
+      ]),
+    )
+
+    expect(blocks.map((block) => block.kind)).toEqual(['steps', 'question', 'text'])
+    expect(blocks[1]).toMatchObject({ kind: 'question', id: '2', number: 2, question: 'Tell me about a time you cut scope.' })
+  })
+
+  it('shows a question still being written without a number, and leaves out one with no text yet', () => {
+    const blocks = messageBlocks(
+      assistant('m', [askPart('1', undefined, undefined, 'input-streaming'), askPart('2', 'How would you', undefined, 'input-streaming')]),
+      true,
+    )
+
+    expect(blocks).toEqual([expect.objectContaining({ kind: 'question', id: '2', number: null, question: 'How would you' })])
+  })
+
+  it('keeps a refused or failed question as a tool step', () => {
+    const blocks = messageBlocks(
+      assistant('m', [
+        askPart('1', 'One more?', { ok: false, note: 'That was the last question' }),
+        askPart('2', 'Another?', undefined, 'output-error'),
+      ]),
+    )
+
+    expect(blocks).toEqual([expect.objectContaining({ kind: 'steps', steps: [expect.objectContaining({ id: '1' }), expect.objectContaining({ id: '2' })] })])
+  })
+})

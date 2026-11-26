@@ -25,6 +25,9 @@ import { ANTHROPIC } from '../../ai/ai.constants';
 import { errorName } from '../../common/error-name';
 import { ProfileService } from '../../profile/profile.service';
 import { ResumeService } from '../../resume/resume.service';
+import { InterviewsService } from '../interviews/interviews.service';
+import { INTERVIEW_SYSTEM_PROMPT } from '../interviews/interviews.constants';
+import { stopAfterInterviewQuestion } from '../interviews/interviews.utils';
 import { MessageUsage } from '../message.schema';
 import { SessionsService } from '../sessions.service';
 import type { ClaimedTurn } from '../sessions.types';
@@ -93,6 +96,7 @@ export class AgentService {
     private readonly profileService: ProfileService,
     private readonly resumeService: ResumeService,
     private readonly agentToolsFactory: AgentToolsFactory,
+    private readonly interviewsService: InterviewsService,
   ) {}
 
   // Streams the reply to `response` while consuming a copy here, so the
@@ -116,17 +120,20 @@ export class AgentService {
       this.logger.log('Agent turn started', context);
 
       const history = await this.sessionsService.turnHistory(turn);
-      const tools = this.agentToolsFactory.build(context);
+      const tools = this.agentToolsFactory.build(context, turn.kind);
 
       let stopReason: string | undefined;
 
       const result = streamText({
         model: this.anthropic(AGENT_MODEL),
-        instructions: await this.systemMessages(turn.userId),
+        instructions: await this.systemMessages(turn),
         messages: await convertToModelMessages(history, { tools }),
         tools,
         toolChoice: 'auto',
-        stopWhen: isStepCount(AGENT_MAX_STEPS),
+        stopWhen:
+          turn.kind === 'interview'
+            ? [isStepCount(AGENT_MAX_STEPS), stopAfterInterviewQuestion]
+            : isStepCount(AGENT_MAX_STEPS),
         abortSignal: stop.signal,
         // Evens out the model's bursts into a steady word-by-word stream.
         experimental_transform: smoothStream(),
@@ -260,6 +267,9 @@ export class AgentService {
     const providerStopReason = stopReason();
 
     if (turnFailure) {
+      // The dropped reply's questions must not keep their numbers.
+      if (turn.kind === 'interview') await this.interviewsService.resync(turn);
+
       this.logger.warn('Agent turn not saved', {
         ...context,
         reason: turnFailure,
@@ -313,8 +323,27 @@ export class AgentService {
     return reply?.parts.some(isAnswerPart) ? null : 'empty-reply';
   }
 
-  // The static prompt, then the profile; each with its own cache marker.
-  private async systemMessages(userId: string): Promise<SystemModelMessage[]> {
+  // Static prompt, then the profile or the interview's context, each with its own cache marker.
+  private async systemMessages(
+    turn: ClaimedTurn,
+  ): Promise<SystemModelMessage[]> {
+    if (turn.kind === 'interview') {
+      return [
+        {
+          role: 'system',
+          content: INTERVIEW_SYSTEM_PROMPT,
+          providerOptions: CACHED,
+        },
+        {
+          role: 'system',
+          content: await this.interviewsService.contextOf(turn),
+          providerOptions: CACHED,
+        },
+      ];
+    }
+
+    const { userId } = turn;
+
     const [profile, resume] = await Promise.all([
       this.profileService.findByUserId(userId),
       this.resumeService.findPrimaryContent(userId),

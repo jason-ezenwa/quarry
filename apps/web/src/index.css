@@ -281,6 +281,12 @@
   font-weight: 400;
 }
 
+@utility text-reading-strong {
+  font-size: 0.9375rem;
+  line-height: 1.5rem;
+  font-weight: 500;
+}
+
 @utility text-ui {
   font-size: 0.875rem;
   line-height: 1.25rem;

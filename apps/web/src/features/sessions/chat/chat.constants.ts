@@ -7,6 +7,7 @@ export const REFUSED_TURN_CODES: ReadonlySet<TurnErrorCode> = new Set<TurnErrorC
   'session-archived',
   'session-message-limit',
   'nothing-to-answer',
+  'interview-ended',
 ])
 
 // The only turn errors the chat shows; the composer explains the archived and limit states.

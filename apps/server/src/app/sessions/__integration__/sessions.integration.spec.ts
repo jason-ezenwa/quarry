@@ -78,7 +78,9 @@ const streamedText = (body: string) =>
   body
     .split('\n')
     .filter((line) => line.startsWith('data: {'))
-    .map((line) => JSON.parse(line.slice(6)) as { type: string; delta?: string })
+    .map(
+      (line) => JSON.parse(line.slice(6)) as { type: string; delta?: string },
+    )
     .filter((chunk) => chunk.type === 'text-delta')
     .map((chunk) => chunk.delta)
     .join('');
@@ -141,9 +143,15 @@ describe('Sessions (integration)', () => {
 
       expect(session.body).toEqual({
         id: created.body.id,
+        kind: 'application',
         title: 'New application',
         company: null,
-        job: { url: JOB_URL, source: null, location: null },
+        job: {
+          url: JOB_URL,
+          source: null,
+          location: null,
+          hasDescription: false,
+        },
         status: 'ready',
         archivedAt: null,
         userMessageCount: 1,
@@ -269,6 +277,7 @@ describe('Sessions (integration)', () => {
 
       expect(usage.body).toEqual({
         sessions: { used: 10, limit: 10, resetsAt },
+        interviews: { used: 0, limit: 10, resetsAt },
       });
     });
 
@@ -301,6 +310,7 @@ describe('Sessions (integration)', () => {
       expect(active.body.items).toEqual([
         {
           id: second.body.id,
+          kind: 'application',
           title: 'New application',
           company: null,
           source: 'pasted',
@@ -658,7 +668,9 @@ describe('Sessions (integration)', () => {
       expect(sent.tools?.map(({ name }) => name).sort()).toEqual([
         'create_tailored_resume',
         'edit_tailored_resume',
+        'get_interview',
         'get_job_description',
+        'list_interviews',
         'save_cover_letter',
         'save_fit_score',
       ]);

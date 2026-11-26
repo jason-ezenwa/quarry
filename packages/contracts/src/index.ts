@@ -4,6 +4,7 @@ export * from "./document-header.js";
 export * from "./document-name.js";
 export * from "./documents.js";
 export * from "./fit-score.js";
+export * from "./interviews.js";
 export * from "./is-one-of.js";
 export * from "./profile.js";
 export * from "./required-text.js";

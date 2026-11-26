@@ -5,6 +5,8 @@ import type {
   DocumentResponse,
   ExportableKind,
   ExportFormat,
+  ApplicationInterview,
+  InterviewState,
   SessionDetail,
   SessionPage,
   SessionSummary,
@@ -37,6 +39,24 @@ export function sessionListQueryOptions(archived: boolean) {
     },
     initialPageParam: null as string | null,
     getNextPageParam: (page) => page.nextCursor,
+  })
+}
+
+export const interviewListQueryOptions = infiniteQueryOptions({
+  queryKey: SESSION_QUERY_KEYS.interviewList,
+  queryFn: ({ pageParam }) => {
+    const params = new URLSearchParams({ kind: 'interview' })
+    if (pageParam) params.set('cursor', pageParam)
+    return apiFetch<SessionPage>(`/api/sessions?${params.toString()}`)
+  },
+  initialPageParam: null as string | null,
+  getNextPageParam: (page) => page.nextCursor,
+})
+
+export function applicationInterviewsQueryOptions(applicationId: string) {
+  return queryOptions({
+    queryKey: SESSION_QUERY_KEYS.applicationInterviews(applicationId),
+    queryFn: () => apiFetch<ApplicationInterview[]>(`${sessionUrl(applicationId)}/interviews`),
   })
 }
 
@@ -95,4 +115,14 @@ export function setSessionArchived(sessionId: string, archived: boolean): Promis
 // Stops the turn answering `messageId`. Resolves once the server has dropped its reply and released the session.
 export function stopTurn(sessionId: string, messageId: string): Promise<void> {
   return apiFetch<void>(`${sessionUrl(sessionId)}/turns/stop`, { method: 'POST', body: JSON.stringify({ messageId }) })
+}
+
+// Starts an interview for an application, or returns the unfinished one.
+export function startInterview(applicationId: string): Promise<SessionSummary> {
+  return apiFetch<SessionSummary>(`${sessionUrl(applicationId)}/interviews`, { method: 'POST' })
+}
+
+// Ends an interview; resolves once its feedback is saved.
+export function endInterview(sessionId: string): Promise<InterviewState> {
+  return apiFetch<InterviewState>(`${sessionUrl(sessionId)}/interview/end`, { method: 'POST' })
 }

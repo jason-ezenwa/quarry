@@ -25,6 +25,8 @@ export type MessageBlock =
   | { kind: 'text'; key: string; text: string }
   | { kind: 'steps'; key: string; steps: ToolStep[] }
   | { kind: 'documents'; key: string; documents: DocumentAnnouncement[] }
+  // A mock interview's main question. `number` is null until the server has numbered it.
+  | { kind: 'question'; key: string; id: string; number: number | null; question: string }
 
 export type Part = UIMessage['parts'][number]
 export type ToolPart = Extract<Part, { toolCallId: string }>

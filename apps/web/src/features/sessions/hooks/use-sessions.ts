@@ -1,7 +1,11 @@
-import type { CreateSessionRequest, SessionDetail } from '@quarry/contracts'
+import type { CreateSessionRequest, InterviewState, SessionDetail } from '@quarry/contracts'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  applicationInterviewsQueryOptions,
   createSession,
+  endInterview,
+  interviewListQueryOptions,
+  startInterview,
   sessionListQueryOptions,
   sessionQueryOptions,
   setSessionArchived,
@@ -50,6 +54,39 @@ export function useSetArchived(sessionId: string) {
     onSuccess: (summary) => {
       queryClient.setQueryData<SessionDetail>(SESSION_QUERY_KEYS.detail(sessionId), (detail) =>
         detail ? { ...detail, archivedAt: summary.archivedAt, status: summary.status } : detail,
+      )
+    },
+    onSettled: refreshLists,
+  })
+}
+
+export function useInterviewList() {
+  return useInfiniteQuery(interviewListQueryOptions)
+}
+
+export function useApplicationInterviews(applicationId: string) {
+  return useQuery(applicationInterviewsQueryOptions(applicationId))
+}
+
+// Opens the application's unfinished interview, or a new one.
+export function useStartInterview(applicationId: string) {
+  const refreshLists = useRefreshSessionLists()
+
+  return useMutation({
+    mutationFn: () => startInterview(applicationId),
+    onSettled: refreshLists,
+  })
+}
+
+export function useEndInterview(sessionId: string) {
+  const queryClient = useQueryClient()
+  const refreshLists = useRefreshSessionLists()
+
+  return useMutation({
+    mutationFn: () => endInterview(sessionId),
+    onSuccess: (interview: InterviewState) => {
+      queryClient.setQueryData<SessionDetail>(SESSION_QUERY_KEYS.detail(sessionId), (detail) =>
+        detail ? { ...detail, interview } : detail,
       )
     },
     onSettled: refreshLists,

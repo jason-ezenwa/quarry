@@ -4,6 +4,7 @@ import { useState, type ComponentProps, type FormEvent, type KeyboardEvent } fro
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { ComposerContext, useComposer } from './composer-context'
+import { COMPOSER_SUBMIT_PLACEMENT } from './session.constants'
 import type { ComposerContextValue, ComposerStatus } from './session.types'
 
 // Holds the draft and sends it trimmed. Remount it with a new key to start from another draft.
@@ -50,7 +51,12 @@ function ComposerNotice({ className, ...props }: ComponentProps<'p'>) {
   return <p data-slot="composer-notice" className={cn('px-1 text-small text-muted-foreground', className)} {...props} />
 }
 
-function ComposerForm({ className, ...props }: Omit<ComponentProps<'form'>, 'onSubmit'>) {
+// Stacked (medium screens up) puts Send below a taller field, for longer answers.
+function ComposerForm({
+  layout = 'inline',
+  className,
+  ...props
+}: Omit<ComponentProps<'form'>, 'onSubmit'> & { layout?: 'inline' | 'stacked' }) {
   const { actions } = useComposer()
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -61,9 +67,11 @@ function ComposerForm({ className, ...props }: Omit<ComponentProps<'form'>, 'onS
   return (
     <form
       data-slot="composer-form"
+      data-layout={layout}
       onSubmit={onSubmit}
       className={cn(
-        'flex min-h-12 items-end gap-2 rounded-lg border border-border bg-card py-1.5 pr-1.5 pl-3.5 has-disabled:opacity-60 has-[textarea:focus-visible]:border-border-strong',
+        'group/composer-form flex min-h-12 items-end gap-2 rounded-lg border border-border bg-card py-1.5 pr-1.5 pl-3.5 has-disabled:opacity-60 has-[textarea:focus-visible]:border-border-strong',
+        layout === 'stacked' && 'md:flex-col md:items-stretch md:pt-3 md:pr-3 md:pb-2.5 md:pl-4',
         className,
       )}
       {...props}
@@ -91,7 +99,7 @@ function ComposerInput({
   }
 
   return (
-    <label className="flex min-w-0 flex-1 self-center">
+    <label className="flex min-w-0 flex-1 self-center md:group-data-[layout=stacked]/composer-form:self-stretch">
       <span className="sr-only">{label}</span>
       <textarea
         data-slot="composer-input"
@@ -100,7 +108,7 @@ function ComposerInput({
         disabled={state.status === 'closed'}
         onChange={(event) => actions.setText(event.target.value)}
         className={cn(
-          'field-sizing-content max-h-48 min-w-0 flex-1 resize-none bg-transparent py-1.5 text-field text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed',
+          'field-sizing-content max-h-48 min-w-0 flex-1 resize-none md:group-data-[layout=stacked]/composer-form:min-h-18 bg-transparent py-1.5 text-field text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed',
           className,
         )}
         {...props}
@@ -118,7 +126,7 @@ function ComposerSubmit() {
     const stopping = state.status === 'stopping'
 
     return (
-      <Button type="button" variant="primary" size="icon-lg" aria-label="Stop" onClick={actions.stop} loading={stopping}>
+      <Button type="button" variant="primary" size="icon-lg" aria-label="Stop" className={COMPOSER_SUBMIT_PLACEMENT} onClick={actions.stop} loading={stopping}>
         {stopping ? null : <StopIcon weight="fill" aria-hidden="true" />}
       </Button>
     )
@@ -127,7 +135,7 @@ function ComposerSubmit() {
   const busy = state.status === 'busy'
 
   return (
-    <Button type="submit" variant="primary" size="icon-lg" aria-label="Send" disabled={!meta.canSend} loading={busy}>
+    <Button type="submit" variant="primary" size="icon-lg" aria-label="Send" className={COMPOSER_SUBMIT_PLACEMENT} disabled={!meta.canSend} loading={busy}>
       {busy ? null : <ArrowUpIcon aria-hidden="true" />}
     </Button>
   )

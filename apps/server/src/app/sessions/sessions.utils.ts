@@ -45,6 +45,7 @@ export function toSessionSummary(
 ): SessionSummary {
   return {
     id: session.id,
+    kind: session.kind,
     title: session.title,
     company: session.company ?? null,
     source: session.job?.source ?? null,
@@ -62,12 +63,14 @@ export function toSessionDetail(
 ): SessionDetail {
   return {
     id: session.id,
+    kind: session.kind,
     title: session.title,
     company: session.company ?? null,
     job: {
       url: session.job?.url ?? null,
       source: session.job?.source ?? null,
       location: session.job?.location ?? null,
+      hasDescription: Boolean(session.job?.description),
     },
     status: statusOf(session),
     archivedAt: session.archivedAt?.toISOString() ?? null,
