@@ -133,7 +133,10 @@ describe('Home: new application (integration)', () => {
     server.use(
       http.get(apiUrl('/api/sessions'), () => HttpResponse.json({ items: [summary()], nextCursor: null })),
       http.get(apiUrl('/api/usage'), () =>
-        HttpResponse.json({ sessions: { used: 4, limit: 10, resetsAt: '2026-12-01T00:00:00.000Z' } }),
+        HttpResponse.json({
+          sessions: { used: 4, limit: 10, resetsAt: '2026-12-01T00:00:00.000Z' },
+          interviews: { used: 0, limit: 10, resetsAt: '2026-12-01T00:00:00.000Z' },
+        }),
       ),
     )
 

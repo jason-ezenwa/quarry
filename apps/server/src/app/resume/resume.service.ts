@@ -108,10 +108,7 @@ export class ResumeService {
   // The default header for a new cover letter: the latest tailored resume's
   // in this session, else the primary resume's.
   async findHeader(owner: SessionContext): Promise<DocumentHeader> {
-    const [latest] = await this.resumeModel
-      .find(this.tailoredFilter(owner))
-      .sort({ createdAt: -1, _id: -1 })
-      .limit(1);
+    const latest = await this.findLatestTailored(owner);
 
     if (latest) return toDocumentHeader(toResumeContent(latest));
 
@@ -119,6 +116,17 @@ export class ResumeService {
     if (!primary) throw new ConflictException('Primary resume not parsed');
 
     return toDocumentHeader(primary.content);
+  }
+
+  // The latest tailored resume in this session, else the primary resume.
+  async findLatestContent(owner: SessionContext): Promise<ResumeContent> {
+    const latest = await this.findLatestTailored(owner);
+    if (latest) return toResumeContent(latest);
+
+    const primary = await this.findPrimaryContent(owner.userId);
+    if (!primary) throw new ConflictException('Primary resume not parsed');
+
+    return primary.content;
   }
 
   async createTailored(
@@ -277,6 +285,14 @@ export class ResumeService {
     return owned
       ? this.resumeModel.findOne({ ...owned, kind: 'tailored' })
       : null;
+  }
+
+  private async findLatestTailored(
+    owner: SessionContext,
+  ): Promise<ResumeDocument | null> {
+    return this.resumeModel
+      .findOne(this.tailoredFilter(owner))
+      .sort({ createdAt: -1, _id: -1 });
   }
 
   private tailoredFilter({

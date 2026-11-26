@@ -1,9 +1,9 @@
 import { FIT_LABELS, isDocumentKind, isOneOf, TOOL_ICONS, type DocumentKind, type SavedDocumentRef, type SessionMessage } from '@quarry/contracts'
-import { isTextUIPart, isToolUIPart, type UIMessage } from 'ai'
-import { FALLBACK_TOOL_STEP, RUNNING_STATES, TOOL_ICON_COMPONENTS, UNFINISHED_STEP_NOTE } from './sessions.constants'
+import { getToolName, isTextUIPart, isToolUIPart, type UIMessage } from 'ai'
+import { FALLBACK_TOOL_STEP, INTERVIEW_TOOLS, RUNNING_STATES, TOOL_ICON_COMPONENTS, UNFINISHED_STEP_NOTE } from './sessions.constants'
 import type { DocumentAnnouncement, MessageBlock, Part, ToolPart, ToolStep } from './sessions.types'
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
@@ -43,8 +43,21 @@ export function toolStepFor(part: ToolPart, live: boolean): ToolStep {
   }
 }
 
+// An interview question, unless it was refused or failed: those stay tool steps. Its text is empty until it starts streaming.
+export function questionFrom(part: ToolPart): { number: number | null; question: string } | null {
+  if (getToolName(part) !== INTERVIEW_TOOLS.ask) return null
+  if (part.state !== 'output-available' && !RUNNING_STATES.has(part.state)) return null
+
+  const input: unknown = part.input
+  const output: unknown = part.state === 'output-available' ? part.output : undefined
+  if (isRecord(output) && output.ok === false) return null
+  const question = isRecord(input) && typeof input.question === 'string' ? input.question : ''
+
+  return { number: isRecord(output) && typeof output.number === 'number' ? output.number : null, question }
+}
+
 // Text parts become messages; consecutive tool calls share one list of steps, followed by the documents
-// they saved, in the order written. Reasoning and the rest are left out. `live`: the reply is streaming.
+// they saved, in the order written. An interview's question is a block of its own. Reasoning and the rest are left out. `live`: the reply is streaming.
 export function messageBlocks(message: UIMessage, live = false): MessageBlock[] {
   const blocks: MessageBlock[] = []
   let saved: DocumentAnnouncement[] = []
@@ -66,6 +79,15 @@ export function messageBlocks(message: UIMessage, live = false): MessageBlock[] 
     }
 
     if (!isToolUIPart(part)) return
+
+    const question = questionFrom(part)
+
+    if (question) {
+      if (!question.question.trim()) return
+      flushDocuments(index)
+      blocks.push({ kind: 'question', key: `${message.id}-${index}`, id: part.toolCallId, ...question })
+      return
+    }
 
     const last = blocks.at(-1)
     const step = toolStepFor(part, live)

@@ -7,6 +7,9 @@ import { ProfileModule } from '../profile/profile.module';
 import { ResumeModule } from '../resume/resume.module';
 import { AgentToolsFactory } from './agent/agent-tools.factory';
 import { AgentService } from './agent/agent.service';
+import { InterviewFeedbackService } from './interviews/feedback/feedback.service';
+import { Interview, InterviewSchema } from './interviews/interview.schema';
+import { InterviewsService } from './interviews/interviews.service';
 import { jobFetcherProviders } from './job-fetcher/job-fetcher.providers';
 import { Message, MessageSchema } from './message.schema';
 import { AgentSession, AgentSessionSchema } from './session.schema';
@@ -20,6 +23,7 @@ import { UsageController } from './usage.controller';
     MongooseModule.forFeature([
       { name: AgentSession.name, schema: AgentSessionSchema },
       { name: Message.name, schema: MessageSchema },
+      { name: Interview.name, schema: InterviewSchema },
     ]),
     AiModule,
     DocumentsModule,
@@ -32,6 +36,8 @@ import { UsageController } from './usage.controller';
     SessionsService,
     AgentService,
     AgentToolsFactory,
+    InterviewsService,
+    InterviewFeedbackService,
     ...jobFetcherProviders,
     TurnLockReset,
   ],

@@ -23,7 +23,8 @@ import {
 } from '@/components/session/output-panel'
 import { documentQueryOptions } from '../../sessions-api'
 import { DOCUMENT_KIND_DISPLAY, EMPTY_TAB_COPY } from '../documents.constants'
-import type { OpenDocument } from '../documents.types'
+import { INTERVIEWS_TAB } from '../../interviews/interviews.constants'
+import type { OpenDocument, OutputTab } from '../documents.types'
 import { CoverLetter } from './cover-letter'
 import { ExportButtons } from './export-buttons'
 import { FitReport } from './fit-report'
@@ -63,34 +64,40 @@ function ExportToolbar({ sessionId, document }: { sessionId: string; document: O
   )
 }
 
-// The documents a session saved: one tab per kind, each showing one document. The children
-// fill the bar: a tab list, and any actions beside it.
+function isOutputTab(value: string): value is OutputTab {
+  return isDocumentKind(value) || value === INTERVIEWS_TAB
+}
+
+// The documents a session saved: one tab per kind, each showing one document. `bar` fills the
+// row above: a tab list, and any actions beside it. The children are further tabs' contents.
 export function DocumentPanel({
   sessionId,
   job,
   tab,
   documents,
   onTabChange,
+  bar,
   children,
 }: {
   sessionId: string
   job: SessionJob
-  tab: DocumentKind
+  tab: OutputTab
   // The document each tab shows: the one opened from a card, else the newest of its kind.
   documents: Partial<Record<DocumentKind, OpenDocument>>
-  onTabChange: (tab: DocumentKind) => void
-  children: ReactNode
+  onTabChange: (tab: OutputTab) => void
+  bar: ReactNode
+  children?: ReactNode
 }) {
-  const shown = documents[tab]
+  const shown = isDocumentKind(tab) ? documents[tab] : undefined
 
   return (
     <OutputPanel
       value={tab}
       onValueChange={(value) => {
-        if (isDocumentKind(value)) onTabChange(value)
+        if (isOutputTab(value)) onTabChange(value)
       }}
     >
-      <OutputPanelBar>{children}</OutputPanelBar>
+      <OutputPanelBar>{bar}</OutputPanelBar>
       {shown && isExportable(shown) ? (
         <ExportToolbar key={`${shown.kind}/${shown.id}`} sessionId={sessionId} document={shown} />
       ) : null}
@@ -109,12 +116,13 @@ export function DocumentPanel({
           </OutputPanelContent>
         )
       })}
+      {children}
     </OutputPanel>
   )
 }
 
-// One tab per kind, each with its icon, for the panel beside the chat.
-export function DocumentTabs() {
+// One tab per kind, each with its icon, for the panel beside the chat. The children are further tabs.
+export function DocumentTabs({ children }: { children?: ReactNode }) {
   return (
     <OutputPanelTabs aria-label="Outputs">
       {DOCUMENT_KINDS.map((kind) => {
@@ -127,12 +135,13 @@ export function DocumentTabs() {
           </OutputPanelTab>
         )
       })}
+      {children}
     </OutputPanelTabs>
   )
 }
 
-// The tabs across the width with no icons, for phones.
-export function DocumentTabsFullWidth() {
+// The tabs across the width with no icons, for phones. The children are further tabs.
+export function DocumentTabsFullWidth({ children }: { children?: ReactNode }) {
   return (
     <OutputPanelTabs fill aria-label="Outputs">
       {DOCUMENT_KINDS.map((kind) => (
@@ -140,6 +149,7 @@ export function DocumentTabsFullWidth() {
           {DOCUMENT_KIND_DISPLAY[kind].label}
         </OutputPanelTab>
       ))}
+      {children}
     </OutputPanelTabs>
   )
 }

@@ -1,5 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { JOB_SOURCES, type JobSource } from '@quarry/contracts';
+import {
+  JOB_SOURCES,
+  SESSION_KINDS,
+  type JobSource,
+  type SessionKind,
+} from '@quarry/contracts';
 import { HydratedDocument, Types } from 'mongoose';
 import { DEFAULT_SESSION_TITLE } from './sessions.constants';
 
@@ -29,6 +34,18 @@ export class AgentSession {
   @Prop({ required: true, type: Types.ObjectId, ref: 'User' })
   user: Types.ObjectId;
 
+  @Prop({
+    required: true,
+    type: String,
+    enum: SESSION_KINDS,
+    default: 'application',
+  })
+  kind: SessionKind;
+
+  // An interview's application; absent on applications.
+  @Prop({ type: Types.ObjectId, ref: 'AgentSession' })
+  parentSession?: Types.ObjectId;
+
   @Prop({ required: true, type: String, default: DEFAULT_SESSION_TITLE })
   title: string;
 
@@ -54,5 +71,4 @@ export class AgentSession {
 
 export type AgentSessionDocument = HydratedDocument<AgentSession>;
 
-export const AgentSessionSchema =
-  SchemaFactory.createForClass(AgentSession);
+export const AgentSessionSchema = SchemaFactory.createForClass(AgentSession);

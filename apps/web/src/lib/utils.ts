@@ -14,6 +14,7 @@ export const cn = createCn({
             'title',
             'question',
             'reading',
+            'reading-strong',
             'ui',
             'ui-strong',
             'small',

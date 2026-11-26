@@ -14,6 +14,8 @@ export const PATHS = {
   resume: '/profile/resume',
   applications: '/applications',
   session: '/applications/:sessionId',
+  interviews: '/interviews',
+  interview: '/interviews/:sessionId',
   verifyEmail: '/verify-email',
   emailVerified: '/email-verified',
   forgotPassword: '/forgot-password',
@@ -22,6 +24,10 @@ export const PATHS = {
 
 export function sessionPath(sessionId: string): string {
   return `${PATHS.applications}/${encodeURIComponent(sessionId)}`
+}
+
+export function interviewPath(sessionId: string): string {
+  return `${PATHS.interviews}/${encodeURIComponent(sessionId)}`
 }
 
 export const SIGN_UP_ERRORS: Record<number, string> = {

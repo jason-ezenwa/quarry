@@ -33,6 +33,9 @@ function AgentReply({ message, live, activeDocumentId, onOpenDocument }: Documen
           )
         }
 
+        // Only interviews ask questions; they draw them in their own thread.
+        if (block.kind === 'question') return null
+
         return (
           <AgentMessage key={block.key}>
             <MessageMarkdown>{block.text}</MessageMarkdown>
@@ -44,7 +47,8 @@ function AgentReply({ message, live, activeDocumentId, onOpenDocument }: Documen
   )
 }
 
-function TurnError({ error, onRetry }: { error: ChatErrorCode; onRetry: () => void }) {
+// A turn that failed, was stopped or went unanswered, with a Retry where one helps.
+export function TurnError({ error, onRetry }: { error: ChatErrorCode; onRetry: () => void }) {
   return (
     <Callout tone={error === 'stopped' || error === 'unanswered' ? 'review' : 'danger'}>
       <CalloutContent>

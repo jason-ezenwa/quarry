@@ -21,6 +21,7 @@ export const JOB_URL = 'https://jobs.ashbyhq.com/halden/123'
 export function summary(overrides: Partial<SessionSummary> = {}): SessionSummary {
   return {
     id: SESSION_ID,
+    kind: 'application',
     title: 'Senior Product Engineer',
     company: 'Halden',
     source: 'ashby',
@@ -113,9 +114,10 @@ function replyMessage(id: string, document: SavedDocumentRef | undefined): Sessi
 export function detail(overrides: Partial<SessionDetail> = {}): SessionDetail {
   return {
     id: SESSION_ID,
+    kind: 'application',
     title: 'Senior Product Engineer',
     company: 'Halden',
-    job: { url: JOB_URL, source: 'ashby', location: 'Remote' },
+    job: { url: JOB_URL, source: 'ashby', location: 'Remote', hasDescription: true },
     status: 'ready',
     archivedAt: null,
     userMessageCount: 1,

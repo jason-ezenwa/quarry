@@ -20,6 +20,8 @@ import { ApplicationThread } from '../chat/components/application-thread'
 import { useSessionChat } from '../chat/hooks/use-session-chat'
 import { DocumentPanel, DocumentTabs, DocumentTabsFullWidth } from '../documents/components/document-panel'
 import { useOpenDocuments } from '../documents/hooks/use-open-documents'
+import { InterviewsTab, InterviewsTabContent, InterviewsTabPlain } from '../interviews/components/interviews-tab'
+import { MockInterviewButton } from '../interviews/components/mock-interview-button'
 import type { ApplicationComposerState } from '../chat/chat.types'
 import { CRUMBS } from '../sessions.constants'
 import type { DocumentAnnouncement } from '../sessions.types'
@@ -74,6 +76,7 @@ export function SessionView({ session, fresh }: { session: SessionDetail; fresh:
         actions={
           <>
             {showing ? null : <OutputPanelOpen onClick={openPanel} />}
+            <MockInterviewButton applicationId={session.id} available={!session.archivedAt && session.job.hasDescription} />
             <SessionMenu sessionId={session.id} archived={Boolean(session.archivedAt)} />
           </>
         }
@@ -84,7 +87,7 @@ export function SessionView({ session, fresh }: { session: SessionDetail; fresh:
             messages={chat.messages}
             working={working}
             error={chat.error}
-            activeDocumentId={showing ? (outputs.documents[outputs.tab]?.id ?? null) : null}
+            activeDocumentId={showing ? (outputs.shown?.id ?? null) : null}
             onOpenDocument={openDocument}
             onRetry={chat.retry}
           />
@@ -101,9 +104,18 @@ export function SessionView({ session, fresh }: { session: SessionDetail; fresh:
         </SessionChat>
         {wide && panelOpen ? (
           <SessionAside aria-label="Output">
-            <DocumentPanel {...panelProps}>
-              <DocumentTabs />
-              <OutputPanelClose onClick={() => setPanelOpen(false)} />
+            <DocumentPanel
+              {...panelProps}
+              bar={
+                <>
+                  <DocumentTabs>
+                    <InterviewsTab />
+                  </DocumentTabs>
+                  <OutputPanelClose onClick={() => setPanelOpen(false)} />
+                </>
+              }
+            >
+              <InterviewsTabContent applicationId={session.id} />
             </DocumentPanel>
           </SessionAside>
         ) : null}
@@ -114,8 +126,15 @@ export function SessionView({ session, fresh }: { session: SessionDetail; fresh:
           <OutputSheetTitle>{session.company ?? session.title}</OutputSheetTitle>
           <OutputSheetSpacer />
         </OutputSheetHeader>
-        <DocumentPanel {...panelProps}>
-          <DocumentTabsFullWidth />
+        <DocumentPanel
+          {...panelProps}
+          bar={
+            <DocumentTabsFullWidth>
+              <InterviewsTabPlain />
+            </DocumentTabsFullWidth>
+          }
+        >
+          <InterviewsTabContent applicationId={session.id} />
         </DocumentPanel>
       </OutputSheet>
     </SessionFrame>

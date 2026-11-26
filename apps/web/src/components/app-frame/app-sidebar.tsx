@@ -1,3 +1,4 @@
+import { ChatsCircleIcon } from '@phosphor-icons/react/dist/csr/ChatsCircle'
 import { HouseIcon } from '@phosphor-icons/react/dist/csr/House'
 import { PlusIcon } from '@phosphor-icons/react/dist/csr/Plus'
 import { StackIcon } from '@phosphor-icons/react/dist/csr/Stack'
@@ -32,6 +33,9 @@ export function AppSidebar({ inSheet = false }: { inSheet?: boolean }) {
         </NavItem>
         <NavItem to={PATHS.applications} icon={StackIcon}>
           Applications
+        </NavItem>
+        <NavItem to={PATHS.interviews} icon={ChatsCircleIcon}>
+          Interviews
         </NavItem>
         <NavItem to={PATHS.profile} icon={UserCircleIcon}>
           Profile

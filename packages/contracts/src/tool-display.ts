@@ -6,6 +6,10 @@ export const TOOL_ICONS = [
   "file-text",
   "pencil",
   "envelope",
+  "play",
+  "flag",
+  "list",
+  "clipboard",
 ] as const;
 
 export type ToolIcon = (typeof TOOL_ICONS)[number];

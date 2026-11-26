@@ -11,7 +11,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type {
+  ApplicationInterview,
   CreateSessionResponse,
+  InterviewState,
   SessionDetail,
   SessionPage,
   SessionSummary,
@@ -26,6 +28,7 @@ import { ListSessionsDto } from './dto/list-sessions.dto';
 import { RunTurnDto } from './dto/run-turn.dto';
 import { StopTurnDto } from './dto/stop-turn.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
+import { InterviewsService } from './interviews/interviews.service';
 import { SessionsService } from './sessions.service';
 
 // Every query is scoped to the signed-in user, so another user's session is
@@ -36,6 +39,7 @@ export class SessionsController {
   constructor(
     private readonly sessionsService: SessionsService,
     private readonly agentService: AgentService,
+    private readonly interviewsService: InterviewsService,
   ) {}
 
   @Post()
@@ -51,7 +55,9 @@ export class SessionsController {
     @CurrentUser() user: SessionUser,
     @Query() query: ListSessionsDto,
   ): Promise<SessionPage> {
-    return this.sessionsService.list(user.id, query);
+    return query.kind === 'interview'
+      ? this.interviewsService.list(user.id, query)
+      : this.sessionsService.list(user.id, query);
   }
 
   @Get(':id')
@@ -59,7 +65,11 @@ export class SessionsController {
     @CurrentUser() user: SessionUser,
     @Param('id') id: string,
   ): Promise<SessionDetail> {
-    return this.sessionsService.get(user.id, id);
+    const detail = await this.sessionsService.get(user.id, id);
+
+    return detail.kind === 'interview'
+      ? this.interviewsService.withInterview(user.id, detail)
+      : detail;
   }
 
   @Patch(':id')
@@ -92,5 +102,40 @@ export class SessionsController {
     @Body() dto: StopTurnDto,
   ): Promise<void> {
     await this.agentService.stopTurn(user.id, id, dto.messageId);
+  }
+
+  // 201 with a new interview, or 200 with the application's unfinished one.
+  @Post(':id/interviews')
+  async startInterview(
+    @CurrentUser() user: SessionUser,
+    @Param('id') id: string,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<SessionSummary> {
+    const { summary, created } = await this.interviewsService.start(
+      user.id,
+      id,
+    );
+
+    response.status(created ? 201 : 200);
+
+    return summary;
+  }
+
+  @Get(':id/interviews')
+  async listInterviews(
+    @CurrentUser() user: SessionUser,
+    @Param('id') id: string,
+  ): Promise<ApplicationInterview[]> {
+    return this.interviewsService.listForApplication(user.id, id);
+  }
+
+  // Answered once the feedback is saved.
+  @Post(':id/interview/end')
+  @HttpCode(200)
+  async endInterview(
+    @CurrentUser() user: SessionUser,
+    @Param('id') id: string,
+  ): Promise<InterviewState> {
+    return this.interviewsService.end(user.id, id);
   }
 }

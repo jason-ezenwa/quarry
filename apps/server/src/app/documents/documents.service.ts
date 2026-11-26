@@ -173,6 +173,34 @@ export class DocumentsService {
     return toFitScoreResponse(fitScore);
   }
 
+  async latestCoverLetter({
+    userId,
+    sessionId,
+  }: SessionContext): Promise<CoverLetterDocumentResponse | null> {
+    const latest = await this.coverLetterModel
+      .findOne({
+        user: new Types.ObjectId(userId),
+        session: new Types.ObjectId(sessionId),
+      })
+      .sort({ createdAt: -1, _id: -1 });
+
+    return latest && toCoverLetterResponse(latest);
+  }
+
+  async latestFitScore({
+    userId,
+    sessionId,
+  }: SessionContext): Promise<FitScoreDocumentResponse | null> {
+    const latest = await this.fitScoreModel
+      .findOne({
+        user: new Types.ObjectId(userId),
+        session: new Types.ObjectId(sessionId),
+      })
+      .sort({ createdAt: -1, _id: -1 });
+
+    return latest && toFitScoreResponse(latest);
+  }
+
   // Each session's latest fit report overall, unrounded.
   async latestFitOveralls(
     sessionIds: Types.ObjectId[],

@@ -98,6 +98,7 @@ export async function seedSessions(
     .insertMany(
       createdAt.map((date) => ({
         user: new Types.ObjectId(userId),
+        kind: 'application',
         title: 'New application',
         userMessageCount: 1,
         turnStartedAt: null,

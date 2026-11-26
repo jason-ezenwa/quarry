@@ -4,6 +4,7 @@ const roles = [
   { role: 'text-title', spec: '26 / 32 · 600 · -2%', sample: 'New application' },
   { role: 'text-question', spec: '16 / 23 · 500', sample: 'Tell me about a system you designed end to end.' },
   { role: 'text-reading', spec: '15 / 24', sample: 'You line up well. Go is the main gap.' },
+  { role: 'text-reading-strong', spec: '15 / 24 · 500', sample: 'Tell me about a system you designed.' },
   { role: 'text-ui', spec: '14 / 20', sample: 'Senior backend engineer' },
   { role: 'text-ui-strong', spec: '14 / 20 · 500', sample: 'Fit report' },
   { role: 'text-small', spec: '13 / 18', sample: 'Applications' },
