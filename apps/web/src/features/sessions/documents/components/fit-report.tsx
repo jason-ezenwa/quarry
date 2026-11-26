@@ -6,15 +6,17 @@ import { FIT_DIMENSION_NAMES } from '../documents.constants'
 
 function Points({ title, items, tone }: { title: string; items: string[]; tone: 'success' | 'warning' }) {
   return (
-    <section className="flex min-w-0 flex-col gap-2.5">
+    <section className="flex min-w-0 flex-col gap-1.5">
       <div className="flex items-center gap-1.75 text-muted-foreground">
         <span aria-hidden="true" className={cn('size-1.5 rounded-full', tone === 'success' ? 'bg-success' : 'bg-warning')} />
         <h3 className="text-doc-caps">{title}</h3>
         <span className="text-label">{items.length}</span>
       </div>
-      <ul className="flex flex-col gap-1.75 text-small">
+      <ul className="flex flex-col text-small">
         {items.map((item, index) => (
-          <li key={index}>{item}</li>
+          <li key={index} className="border-t border-border-soft py-2.25">
+            {item}
+          </li>
         ))}
       </ul>
     </section>
