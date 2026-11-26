@@ -26,6 +26,7 @@ import { FeedbackPanel, FeedbackTabs, FeedbackTabsFullWidth } from './feedback-p
 import { InterviewComposer } from './interview-composer'
 import { InterviewProgress } from './interview-progress-bar'
 import { InterviewThread } from './interview-thread'
+import { PracticeAgainButton } from './practice-again-button'
 
 function composerState(
   session: SessionDetail,
@@ -55,6 +56,7 @@ export function InterviewView({ session, fresh }: { session: SessionDetail; fres
   const [panelOpen, setPanelOpen] = useState(ended)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [wasEnded, setWasEnded] = useState(ended)
+  const [practiceError, setPracticeError] = useState<string | null>(null)
 
   // The interview ending while open shows its feedback. Set during render, as React allows.
   if (ended !== wasEnded) {
@@ -86,7 +88,11 @@ export function InterviewView({ session, fresh }: { session: SessionDetail; fres
         actions={
           <>
             {medium && count ? <span className="pr-1.5 text-label text-muted-foreground">{count}</span> : null}
-            {ended ? null : (
+            {ended ? (
+              parent ? (
+                <PracticeAgainButton applicationId={parent.id} size={medium ? 'default' : 'sm'} onError={setPracticeError} />
+              ) : null
+            ) : (
               <Button size={medium ? 'default' : 'sm'} loading={ending.ending} disabled={working} onClick={ending.end}>
                 {medium ? 'End interview' : 'End'}
               </Button>
@@ -109,10 +115,10 @@ export function InterviewView({ session, fresh }: { session: SessionDetail; fres
             currentQuestionId={ended ? null : progress.currentQuestionId}
             onRetry={chat.retry}
           >
-            {ending.error ? (
+            {ending.error || practiceError ? (
               <Callout tone="danger">
                 <CalloutContent>
-                  <CalloutTitle>{ending.error}</CalloutTitle>
+                  <CalloutTitle>{ending.error ?? practiceError}</CalloutTitle>
                 </CalloutContent>
               </Callout>
             ) : null}
@@ -133,7 +139,7 @@ export function InterviewView({ session, fresh }: { session: SessionDetail; fres
         </SessionChat>
         {wide && panelOpen ? (
           <SessionAside aria-label="Output">
-            <FeedbackPanel interview={session.interview} applicationId={parent?.id}>
+            <FeedbackPanel interview={session.interview}>
               <FeedbackTabs />
               <OutputPanelClose onClick={() => setPanelOpen(false)} />
             </FeedbackPanel>
@@ -146,7 +152,7 @@ export function InterviewView({ session, fresh }: { session: SessionDetail; fres
           <OutputSheetTitle>Feedback</OutputSheetTitle>
           <OutputSheetSpacer />
         </OutputSheetHeader>
-        <FeedbackPanel interview={session.interview} applicationId={parent?.id}>
+        <FeedbackPanel interview={session.interview}>
           <FeedbackTabsFullWidth />
         </FeedbackPanel>
       </OutputSheet>

@@ -1,29 +1,25 @@
 import { CaretDownIcon } from '@phosphor-icons/react/dist/csr/CaretDown'
 import { CaretUpIcon } from '@phosphor-icons/react/dist/csr/CaretUp'
 import type { StrongerAnswer } from '@quarry/contracts'
-import { useId, useState, type ComponentProps, type ReactNode } from 'react'
+import { useId, useState, type ComponentProps } from 'react'
 import { cn } from '@/lib/utils'
 import { formatShortDate } from '../../session-format'
 
 export function InterviewFeedback({
   endedAt,
   questionCount,
-  action,
   className,
   children,
   ...props
-}: ComponentProps<'article'> & { endedAt: string; questionCount: number; action?: ReactNode }) {
+}: ComponentProps<'article'> & { endedAt: string; questionCount: number }) {
   return (
     <article data-slot="interview-feedback" aria-label="Interview feedback" className={cn('flex flex-col gap-9 md:gap-11', className)} {...props}>
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-col gap-2.5">
-          <p className="flex gap-4 text-label text-muted-foreground">
-            <span>{formatShortDate(endedAt)}</span>
-            <span>{questionCount === 1 ? '1 question' : `${questionCount} questions`}</span>
-          </p>
-          <h2 className="text-title">Feedback</h2>
-        </div>
-        {action}
+      <header className="flex flex-col gap-2.5">
+        <p className="flex gap-4 text-label text-muted-foreground">
+          <span>{formatShortDate(endedAt)}</span>
+          <span>{questionCount === 1 ? '1 question' : `${questionCount} questions`}</span>
+        </p>
+        <h2 className="text-title">Feedback</h2>
       </header>
       {children}
     </article>

@@ -11,17 +11,13 @@ import {
   ToImprove,
   WentWell,
 } from './interview-feedback'
-import { PracticeAgainButton } from './practice-again-button'
 
 // The feedback, once the interview has ended. The children fill the bar: the tab and its actions.
 export function FeedbackPanel({
   interview,
-  applicationId,
   children,
 }: {
   interview: InterviewState | undefined
-  // The application to practise again for; no Practice again without one.
-  applicationId: string | undefined
   children: ReactNode
 }) {
   const feedback = interview?.feedback
@@ -32,11 +28,7 @@ export function FeedbackPanel({
       <OutputPanelBar>{children}</OutputPanelBar>
       <OutputPanelContent value={FEEDBACK_TAB} className="md:pt-4">
         {feedback && endedAt ? (
-          <InterviewFeedback
-            endedAt={endedAt}
-            questionCount={interview.questionCount}
-            action={applicationId ? <PracticeAgainButton applicationId={applicationId} /> : null}
-          >
+          <InterviewFeedback endedAt={endedAt} questionCount={interview.questionCount}>
             <FeedbackPoints>
               <WentWell items={feedback.wentWell} />
               <ToImprove items={feedback.toImprove} />

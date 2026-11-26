@@ -94,6 +94,7 @@ describe('Interview page (integration)', () => {
     expect(within(panel).getByText(FEEDBACK.wentWell[0])).toBeInTheDocument()
     expect(recorded.ends).toBe(1)
     expect(screen.queryByRole('button', { name: 'End interview' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Practice again' })).toBeInTheDocument()
     expect(screen.getByRole('textbox', { name: 'Your answer' })).toBeDisabled()
     expect(screen.getByText(/This interview has ended/)).toBeInTheDocument()
   })
@@ -202,8 +203,7 @@ describe('Interview page (integration)', () => {
 
     const router = renderRoute(INTERVIEW_PATH)
 
-    const panel = await screen.findByRole('complementary', { name: 'Output' })
-    await userEvent.click(within(panel).getByRole('button', { name: 'Practice again' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Practice again' }))
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/interviews/interview-2'))
     expect(recorded.starts).toBe(1)
@@ -227,10 +227,9 @@ describe('Interview page (integration)', () => {
 
     renderRoute(INTERVIEW_PATH)
 
-    const panel = await screen.findByRole('complementary', { name: 'Output' })
-    await userEvent.click(within(panel).getByRole('button', { name: 'Practice again' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Practice again' }))
 
-    expect(await within(panel).findByText("You've used all 10 interviews this month. More on December 1.")).toBeInTheDocument()
+    expect(await screen.findByText("You've used all 10 interviews this month. More on December 1.")).toBeInTheDocument()
   })
 
   it('keeps the feedback panel closed while the interview runs, with a note in it once opened', async () => {
@@ -257,7 +256,7 @@ describe('Interview page (integration)', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Open panel' }))
     const dialog = await screen.findByRole('dialog', { name: 'Feedback' })
     expect(within(dialog).getByText(FEEDBACK.wentWell[0])).toBeInTheDocument()
-    expect(within(dialog).getByRole('button', { name: 'Practice again' })).toBeInTheDocument()
+    expect(within(dialog).queryByRole('button', { name: 'Practice again' })).not.toBeInTheDocument()
   })
 
   it('puts back an answer the server refused because the interview had already ended', async () => {
