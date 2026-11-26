@@ -68,6 +68,12 @@ export const DOT_TONE: Record<FitLabel, string> = {
   'weak-fit': 'bg-destructive',
 }
 
+export const FIT_TEXT_TONE: Record<FitLabel, string> = {
+  'strong-fit': 'text-success-ink',
+  'good-fit': 'text-warning-ink',
+  'weak-fit': 'text-destructive-ink',
+}
+
 export const CRUMBS = [{ label: 'Applications', to: PATHS.applications }]
 
 // Interview tools the web app draws in its own way: a question as the numbered question, the setup in the header.

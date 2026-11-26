@@ -1,6 +1,7 @@
 import { FIT_DIMENSION_KEYS, FIT_DIMENSIONS, FIT_LABEL_TEXT, type FitScoreDocumentResponse, type SessionJob } from '@quarry/contracts'
 import { Meter } from '@/components/ui/meter'
 import { cn } from '@/lib/utils'
+import { FIT_TEXT_TONE } from '../../sessions.constants'
 import { jobLine, sourceLabel } from '../../session-format'
 import { FIT_DIMENSION_NAMES } from '../documents.constants'
 
@@ -32,9 +33,9 @@ export function FitReport({ report, job }: { report: FitScoreDocumentResponse; j
           <h2 className="text-doc-title">{report.role}</h2>
           <p className="text-small text-muted-foreground">{jobLine([report.company, job.location, sourceLabel(job.source)])}</p>
         </div>
-        <div className="flex flex-col items-end gap-0.5">
-          <span className="text-score text-fit">{report.overall}%</span>
-          <span className="text-small text-muted-foreground">{FIT_LABEL_TEXT[report.label]}</span>
+        <div className={cn('flex flex-col items-end gap-0.5', FIT_TEXT_TONE[report.label])}>
+          <span className="text-score">{report.overall}%</span>
+          <span className="text-small">{FIT_LABEL_TEXT[report.label]}</span>
         </div>
       </header>
       <table className="w-full border-collapse">
