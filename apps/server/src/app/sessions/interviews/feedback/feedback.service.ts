@@ -50,13 +50,14 @@ export class InterviewFeedbackService {
     questionsAndAnswers,
     abortSignal,
   }: FeedbackInput): Promise<WrittenFeedback> {
+    // Unanswered questions are left out, so feedback is only about what was said.
     const result = await generateText({
       model: this.anthropic(AGENT_MODEL),
       system: FEEDBACK_SYSTEM_PROMPT,
       messages: [
         {
           role: 'user',
-          content: `${context}\n\n${profile}\n\n<interview>\n${JSON.stringify(questionsAndAnswers)}\n</interview>\n\nWrite the feedback on this interview.`,
+          content: `${context}\n\n${profile}\n\n<interview>\n${JSON.stringify(questionsAndAnswers.filter(({ answer }) => answer.trim()))}\n</interview>\n\nWrite the feedback on this interview.`,
         },
       ],
       output: Output.object({ schema: interviewFeedbackSchema }),

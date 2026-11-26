@@ -698,6 +698,8 @@ describe('Interviews (integration)', () => {
       const sent = JSON.stringify(feedbackRequest.messages);
       expect(sent).toContain(JOB_DESCRIPTION);
       expect(sent).toContain('targetRoles');
+      expect(sent).toContain('Tell me about yourself.');
+      expect(sent).not.toContain('Why Globex?');
 
       const interview = await findInterview(id);
       expect(interview?.questionsAndAnswers).toEqual([
