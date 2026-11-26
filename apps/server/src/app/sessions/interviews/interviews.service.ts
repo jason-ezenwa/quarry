@@ -30,10 +30,8 @@ import {
 import { SessionsService, toSessionParent } from '../sessions.service';
 import { monthlyPeriod, toSessionSummary } from '../sessions.utils';
 import { groupInterview, hasAnswer } from './interview-grouping';
-import {
-  FeedbackNotWrittenError,
-  InterviewFeedbackService,
-} from './feedback/feedback.service';
+import { InterviewFeedbackService } from './feedback/feedback.service';
+import { feedbackFailureDetails } from './feedback/feedback.utils';
 import { Interview, InterviewDocument } from './interview.schema';
 import {
   ASK_QUESTION_TOOL,
@@ -491,10 +489,7 @@ export class InterviewsService {
         userId,
         sessionId,
         error: errorName(error),
-        ...(error instanceof FeedbackNotWrittenError && {
-          finishReason: error.finishReason,
-          stopReason: error.stopReason,
-        }),
+        ...feedbackFailureDetails(error),
         durationMs: Date.now() - startedAt,
       });
 
