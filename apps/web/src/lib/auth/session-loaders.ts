@@ -5,7 +5,7 @@ import { queryClient } from '../query-client'
 import { PATHS } from './auth.constants'
 
 // A session from before verification was required counts as signed out until verified.
-async function hasSession(): Promise<boolean> {
+export async function hasSession(): Promise<boolean> {
   const { data } = await authClient.getSession()
   return Boolean(data?.user.emailVerified)
 }

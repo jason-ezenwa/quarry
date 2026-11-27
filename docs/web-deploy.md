@@ -22,6 +22,7 @@ Add these environment variables (Vite inlines `VITE_*` values at build time):
 | Variable | Value |
 | --- | --- |
 | `VITE_API_URL` | The API's origin, e.g. `https://api.quarry.example.com` (no trailing slash, no `/api`) |
+| `VITE_WAITLIST_URL` | Optional. The private beta waitlist form the landing page links to; defaults to the beta Google Form |
 | `NODE_VERSION` | `24` |
 | `PNPM_VERSION` | `10.20.0` |
 | `MONGOMS_DISABLE_POSTINSTALL` | `1` (skips the 120 MB test MongoDB download) |

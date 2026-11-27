@@ -49,7 +49,7 @@ describe('Home: new application (integration)', () => {
     )
 
     const recorded = serveSession(freshSession())
-    const router = renderRoute('/')
+    const router = renderRoute('/home')
 
     await userEvent.type(await screen.findByRole('textbox', { name: 'Job link' }), JOB_URL)
     await userEvent.click(screen.getByRole('button', { name: 'Start' }))
@@ -78,7 +78,7 @@ describe('Home: new application (integration)', () => {
     )
 
     serveSession(freshSession('Score my fit for this job:\n\nWe need a senior engineer.'))
-    renderRoute('/')
+    renderRoute('/home')
 
     await userEvent.click(await screen.findByRole('button', { name: 'Paste a description instead' }))
     await userEvent.type(screen.getByRole('textbox', { name: 'Job description' }), 'We need a senior engineer.')
@@ -90,7 +90,7 @@ describe('Home: new application (integration)', () => {
 
   it('refuses a link that is not http(s) without calling the API', async () => {
     signInAs()
-    renderRoute('/')
+    renderRoute('/home')
 
     await userEvent.type(await screen.findByRole('textbox', { name: 'Job link' }), 'not a link')
     await userEvent.click(screen.getByRole('button', { name: 'Start' }))
@@ -117,13 +117,13 @@ describe('Home: new application (integration)', () => {
       ),
     )
 
-    const router = renderRoute('/')
+    const router = renderRoute('/home')
 
     await userEvent.type(await screen.findByRole('textbox', { name: 'Job link' }), JOB_URL)
     await userEvent.click(screen.getByRole('button', { name: 'Start' }))
 
     expect(await screen.findByText(/You've used all 10 applications this month\. More on December 1\./)).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe('/')
+    expect(router.state.location.pathname).toBe('/home')
   })
 
   it('lists recent applications and the month count', async () => {
@@ -140,7 +140,7 @@ describe('Home: new application (integration)', () => {
       ),
     )
 
-    renderRoute('/')
+    renderRoute('/home')
 
     const recent = await screen.findByRole('region', { name: 'Recent' })
     expect(await within(recent).findByRole('link', { name: /Senior Product Engineer/ })).toHaveAttribute('href', SESSION_PATH)
@@ -489,7 +489,7 @@ describe('Session page (integration)', () => {
 
     expect(await screen.findByText(/has used its 40 messages/)).toBeInTheDocument()
     expect(screen.getByRole('textbox', { name: 'Message' })).toBeDisabled()
-    expect(screen.getByRole('link', { name: 'Start a new application' })).toHaveAttribute('href', '/')
+    expect(screen.getByRole('link', { name: 'Start a new application' })).toHaveAttribute('href', '/home')
   })
 
   it('shows the working state for a turn running elsewhere, then the reply once it lands', async () => {

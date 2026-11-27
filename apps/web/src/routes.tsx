@@ -15,6 +15,7 @@ import { ForgotPasswordPage } from './pages/forgot-password/index.tsx'
 import { HomePage } from './pages/home/index.tsx'
 import { InterviewPage } from './pages/interviews/[sessionId]/index.tsx'
 import { InterviewsPage } from './pages/interviews/index.tsx'
+import { LandingPage } from './pages/landing/index.tsx'
 import { OnboardingPage } from './pages/onboarding/index.tsx'
 import { ProfilePage } from './pages/profile/index.tsx'
 import { ResetPasswordPage } from './pages/reset-password/index.tsx'
@@ -54,6 +55,8 @@ export const routes: RouteObject[] = [
           { path: PATHS.interview, Component: InterviewPage },
         ],
       },
+      // No loader: the page shows at once, even while the API wakes up, and sends a signed-in user on to home.
+      { path: PATHS.landing, Component: LandingPage },
       { path: PATHS.onboarding, loader: sequence(requireSession, requireNoProfile), Component: OnboardingPage },
       { path: PATHS.signIn, loader: requireNoSession, Component: SignInPage },
       { path: PATHS.signUp, loader: requireNoSession, Component: SignUpPage },

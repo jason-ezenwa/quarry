@@ -13,6 +13,8 @@ const badgeVariants = cva(
         interview: "bg-status-interview text-status-interview-foreground",
         drafting: "bg-status-drafting text-status-drafting-foreground",
         neutral: "bg-muted text-muted-foreground",
+        // The private beta label on the landing page: a matcha pill, led by a moss dot.
+        beta: "gap-2 rounded-full bg-beta-tint px-2.5 text-beta before:size-1.5 before:rounded-full before:bg-beta",
       },
     },
     defaultVariants: {
