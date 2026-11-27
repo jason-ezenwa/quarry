@@ -1,5 +1,4 @@
 import { LandingBetaBand } from '@/features/landing/components/landing-beta-band'
-import { LandingFooter } from '@/features/landing/components/landing-footer'
 import { LandingHeader } from '@/features/landing/components/landing-header'
 import { LandingHero } from '@/features/landing/components/landing-hero'
 import { LandingShowcase } from '@/features/landing/components/landing-showcase'
@@ -14,7 +13,6 @@ export function LandingPage() {
       <LandingHero />
       <LandingShowcase />
       <LandingBetaBand />
-      <LandingFooter />
     </main>
   )
 }
