@@ -23,7 +23,6 @@ previews: production builds run in GitHub Actions (section 4).
 | Variable | Value |
 | --- | --- |
 | `VITE_API_URL` | The API's origin, e.g. `https://api.quarry.example.com` (no trailing slash, no `/api`) |
-| `VITE_WAITLIST_URL` | Optional. The beta waitlist form, linked from the landing page and a refused sign-up; defaults to the beta Google Form |
 | `NODE_VERSION` | `24` |
 | `PNPM_VERSION` | `10.20.0` |
 | `MONGOMS_DISABLE_POSTINSTALL` | `1` (skips the 120 MB test MongoDB download) |
@@ -73,8 +72,7 @@ for checks the same way, through its "after CI checks pass" setting.
 | Secret | `CLOUDFLARE_API_TOKEN` | The token from step 2 |
 | Secret | `CLOUDFLARE_ACCOUNT_ID` | The ID in the dashboard URL, `dash.cloudflare.com/<account id>/…` |
 | Variable | `VITE_API_URL` | Same as the Pages variable |
-| Variable | `VITE_WAITLIST_URL` | Optional, same as the Pages variable |
-
+| Variable 
 Vite inlines `VITE_*` values at build time. After changing one, redeploy from
 **Actions → Web CI → Run workflow** on `main`: pushes only run the workflow
 when they touch the web app or shared code.

@@ -18,10 +18,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['src/test/setup.ts'],
     // Behind UTC, so a date read in local time shows the day before.
-    env: {
-      TZ: 'America/Los_Angeles',
-      VITE_WAITLIST_URL: 'https://forms.example.com/quarry-waitlist',
-    },
+    env: { TZ: 'America/Los_Angeles' },
     projects: [
       {
         extends: true,

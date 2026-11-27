@@ -2,6 +2,7 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
+import { WAITLIST_URL } from '@/features/landing/landing.constants'
 import { apiUrl } from '@/test/integration/handlers'
 import { renderRoute, TEST_USER } from '@/test/integration/render-route'
 import { server } from '@/test/integration/server'
@@ -96,7 +97,7 @@ describe('Sign up (integration)', () => {
     ).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Join the waitlist' })).toHaveAttribute(
       'href',
-      'https://forms.example.com/quarry-waitlist',
+      WAITLIST_URL,
     )
     expect(router.state.location.pathname).toBe('/sign-up')
   })

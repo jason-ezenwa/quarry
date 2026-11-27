@@ -16,8 +16,3 @@ export type AuthNoticeProps = {
   description: string
   action: { label: string; to: string }
 }
-
-export type NotInvitedAlertProps = {
-  // Empty when no waitlist is set up, which leaves the link out.
-  waitlistUrl: string
-}
