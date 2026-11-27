@@ -1,22 +1,25 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { INVALID_NAME_CODE, USER_NAME_INVALID_MESSAGE } from '@quarry/contracts'
+import { INVALID_NAME_CODE, NOT_INVITED_CODE, USER_NAME_INVALID_MESSAGE } from '@quarry/contracts'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Link, useNavigate } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { AuthCard } from '@/components/auth-card/auth-card'
+import { NotInvitedAlert } from '@/components/auth-card/not-invited-alert'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import type { VerifyEmailState } from '@/features/email-verification/email-verification.types'
 import { authClient } from '@/lib/auth-client'
-import { PASSWORD_MIN_LENGTH, PATHS, SIGN_UP_ERRORS } from '@/lib/auth/auth.constants'
+import { PASSWORD_MIN_LENGTH, PATHS, SIGN_UP_ERRORS, WAITLIST_URL } from '@/lib/auth/auth.constants'
 import { signUpSchema } from '@/lib/auth/auth-schemas'
-import type { SignUpValues } from '@/lib/auth/auth.types'
+import type { SignUpProblem, SignUpValues } from '@/lib/auth/auth.types'
 
 export function SignUpPage() {
   const navigate = useNavigate()
-  const [formError, setFormError] = useState<string | null>(null)
+  // An invite email's link fills in the invited email and first name.
+  const [searchParams] = useSearchParams()
+  const [problem, setProblem] = useState<SignUpProblem | null>(null)
 
   const {
     register,
@@ -25,11 +28,16 @@ export function SignUpPage() {
     formState: { errors, isSubmitting },
   } = useForm<SignUpValues>({
     resolver: zodResolver(signUpSchema),
-    defaultValues: { name: '', email: '', password: '', confirmPassword: '' },
+    defaultValues: {
+      name: searchParams.get('name') ?? '',
+      email: searchParams.get('email') ?? '',
+      password: '',
+      confirmPassword: '',
+    },
   })
 
   async function onSubmit({ name, email, password }: SignUpValues) {
-    setFormError(null)
+    setProblem(null)
 
     const { error } = await authClient.signUp.email({
       name,
@@ -43,8 +51,16 @@ export function SignUpPage() {
       return
     }
 
+    if (error?.code === NOT_INVITED_CODE) {
+      setProblem({ kind: 'not-invited' })
+      return
+    }
+
     if (error) {
-      setFormError(SIGN_UP_ERRORS[error.status] ?? 'We could not create your account. Try again.')
+      setProblem({
+        kind: 'error',
+        message: SIGN_UP_ERRORS[error.status] ?? 'We could not create your account. Try again.',
+      })
       return
     }
 
@@ -55,7 +71,7 @@ export function SignUpPage() {
   return (
     <AuthCard
       title="Create an account"
-      description="Sign up with your email and a password."
+      description="Quarry is in private beta. Sign up with the email your invite was sent to."
       submitLabel="Create account"
       submitting={isSubmitting}
       onSubmit={handleSubmit(onSubmit)}
@@ -69,9 +85,10 @@ export function SignUpPage() {
       }
     >
       <FieldGroup>
-        {formError ? (
+        {problem?.kind === 'not-invited' ? <NotInvitedAlert waitlistUrl={WAITLIST_URL} /> : null}
+        {problem?.kind === 'error' ? (
           <Alert variant="destructive">
-            <AlertDescription>{formError}</AlertDescription>
+            <AlertDescription>{problem.message}</AlertDescription>
           </Alert>
         ) : null}
         <Field data-invalid={Boolean(errors.name)}>

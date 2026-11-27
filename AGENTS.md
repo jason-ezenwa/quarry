@@ -24,3 +24,7 @@ The seed creates one user you can sign in with on the web app:
 
 - Email: `demo@quarry.dev`
 - Password: `quarry-demo-password`
+
+## Beta invites
+
+Sign-up only takes invited emails. Invite one with `pnpm invite add <email> --name <first name>` (`list` and `remove` too). The seed invites the demo account.

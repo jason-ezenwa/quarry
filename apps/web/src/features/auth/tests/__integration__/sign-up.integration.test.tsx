@@ -79,6 +79,35 @@ describe('Sign up (integration)', () => {
     expect(called).toBe(false)
   })
 
+  it('points an email that is not invited to the waitlist', async () => {
+    server.use(
+      http.post(apiUrl('/api/auth/sign-up/email'), () =>
+        HttpResponse.json({ code: 'NOT_INVITED', message: 'Not invited.' }, { status: 403 }),
+      ),
+    )
+    const router = renderRoute('/sign-up')
+
+    await fillAndSubmit()
+
+    expect(
+      await screen.findByText(
+        "Quarry is in private beta, and this email isn't on the invite list yet. Join the waitlist and we'll let you know when a spot opens.",
+      ),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Join the waitlist' })).toHaveAttribute(
+      'href',
+      'https://forms.example.com/quarry-waitlist',
+    )
+    expect(router.state.location.pathname).toBe('/sign-up')
+  })
+
+  it("fills in the invite link's email and name", async () => {
+    renderRoute('/sign-up?email=ada%40example.com&name=Ada')
+
+    expect(await screen.findByLabelText('Name')).toHaveValue('Ada')
+    expect(screen.getByLabelText('Email')).toHaveValue('ada@example.com')
+  })
+
   it("shows the server's name check on the name field", async () => {
     server.use(
       http.post(apiUrl('/api/auth/sign-up/email'), () =>

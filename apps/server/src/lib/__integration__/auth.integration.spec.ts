@@ -1,15 +1,24 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createTestApp } from '../../../test/integration/create-test-app';
 import { getTestDatabase } from '../../../test/integration/database';
-import { signUp, TEST_ORIGIN, TEST_PASSWORD } from './sign-up.fixture';
+import {
+  inviteToBeta,
+  signUp,
+  TEST_ORIGIN,
+  TEST_PASSWORD,
+} from './sign-up.fixture';
 
 describe('Email and password auth (integration)', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
     app = await createTestApp();
+  });
+
+  beforeEach(async () => {
+    await inviteToBeta('ada@example.com');
   });
 
   afterAll(async () => {

@@ -1,4 +1,5 @@
 import { betterAuth } from 'better-auth';
+import { createAuthMiddleware } from 'better-auth/api';
 import { mongodbAdapter } from 'better-auth/adapters/mongodb';
 import { config } from 'dotenv';
 import { MongoClient } from 'mongodb';
@@ -6,8 +7,10 @@ import {
   ONE_HOUR_IN_SECONDS,
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
+  USERS_COLLECTION,
 } from './auth.constants';
 import { AUTH_RATE_LIMIT_RULES } from './auth-rate-limit.constants';
+import { refuseUninvitedSignUp } from './beta-invites/invite-guard';
 import { RESOLVED_CLIENT_IP_HEADER } from './client-ip/client-ip.constants';
 import { DATABASE_NAME, getMongoUri } from './database';
 import type {
@@ -75,6 +78,7 @@ async function verifyEmailOnPasswordReset({
 
 const client = new MongoClient(getMongoUri());
 const db = client.db(DATABASE_NAME);
+const refuseUninvited = refuseUninvitedSignUp(db);
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
@@ -111,9 +115,14 @@ export const auth = betterAuth({
     // The same client IP the throttler uses, resolved by resolveClientIp.
     ipAddress: { ipAddressHeaders: [RESOLVED_CLIENT_IP_HEADER] },
   },
-  hooks: { before: checkUserNameBeforeSaving },
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      await refuseUninvited(ctx);
+      return checkUserNameBeforeSaving(ctx);
+    }),
+  },
   user: {
-    modelName: 'users',
+    modelName: USERS_COLLECTION,
   },
   account: {
     modelName: 'accounts',

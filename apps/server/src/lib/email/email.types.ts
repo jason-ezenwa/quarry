@@ -29,3 +29,10 @@ export type PasswordResetEmailInput = {
 };
 
 export type Greeting = { text: string; html: string };
+
+export type InviteEmailInput = {
+  email: string;
+  firstName: string;
+  // The web app's sign-up page, with the email and name filled in.
+  url: string;
+};

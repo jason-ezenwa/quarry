@@ -38,3 +38,6 @@ export const SIGN_IN_ERRORS: Record<number, string> = {
   401: 'Incorrect email or password.',
   [TOO_MANY_REQUESTS_STATUS]: RATE_LIMITED_MESSAGE,
 }
+
+// The beta waitlist form. Without it the not-invited message has no link.
+export const WAITLIST_URL = import.meta.env.VITE_WAITLIST_URL || ''

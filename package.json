@@ -8,7 +8,8 @@
     "build": "turbo run build",
     "test": "turbo run test",
     "lint": "turbo run lint",
-    "test:integration": "turbo run test:integration"
+    "test:integration": "turbo run test:integration",
+    "invite": "pnpm --filter server invite"
   },
   "devDependencies": {
     "turbo": "^2.11.13"

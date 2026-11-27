@@ -1,10 +1,18 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import { createTestApp } from '../../../test/integration/create-test-app';
 import { getTestDatabase } from '../../../test/integration/database';
 import { RESOLVED_CLIENT_IP_HEADER } from '../client-ip/client-ip.constants';
-import { TEST_ORIGIN, TEST_PASSWORD } from './sign-up.fixture';
+import { inviteToBeta, TEST_ORIGIN, TEST_PASSWORD } from './sign-up.fixture';
 
 // Rate limiting is off in tests and on when deployed, here behind an edge that
 // sets cf-connecting-ip. Hoisted above the imports, so auth.ts reads them.
@@ -21,6 +29,12 @@ describe('Auth rate limits (integration)', () => {
 
   beforeAll(async () => {
     app = await createTestApp();
+  });
+
+  beforeEach(async () => {
+    await inviteToBeta(
+      ...[0, 1, 2, 3, 4].map((index) => `user-${index}@example.com`),
+    );
   });
 
   afterAll(async () => {
