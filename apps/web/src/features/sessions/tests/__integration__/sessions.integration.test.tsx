@@ -647,7 +647,8 @@ describe('Session page (integration)', () => {
     expect(await screen.findByText('Something went wrong. Try again.')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
 
-    expect(await screen.findByText('You line up well. Go is the main gap.')).toBeInTheDocument()
+    // In one check: the streamed reply is redrawn from the stored session once it lands.
+    await waitFor(() => expect(screen.getByText('You line up well. Go is the main gap.')).toBeInTheDocument())
     expect(turns).toEqual([{}, {}])
   })
 
@@ -720,7 +721,8 @@ describe('Session page (integration)', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: 'Retry' }))
 
-    expect(await screen.findByText('You line up well. Go is the main gap.')).toBeInTheDocument()
+    // In one check: the streamed reply is redrawn from the stored session once it lands.
+    await waitFor(() => expect(screen.getByText('You line up well. Go is the main gap.')).toBeInTheDocument())
     expect(turns).toEqual([{}, {}])
   })
 })
@@ -766,7 +768,8 @@ describe('Stopping a turn (integration)', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
 
-    expect(await screen.findByText('You line up well. Go is the main gap.')).toBeInTheDocument()
+    // In one check: the streamed reply is redrawn from the stored session once it lands.
+    await waitFor(() => expect(screen.getByText('You line up well. Go is the main gap.')).toBeInTheDocument())
     expect(turns).toEqual([{}, {}])
     expect(screen.queryByText('You stopped this reply.')).not.toBeInTheDocument()
   })

@@ -2,6 +2,7 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
+import { WAITLIST_URL } from '@/features/landing/landing.constants'
 import { apiUrl } from '@/test/integration/handlers'
 import { renderRoute, TEST_USER } from '@/test/integration/render-route'
 import { server } from '@/test/integration/server'
@@ -77,6 +78,35 @@ describe('Sign up (integration)', () => {
 
     expect(await screen.findByText("Names can't include web addresses.")).toBeInTheDocument()
     expect(called).toBe(false)
+  })
+
+  it('points an email that is not invited to the waitlist', async () => {
+    server.use(
+      http.post(apiUrl('/api/auth/sign-up/email'), () =>
+        HttpResponse.json({ code: 'NOT_INVITED', message: 'Not invited.' }, { status: 403 }),
+      ),
+    )
+    const router = renderRoute('/sign-up')
+
+    await fillAndSubmit()
+
+    expect(
+      await screen.findByText(
+        "Quarry is in private beta, and this email isn't on the invite list yet. Join the waitlist and we'll let you know when a spot opens.",
+      ),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Join the waitlist' })).toHaveAttribute(
+      'href',
+      WAITLIST_URL,
+    )
+    expect(router.state.location.pathname).toBe('/sign-up')
+  })
+
+  it("fills in the invite link's email and name", async () => {
+    renderRoute('/sign-up?email=ada%40example.com&name=Ada')
+
+    expect(await screen.findByLabelText('Name')).toHaveValue('Ada')
+    expect(screen.getByLabelText('Email')).toHaveValue('ada@example.com')
   })
 
   it("shows the server's name check on the name field", async () => {

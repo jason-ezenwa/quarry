@@ -17,12 +17,12 @@ Import an existing Git repository**, pick this repo and set:
 | Build command | `pnpm turbo run build --filter=web` |
 | Build output directory | `apps/web/dist` |
 
-Add these environment variables (Vite inlines `VITE_*` values at build time):
+Add these environment variables. Cloudflare only uses them for branch
+previews: production builds run in GitHub Actions (section 4).
 
 | Variable | Value |
 | --- | --- |
 | `VITE_API_URL` | The API's origin, e.g. `https://api.quarry.example.com` (no trailing slash, no `/api`) |
-| `VITE_WAITLIST_URL` | Optional. The private beta waitlist form the landing page links to; defaults to the beta Google Form |
 | `NODE_VERSION` | `24` |
 | `PNPM_VERSION` | `10.20.0` |
 | `MONGOMS_DISABLE_POSTINSTALL` | `1` (skips the 120 MB test MongoDB download) |
@@ -51,3 +51,32 @@ add the CNAME Render shows at your DNS provider. Then set on Render:
 Better Auth's session cookie is `SameSite=Lax`, so the browser only sends it
 when the web app and the API are on the same site. `*.pages.dev` and
 `*.onrender.com` are different sites, so sign-in will not stick between them.
+
+## 4. Deploy from CI
+
+Production deploys wait for the **Web CI** workflow (`.github/workflows/web.yml`).
+Its **Deploy web** job runs on pushes to `main` once **Build, lint and test**
+passes, and uploads that job's build with `wrangler pages deploy`. Render waits
+for checks the same way, through its "after CI checks pass" setting.
+
+1. In the Pages project, open **Settings → Branch control** and untick
+   **Enable automatic production branch deployments**. Branch previews can
+   stay on.
+2. In **My Profile → API Tokens**, create a token with the
+   **Account → Cloudflare Pages → Edit** permission.
+3. Before merging the PR that adds the workflow, open the GitHub repo's
+   **Settings → Secrets and variables → Actions** and add:
+
+| Kind | Name | Value |
+| --- | --- | --- |
+| Secret | `CLOUDFLARE_API_TOKEN` | The token from step 2 |
+| Secret | `CLOUDFLARE_ACCOUNT_ID` | The ID in the dashboard URL, `dash.cloudflare.com/<account id>/…` |
+| Variable | `VITE_API_URL` | Same as the Pages variable |
+| Variable 
+Vite inlines `VITE_*` values at build time. After changing one, redeploy from
+**Actions → Web CI → Run workflow** on `main`: pushes only run the workflow
+when they touch the web app or shared code.
+
+Both **Web CI** and **Server CI** only run when their app (or shared code)
+changes, so don't mark either check as required in branch protection: a PR that
+only touches the other app would wait on it forever.

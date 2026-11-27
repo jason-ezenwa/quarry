@@ -1,0 +1,63 @@
+name: Server CI
+
+on:
+  pull_request:
+    paths:
+      - apps/server/**
+      - packages/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - turbo.json
+      - .github/workflows/server.yml
+  push:
+    branches: [main]
+    paths:
+      - apps/server/**
+      - packages/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - turbo.json
+      - .github/workflows/server.yml
+
+# A newer push to the same PR replaces the run in progress.
+concurrency:
+  group: server-ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Build, lint and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      # The integration tests' in-memory MongoDB binary, about 120 MB.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm turbo run build --filter=server
+
+      # The build skips scripts and specs, and the test runners don't type-check.
+      - run: pnpm --filter server exec tsc --noEmit
+
+      - run: pnpm turbo run lint --filter=server --filter=@quarry/contracts
+
+      - run: pnpm turbo run test --filter=server --filter=@quarry/contracts
+
+      - run: pnpm turbo run test:integration --filter=server

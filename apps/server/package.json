@@ -20,7 +20,8 @@
     "migrate:status": "migrate-mongo status -f migrate-mongo-config.js",
     "migrate:up": "migrate-mongo up -f migrate-mongo-config.js",
     "migrate:down": "migrate-mongo down -f migrate-mongo-config.js",
-    "seed": "ts-node --transpile-only -P tsconfig.migrate-mongo.json scripts/seed.ts"
+    "seed": "ts-node --transpile-only -P tsconfig.migrate-mongo.json scripts/seed.ts",
+    "invite": "ts-node --transpile-only -P tsconfig.migrate-mongo.json scripts/invite.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.107",

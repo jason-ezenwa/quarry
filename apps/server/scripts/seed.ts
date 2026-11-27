@@ -1,5 +1,8 @@
 import { Logger } from '@nestjs/common';
+import { MongoClient } from 'mongodb';
 import { auth } from '../src/lib/auth';
+import { addInvite } from '../src/lib/beta-invites/beta-invites';
+import { DATABASE_NAME, getMongoUri } from '../src/lib/database';
 
 const DEMO_USER = {
   name: 'Demo User',
@@ -9,9 +12,26 @@ const DEMO_USER = {
 
 const logger = new Logger('Seed');
 
+// Sign-up only takes invited emails. Forced, so a full beta list can't block it.
+async function inviteDemoUser(): Promise<void> {
+  const client = new MongoClient(getMongoUri());
+
+  try {
+    await addInvite(
+      client.db(DATABASE_NAME),
+      { email: DEMO_USER.email, firstName: 'Demo' },
+      { force: true },
+    );
+  } finally {
+    await client.close();
+  }
+}
+
 // Signs up through Better Auth, then verifies, since unverified accounts can't sign in.
 async function seed(): Promise<void> {
   const context = await auth.$context;
+
+  await inviteDemoUser();
 
   const existing = await context.internalAdapter.findUserByEmail(
     DEMO_USER.email,

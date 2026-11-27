@@ -1,10 +1,23 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import { createTestApp } from '../../../test/integration/create-test-app';
 import { getTestDatabase } from '../../../test/integration/database';
 import { fakeResend } from '../../../test/integration/fake-resend';
-import { signUp, TEST_ORIGIN, TEST_PASSWORD } from './sign-up.fixture';
+import {
+  inviteToBeta,
+  signUp,
+  TEST_ORIGIN,
+  TEST_PASSWORD,
+} from './sign-up.fixture';
 
 const EMAIL = 'ada@example.com';
 const NEW_PASSWORD = 'a-brand-new-password';
@@ -15,6 +28,10 @@ describe('Password reset (integration)', () => {
 
   beforeAll(async () => {
     app = await createTestApp();
+  });
+
+  beforeEach(async () => {
+    await inviteToBeta(EMAIL);
   });
 
   afterAll(async () => {
