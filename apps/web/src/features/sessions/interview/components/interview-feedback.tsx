@@ -8,7 +8,6 @@ import { formatShortDate } from '../../session-format'
 export function InterviewFeedback({ className, children, ...props }: ComponentProps<'article'>) {
   return (
     <article data-slot="interview-feedback" aria-label="Interview feedback" className={cn('flex flex-col gap-6.5', className)} {...props}>
-      <h2 className="text-doc-title">Feedback</h2>
       {children}
     </article>
   )
