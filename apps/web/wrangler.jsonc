@@ -1,0 +1,12 @@
+// Cloudflare Workers config for the web app: static assets only, no Worker
+// script, so requests are served without counting against the free plan.
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "quarry",
+  "compatibility_date": "2026-11-27",
+  "assets": {
+    "directory": "./dist",
+    // Client-side routes (e.g. /applications/123) load index.html.
+    "not_found_handling": "single-page-application"
+  }
+}
