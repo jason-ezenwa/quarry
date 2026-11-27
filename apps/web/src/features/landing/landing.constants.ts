@@ -5,5 +5,5 @@ export const WAITLIST_URL =
 // Public domain, from the Art Institute of Chicago.
 export const PAINTING_CREDIT = 'Camille Corot, Landscape'
 
-export const APP_SHOT_ALT =
-  "Quarry with an application open: Wren's steps and replies on the left, the fit report on the right."
+export const DEMO_LABEL =
+  "Quarry with an application open: Wren reads the job post, scores your fit, then tailors your resume and cover letter, with the fit report beside the chat."
