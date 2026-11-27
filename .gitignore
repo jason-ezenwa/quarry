@@ -13,6 +13,3 @@ coverage
 .DS_Store
 *.log
 *.tsbuildinfo
-
-# Wrangler local state
-.wrangler

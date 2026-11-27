@@ -1,42 +1,52 @@
-# Deploying the web app to Cloudflare
+# Deploying the web app to Cloudflare Pages
 
-The web app is a static Vite build served from Cloudflare Workers as static
-assets (`apps/web/wrangler.jsonc`). There is no Worker script, so asset
-requests are free and unmetered on the free plan. The API runs separately on
-Render.
+The web app is a static Vite build served by Cloudflare Pages (free, with
+unlimited static requests). The API runs separately on Render. Both sit on
+subdomains of one domain whose DNS stays at its current registrar.
 
-## Workers Builds settings
+## 1. Create the Pages project
 
-In the Cloudflare dashboard, open the Worker, then **Settings → Build**:
+In the Cloudflare dashboard, go to **Workers & Pages → Create → Pages →
+Import an existing Git repository**, pick this repo and set:
 
 | Setting | Value |
 | --- | --- |
+| Production branch | `main` |
+| Framework preset | None |
 | Root directory | `/` (the repo root, so the workspace installs and builds) |
 | Build command | `pnpm turbo run build --filter=web` |
-| Deploy command | `pnpm --filter web run deploy` |
-| Non-production branch deploy command | `pnpm --filter web exec wrangler versions upload` |
+| Build output directory | `apps/web/dist` |
 
-The Worker's name in the dashboard must match `name` in
-`apps/web/wrangler.jsonc` (`quarry`).
-
-Under **Settings → Build → Variables and secrets** add these build variables.
-Vite inlines `VITE_*` values at build time, so they go here, not under the
-Worker's runtime variables.
+Add these environment variables (Vite inlines `VITE_*` values at build time):
 
 | Variable | Value |
 | --- | --- |
-| `VITE_API_URL` | The API's public origin, e.g. `https://api.example.com` (no trailing slash, no `/api`) |
+| `VITE_API_URL` | The API's origin, e.g. `https://api.quarry.example.com` (no trailing slash, no `/api`) |
+| `NODE_VERSION` | `24` |
+| `PNPM_VERSION` | `10.20.0` |
 | `MONGOMS_DISABLE_POSTINSTALL` | `1` (skips the 120 MB test MongoDB download) |
 
-## Server settings
+Client-side routes need no config: with no `404.html` in the build, Pages
+serves `index.html` for any path it doesn't find.
 
-On Render, set `FRONTEND_URL` to the web app's origin. CORS and Better Auth
-only accept requests from that origin.
+## 2. Add the custom domain
 
-## Cookies need the same site
+In the Pages project, open **Custom domains → Set up a custom domain** and
+enter the web subdomain, e.g. `quarry.example.com`. Cloudflare shows a CNAME
+target (`<project>.pages.dev`). Add that CNAME at your DNS provider. A
+subdomain works without moving the domain's nameservers to Cloudflare.
+
+## 3. Point the API at the same domain
+
+On Render, add a custom domain for the API, e.g. `api.quarry.example.com`, and
+add the CNAME Render shows at your DNS provider. Then set on Render:
+
+- `FRONTEND_URL` to the web origin, e.g. `https://quarry.example.com`. CORS
+  and Better Auth only accept requests from it.
+- `BETTER_AUTH_URL` to the API origin, e.g. `https://api.quarry.example.com`.
+
+## Why one domain
 
 Better Auth's session cookie is `SameSite=Lax`, so the browser only sends it
-when the web app and the API are on the same site. `*.workers.dev` and
+when the web app and the API are on the same site. `*.pages.dev` and
 `*.onrender.com` are different sites, so sign-in will not stick between them.
-Serve both from subdomains of one domain you own, for example
-`app.example.com` on Cloudflare and `api.example.com` on Render.
