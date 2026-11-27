@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { File as NodeFile } from 'node:buffer'
 import { cleanup } from '@testing-library/react'
 import { afterAll, afterEach, beforeAll } from 'vitest'
