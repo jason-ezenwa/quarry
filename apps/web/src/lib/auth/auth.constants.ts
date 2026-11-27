@@ -6,7 +6,9 @@ export const TOO_MANY_REQUESTS_STATUS = 429
 export const RATE_LIMITED_MESSAGE = 'Too many attempts. Try again in a few minutes.'
 
 export const PATHS = {
-  home: '/',
+  // Signed-in visitors are sent on to home.
+  landing: '/',
+  home: '/home',
   signIn: '/sign-in',
   signUp: '/sign-up',
   onboarding: '/onboarding',
@@ -38,6 +40,3 @@ export const SIGN_IN_ERRORS: Record<number, string> = {
   401: 'Incorrect email or password.',
   [TOO_MANY_REQUESTS_STATUS]: RATE_LIMITED_MESSAGE,
 }
-
-// The beta waitlist form. Without it the not-invited message has no link.
-export const WAITLIST_URL = import.meta.env.VITE_WAITLIST_URL || ''

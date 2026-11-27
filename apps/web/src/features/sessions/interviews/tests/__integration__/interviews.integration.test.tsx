@@ -88,7 +88,7 @@ describe('Sidebar (integration)', () => {
     setViewport('desktop')
     signInAs()
     serveLists([[interviewSummary()]])
-    const router = renderRoute('/')
+    const router = renderRoute('/home')
 
     const recent = await screen.findByRole('navigation', { name: 'Recent' })
     expect(await within(recent).findByRole('link', { name: /Halden/ })).toHaveAttribute('href', '/applications/session-abc')
@@ -112,7 +112,7 @@ describe('Sidebar (integration)', () => {
         }),
       ),
     )
-    renderRoute('/')
+    renderRoute('/home')
 
     const interviews = within(await screen.findByRole('group', { name: 'Interviews' }))
     expect(interviews.getByRole('meter', { name: 'Interviews' })).toHaveAttribute('value', '10')

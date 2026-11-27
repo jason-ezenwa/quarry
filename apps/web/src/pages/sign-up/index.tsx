@@ -11,7 +11,8 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/c
 import { Input } from '@/components/ui/input'
 import type { VerifyEmailState } from '@/features/email-verification/email-verification.types'
 import { authClient } from '@/lib/auth-client'
-import { PASSWORD_MIN_LENGTH, PATHS, SIGN_UP_ERRORS, WAITLIST_URL } from '@/lib/auth/auth.constants'
+import { WAITLIST_URL } from '@/features/landing/landing.constants'
+import { PASSWORD_MIN_LENGTH, PATHS, SIGN_UP_ERRORS } from '@/lib/auth/auth.constants'
 import { signUpSchema } from '@/lib/auth/auth-schemas'
 import type { SignUpProblem, SignUpValues } from '@/lib/auth/auth.types'
 

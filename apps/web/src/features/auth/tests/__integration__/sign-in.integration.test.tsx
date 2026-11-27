@@ -28,7 +28,7 @@ describe('Sign in (integration)', () => {
     await fillAndSubmit('Ada@Example.com', 'correct-horse')
 
     expect(await screen.findByText('Ada Obi')).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe('/')
+    expect(router.state.location.pathname).toBe('/home')
     expect(body).toEqual({ email: 'ada@example.com', password: 'correct-horse' })
   })
 
@@ -52,7 +52,7 @@ describe('Sign in (integration)', () => {
   it('treats a session for an unverified account as signed out', async () => {
     signInAs({ user: { ...TEST_USER, emailVerified: false } })
 
-    const router = renderRoute('/')
+    const router = renderRoute('/home')
 
     expect(await screen.findByRole('button', { name: 'Sign in' })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/sign-in')
@@ -89,6 +89,6 @@ describe('Sign in (integration)', () => {
     const router = renderRoute('/sign-in')
 
     expect(await screen.findByText('Ada Obi')).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe('/')
+    expect(router.state.location.pathname).toBe('/home')
   })
 })

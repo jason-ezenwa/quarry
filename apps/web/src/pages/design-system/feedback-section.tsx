@@ -8,7 +8,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { Section, Specimen } from './section.tsx'
 
 const alertVariants = ['default', 'success', 'warning', 'destructive'] as const
-const badgeVariants = ['ready', 'interview', 'drafting', 'neutral'] as const
+const badgeVariants = ['ready', 'interview', 'drafting', 'neutral', 'beta'] as const
 
 export function FeedbackSection() {
   return (

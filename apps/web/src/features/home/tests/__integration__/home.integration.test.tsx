@@ -8,7 +8,7 @@ import { server } from '@/test/integration/server'
 
 describe('Home (integration)', () => {
   it('sends a signed-out visitor to sign-in', async () => {
-    const router = renderRoute('/')
+    const router = renderRoute('/home')
 
     expect(await screen.findByRole('button', { name: 'Sign in' })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/sign-in')
@@ -17,7 +17,7 @@ describe('Home (integration)', () => {
   it('shows who is signed in, in the account menu', async () => {
     signInAs()
 
-    renderRoute('/')
+    renderRoute('/home')
     await screen.findByText('Ada Obi')
     await userEvent.click(screen.getByRole('button', { name: 'Account' }))
 
@@ -34,7 +34,7 @@ describe('Home (integration)', () => {
         return HttpResponse.json({ success: true })
       }),
     )
-    const router = renderRoute('/')
+    const router = renderRoute('/home')
 
     await userEvent.click(await screen.findByRole('button', { name: 'Account' }))
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Sign out' }))
@@ -45,7 +45,7 @@ describe('Home (integration)', () => {
 
   it('opens the menu from the page header and closes it on navigation', async () => {
     signInAs()
-    const router = renderRoute('/')
+    const router = renderRoute('/home')
 
     await userEvent.click(await screen.findByRole('button', { name: 'Open menu' }))
     await userEvent.click(within(await screen.findByRole('dialog', { name: 'Menu' })).getByRole('link', { name: 'Profile' }))
@@ -59,7 +59,7 @@ describe('Home (integration)', () => {
     it('says the resume is being read while it parses', async () => {
       signInAs({ resume: primaryResumeResponse({ parseStatus: 'parsing', parsedAt: null, reviewedAt: null, resume: null }) })
 
-      renderRoute('/')
+      renderRoute('/home')
 
       expect(await screen.findByText('Reading your resume')).toBeInTheDocument()
       expect(screen.queryByRole('link', { name: 'Review' })).not.toBeInTheDocument()
@@ -67,7 +67,7 @@ describe('Home (integration)', () => {
 
     it('links to the resume page once parsed', async () => {
       signInAs({ resume: primaryResumeResponse({ reviewedAt: null }) })
-      const router = renderRoute('/')
+      const router = renderRoute('/home')
 
       await userEvent.click(await screen.findByRole('link', { name: 'Review' }))
 
@@ -76,7 +76,7 @@ describe('Home (integration)', () => {
 
     it('points a failed parse to the profile', async () => {
       signInAs({ resume: primaryResumeResponse({ parseStatus: 'failed', parsedAt: null, reviewedAt: null, resume: null }) })
-      const router = renderRoute('/')
+      const router = renderRoute('/home')
 
       await userEvent.click(await screen.findByRole('link', { name: 'Go to profile' }))
 
@@ -94,7 +94,7 @@ describe('Home (integration)', () => {
         }),
       )
 
-      renderRoute('/')
+      renderRoute('/home')
 
       await screen.findByText('Ada Obi')
       await waitFor(() => expect(answered).toBe(true))

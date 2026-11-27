@@ -123,6 +123,10 @@
   --fit-foreground: var(--on-moss);
   --fit-tint: var(--matcha);
 
+  --beta: var(--moss);
+  --beta-foreground: var(--on-moss);
+  --beta-tint: var(--matcha);
+
   --status-ready: var(--moss);
   --status-ready-foreground: var(--on-moss);
   --status-interview: var(--lilac-deep);
@@ -229,6 +233,9 @@
   --color-fit: var(--fit);
   --color-fit-foreground: var(--fit-foreground);
   --color-fit-tint: var(--fit-tint);
+  --color-beta: var(--beta);
+  --color-beta-foreground: var(--beta-foreground);
+  --color-beta-tint: var(--beta-tint);
   --color-status-ready: var(--status-ready);
   --color-status-ready-foreground: var(--status-ready-foreground);
   --color-status-interview: var(--status-interview);
@@ -379,6 +386,46 @@
 
   @media (width >= 40rem) {
     font-size: 2.5rem;
+  }
+}
+
+/* Marketing only, never inside the app. */
+@utility text-hero {
+  font-size: 2.625rem;
+  line-height: 2.75rem;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+
+  @media (width >= 48rem) {
+    font-size: 3.75rem;
+    line-height: 1;
+  }
+
+  @media (width >= 80rem) {
+    font-size: 4.75rem;
+  }
+}
+
+@utility text-lede {
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 400;
+
+  @media (width >= 48rem) {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+  }
+}
+
+@utility text-section {
+  font-size: 1.375rem;
+  line-height: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+
+  @media (width >= 48rem) {
+    font-size: 1.5rem;
+    line-height: 1.875rem;
   }
 }
 
