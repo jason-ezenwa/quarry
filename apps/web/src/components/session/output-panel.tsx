@@ -60,7 +60,7 @@ function OutputPanelToolbar({ className, ...props }: ComponentProps<'div'>) {
   return (
     <div
       data-slot="output-panel-toolbar"
-      className={cn('flex shrink-0 items-center gap-1.5 px-4 pb-2 md:pr-2.5 md:pl-3.5', className)}
+      className={cn('flex min-h-control-sm shrink-0 items-center gap-1.5 px-4 pb-2 md:pr-2.5 md:pl-3.5', className)}
       {...props}
     />
   )

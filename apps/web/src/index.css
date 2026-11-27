@@ -262,6 +262,7 @@
  * Type roles from the design system. Each sets size, line height, weight and
  * tracking together, so a call site never adds font-medium or a tracking class.
  */
+/* The heading of a screen built around a single action, such as New application, sign in or onboarding. */
 @utility text-title {
   font-size: 1.625rem;
   line-height: 2rem;
@@ -347,6 +348,7 @@
   font-weight: 400;
 }
 
+/* Headings in documents and output panels. */
 @utility text-doc-title {
   font-size: 1.0625rem;
   line-height: 1.375rem;

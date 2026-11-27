@@ -1,7 +1,7 @@
 import { Section, Specimen } from './section.tsx'
 
 const roles = [
-  { role: 'text-title', spec: '26 / 32 · 600 · -2%', sample: 'New application' },
+  { role: 'text-title', spec: '26 / 32 · 600 · -2% · single-action screens', sample: 'New application' },
   { role: 'text-question', spec: '16 / 23 · 500', sample: 'Tell me about a system you designed end to end.' },
   { role: 'text-reading', spec: '15 / 24', sample: 'You line up well. Go is the main gap.' },
   { role: 'text-reading-strong', spec: '15 / 24 · 500', sample: 'Tell me about a system you designed.' },
@@ -16,7 +16,7 @@ const roles = [
   { role: 'text-pill', spec: '11 / 20 · mono', sample: 'Ready' },
   { role: 'text-wordmark', spec: '15 / 20 · 600 · -1%', sample: 'Quarry' },
   { role: 'text-field', spec: '16 / 22 on phones, 15 / 24 from md', sample: 'Paste a job link' },
-  { role: 'text-doc-title', spec: '17 / 22 · 600 · -1%', sample: 'Cover letter' },
+  { role: 'text-doc-title', spec: '17 / 22 · 600 · -1% · documents and output panels', sample: 'Feedback' },
   { role: 'text-doc-body', spec: '13 / 19', sample: 'I build backend systems that stay boring under load.' },
   { role: 'text-doc-caps', spec: '11 / 14 · 600 · 6% · caps', sample: 'Experience' },
 ]

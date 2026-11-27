@@ -15,6 +15,9 @@
   `text-ui-strong`, `text-small`, `text-label` and the rest in `src/index.css`),
   not `text-sm` and friends. Each role owns its weight, so don't add
   `font-medium` or a tracking class.
+- `text-title` is the heading of a screen built around a single action (New
+  application, sign in, onboarding). Headings in documents and output panels
+  use `text-doc-title`.
 - Icons are Phosphor, imported one at a time from
   `@phosphor-icons/react/dist/csr/<IconName>`.
 

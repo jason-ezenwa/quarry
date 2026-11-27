@@ -5,24 +5,22 @@ import { useId, useState, type ComponentProps } from 'react'
 import { cn } from '@/lib/utils'
 import { formatShortDate } from '../../session-format'
 
-export function InterviewFeedback({
-  endedAt,
-  questionCount,
-  className,
-  children,
-  ...props
-}: ComponentProps<'article'> & { endedAt: string; questionCount: number }) {
+export function InterviewFeedback({ className, children, ...props }: ComponentProps<'article'>) {
   return (
     <article data-slot="interview-feedback" aria-label="Interview feedback" className={cn('flex flex-col gap-9 md:gap-11', className)} {...props}>
-      <header className="flex flex-col gap-2.5">
-        <p className="flex gap-4 text-label text-muted-foreground">
-          <span>{formatShortDate(endedAt)}</span>
-          <span>{questionCount === 1 ? '1 question' : `${questionCount} questions`}</span>
-        </p>
-        <h2 className="text-title">Feedback</h2>
-      </header>
+      <h2 className="text-doc-title">Feedback</h2>
       {children}
     </article>
+  )
+}
+
+// When the interview ended and how many questions it had, for the panel's name row.
+export function FeedbackMeta({ endedAt, questionCount }: { endedAt: string; questionCount: number }) {
+  return (
+    <span className="flex gap-4">
+      <span>{formatShortDate(endedAt)}</span>
+      <span>{questionCount === 1 ? '1 question' : `${questionCount} questions`}</span>
+    </span>
   )
 }
 

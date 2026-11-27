@@ -1,10 +1,20 @@
 import { ClipboardTextIcon } from '@phosphor-icons/react/dist/csr/ClipboardText'
 import type { InterviewState } from '@quarry/contracts'
 import type { ReactNode } from 'react'
-import { OutputPanel, OutputPanelBar, OutputPanelContent, OutputPanelMessage, OutputPanelTab, OutputPanelTabs } from '@/components/session/output-panel'
+import {
+  OutputPanel,
+  OutputPanelBar,
+  OutputPanelContent,
+  OutputPanelMessage,
+  OutputPanelName,
+  OutputPanelTab,
+  OutputPanelTabs,
+  OutputPanelToolbar,
+} from '@/components/session/output-panel'
 import { FEEDBACK_PENDING, FEEDBACK_TAB } from '../interview.constants'
 import {
   AdditionalNotes,
+  FeedbackMeta,
   FeedbackPoints,
   InterviewFeedback,
   StrongerAnswers,
@@ -26,9 +36,16 @@ export function FeedbackPanel({
   return (
     <OutputPanel value={FEEDBACK_TAB}>
       <OutputPanelBar>{children}</OutputPanelBar>
-      <OutputPanelContent value={FEEDBACK_TAB} className="md:pt-4">
+      {feedback && endedAt ? (
+        <OutputPanelToolbar>
+          <OutputPanelName>
+            <FeedbackMeta endedAt={endedAt} questionCount={interview.questionCount} />
+          </OutputPanelName>
+        </OutputPanelToolbar>
+      ) : null}
+      <OutputPanelContent value={FEEDBACK_TAB} className="px-4 md:pr-2.5 md:pl-3.5">
         {feedback && endedAt ? (
-          <InterviewFeedback endedAt={endedAt} questionCount={interview.questionCount}>
+          <InterviewFeedback>
             <FeedbackPoints>
               <WentWell items={feedback.wentWell} />
               <ToImprove items={feedback.toImprove} />
