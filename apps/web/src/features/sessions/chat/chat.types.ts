@@ -1,4 +1,5 @@
 import type { SessionErrorCode } from '@quarry/contracts'
+import type { UIMessage } from 'ai'
 import type { ComposerStatus } from '@/components/session/session.types'
 import type { DocumentAnnouncement } from '../sessions.types'
 import type { CHAT_ERRORS } from './chat.constants'
@@ -20,4 +21,18 @@ export type ApplicationComposerState = Exclude<ComposerStatus, 'closed'> | 'arch
 export type DocumentCardProps = {
   activeDocumentId: string | null
   onOpenDocument: (document: DocumentAnnouncement) => void
+}
+
+// A session's conversation and what can be done to it, as the session page draws it.
+export type SessionChatState = {
+  messages: UIMessage[]
+  busy: boolean
+  waiting: boolean
+  error: ChatErrorCode | null
+  unsent: UnsentDraft | null
+  send: (text: string) => void
+  retry: () => void
+  canStop: boolean
+  stopping: boolean
+  stop: () => Promise<void>
 }

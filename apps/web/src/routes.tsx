@@ -16,6 +16,7 @@ import { HomePage } from './pages/home/index.tsx'
 import { InterviewPage } from './pages/interviews/[sessionId]/index.tsx'
 import { InterviewsPage } from './pages/interviews/index.tsx'
 import { LandingPage } from './pages/landing/index.tsx'
+import { LandingDemoLayout, LandingDemoPage } from './pages/landing-demo/index.tsx'
 import { OnboardingPage } from './pages/onboarding/index.tsx'
 import { ProfilePage } from './pages/profile/index.tsx'
 import { ResetPasswordPage } from './pages/reset-password/index.tsx'
@@ -57,6 +58,7 @@ export const routes: RouteObject[] = [
       },
       // No loader, so the page shows even while the API wakes up.
       { path: PATHS.landing, Component: LandingPage },
+      { path: PATHS.landingDemo, Component: LandingDemoLayout, children: [{ index: true, Component: LandingDemoPage }] },
       { path: PATHS.onboarding, loader: sequence(requireSession, requireNoProfile), Component: OnboardingPage },
       { path: PATHS.signIn, loader: requireNoSession, Component: SignInPage },
       { path: PATHS.signUp, loader: requireNoSession, Component: SignUpPage },

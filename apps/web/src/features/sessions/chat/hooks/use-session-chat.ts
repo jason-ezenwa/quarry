@@ -7,7 +7,7 @@ import { asUIMessages, hasUnansweredMessage, messageBlocks, messageText } from '
 import { sessionQueryOptions, stopTurn, turnsUrl } from '../../sessions-api'
 import { SESSION_QUERY_KEYS } from '../../sessions.constants'
 import { REFUSED_TURN_CODES } from '../chat.constants'
-import type { ChatErrorCode, TurnErrorCode, UnsentDraft } from '../chat.types'
+import type { ChatErrorCode, SessionChatState, TurnErrorCode, UnsentDraft } from '../chat.types'
 import { useRefreshSessionLists } from '../../hooks/use-sessions'
 import { useJustStarted } from './use-just-started'
 
@@ -50,7 +50,7 @@ function createTransport(sessionId: string) {
 
 // Seeded from the stored messages; takes in a reply written elsewhere once the session query brings it.
 // `fresh`: the session has been fetched since the page opened.
-export function useSessionChat(session: SessionDetail, fresh: boolean) {
+export function useSessionChat(session: SessionDetail, fresh: boolean): SessionChatState {
   const queryClient = useQueryClient()
   const refreshLists = useRefreshSessionLists()
 

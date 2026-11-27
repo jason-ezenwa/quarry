@@ -9,6 +9,8 @@ export const PATHS = {
   // Signed-in visitors are sent on to home.
   landing: '/',
   home: '/home',
+  // The app playing a scripted session, shown on the landing page. Static, so it wins over the session route.
+  landingDemo: '/applications/demo',
   signIn: '/sign-in',
   signUp: '/sign-up',
   onboarding: '/onboarding',

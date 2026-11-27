@@ -22,13 +22,13 @@ import { DocumentPanel, DocumentTabs, DocumentTabsFullWidth } from '../documents
 import { useOpenDocuments } from '../documents/hooks/use-open-documents'
 import { InterviewsTab, InterviewsTabContent, InterviewsTabPlain } from '../interviews/components/interviews-tab'
 import { MockInterviewButton } from '../interviews/components/mock-interview-button'
-import type { ApplicationComposerState } from '../chat/chat.types'
+import type { ApplicationComposerState, SessionChatState } from '../chat/chat.types'
 import { CRUMBS } from '../sessions.constants'
 import type { DocumentAnnouncement } from '../sessions.types'
 import { SessionMenu } from './session-menu'
 import { StatusBadge } from './status-badge'
 
-function composerState(session: SessionDetail, chat: ReturnType<typeof useSessionChat>): ApplicationComposerState {
+function composerState(session: SessionDetail, chat: SessionChatState): ApplicationComposerState {
   if (session.archivedAt) return 'archived'
   if (session.userMessageCount >= session.messageLimit) return 'limit'
   if (chat.stopping) return 'stopping'
@@ -37,7 +37,11 @@ function composerState(session: SessionDetail, chat: ReturnType<typeof useSessio
 }
 
 export function SessionView({ session, fresh }: { session: SessionDetail; fresh: boolean }) {
-  const chat = useSessionChat(session, fresh)
+  return <SessionScreen session={session} chat={useSessionChat(session, fresh)} />
+}
+
+// The session page around a conversation, wherever it comes from.
+export function SessionScreen({ session, chat }: { session: SessionDetail; chat: SessionChatState }) {
   const wide = useMediaQuery(WIDE_SCREEN_QUERY)
   const outputs = useOpenDocuments(chat.messages)
 
