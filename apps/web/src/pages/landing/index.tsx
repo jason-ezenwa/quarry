@@ -5,7 +5,6 @@ import { LandingHero } from '@/features/landing/components/landing-hero'
 import { LandingShowcase } from '@/features/landing/components/landing-showcase'
 import { useRedirectSignedIn } from '@/features/landing/hooks/use-redirect-signed-in'
 
-// What a signed-out visitor sees at the root: the pitch, the app, and the waitlist.
 export function LandingPage() {
   useRedirectSignedIn()
 

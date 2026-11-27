@@ -6,7 +6,7 @@ export const TOO_MANY_REQUESTS_STATUS = 429
 export const RATE_LIMITED_MESSAGE = 'Too many attempts. Try again in a few minutes.'
 
 export const PATHS = {
-  // Signed-out visitors see the landing page here; signed-in users go on to home.
+  // Signed-in visitors are sent on to home.
   landing: '/',
   home: '/home',
   signIn: '/sign-in',

@@ -55,7 +55,7 @@ export const routes: RouteObject[] = [
           { path: PATHS.interview, Component: InterviewPage },
         ],
       },
-      // No loader: the page shows at once, even while the API wakes up, and sends a signed-in user on to home.
+      // No loader, so the page shows even while the API wakes up.
       { path: PATHS.landing, Component: LandingPage },
       { path: PATHS.onboarding, loader: sequence(requireSession, requireNoProfile), Component: OnboardingPage },
       { path: PATHS.signIn, loader: requireNoSession, Component: SignInPage },

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router'
 import { PATHS } from '@/lib/auth/auth.constants'
 import { hasSession } from '@/lib/auth/session-loaders'
 
-// Checks the session after the landing page shows, so a slow or sleeping API never holds it back.
+// Runs after render so a sleeping API never holds the page back.
 export function useRedirectSignedIn() {
   const navigate = useNavigate()
 

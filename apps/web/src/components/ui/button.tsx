@@ -18,7 +18,6 @@ const buttonVariants = cva(
         destructive:
           "border-border bg-secondary text-destructive-ink hover:border-destructive hover:bg-destructive-tint",
         link: "text-foreground underline underline-offset-3 hover:text-primary",
-        // The call to action on the matcha private beta band.
         beta: "bg-beta text-beta-foreground hover:bg-beta/90",
       },
       size: {
@@ -26,9 +25,8 @@ const buttonVariants = cva(
           "h-control gap-1.5 px-3 has-data-[icon=inline-end]:pr-2.5 has-data-[icon=inline-start]:pl-2.5",
         sm: "h-control-sm gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 [&_svg:not([class*='size-'])]:size-3.5",
         lg: "h-control-lg gap-2 px-3.5 text-ui-strong has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
-        // A text button in a phone header: a 44px target there, the default size from md.
+        // 44px tap target on phones.
         touch: "h-11 gap-1.5 px-3 md:h-control",
-        // The landing page's calls to action: a 44px target, 48px on phones.
         xl: "h-12 gap-2 px-5 text-reading-strong md:h-11",
         icon: "size-control",
         "icon-sm": "size-control-sm [&_svg:not([class*='size-'])]:size-3.5",

@@ -1,4 +1,3 @@
-// The private beta waitlist (a Google Form). Set VITE_WAITLIST_URL to point somewhere else.
 export const WAITLIST_URL =
   import.meta.env.VITE_WAITLIST_URL ||
   'https://docs.google.com/forms/d/e/1FAIpQLSekCnzQkivx27kHAIEfrNi2uBU1cLw9rihkRaGckNOEZf5Z7A/viewform'

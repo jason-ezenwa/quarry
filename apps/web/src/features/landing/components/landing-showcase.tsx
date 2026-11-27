@@ -2,7 +2,7 @@ import appShot from '@/assets/landing/app-shot.webp'
 import painting from '@/assets/landing/corot-landscape.webp'
 import { APP_SHOT_ALT, PAINTING_CREDIT } from '../landing.constants'
 
-// The app, framed on a landscape painting. Phones show a crop of it; larger screens show it whole, cut at the frame's foot.
+// Phones show a crop of the app; larger screens show it whole.
 export function LandingShowcase() {
   return (
     <section aria-label="Quarry in use" className="flex w-full max-w-300 flex-col gap-2.5 px-3 pt-10 md:gap-3 md:px-6 md:pt-16">

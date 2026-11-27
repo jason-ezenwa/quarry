@@ -123,7 +123,6 @@
   --fit-foreground: var(--on-moss);
   --fit-tint: var(--matcha);
 
-  /* The private beta on the landing page: a matcha band with moss text and action. */
   --beta: var(--moss);
   --beta-foreground: var(--on-moss);
   --beta-tint: var(--matcha);
@@ -390,7 +389,7 @@
   }
 }
 
-/* The landing page headline. Marketing only, never inside the app. */
+/* Marketing only, never inside the app. */
 @utility text-hero {
   font-size: 2.625rem;
   line-height: 2.75rem;
@@ -407,7 +406,6 @@
   }
 }
 
-/* The sentence under the landing headline. */
 @utility text-lede {
   font-size: 1rem;
   line-height: 1.5rem;
@@ -419,7 +417,6 @@
   }
 }
 
-/* A section heading on the landing page, such as the private beta band. */
 @utility text-section {
   font-size: 1.375rem;
   line-height: 1.75rem;
