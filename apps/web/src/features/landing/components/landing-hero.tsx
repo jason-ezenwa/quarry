@@ -12,7 +12,7 @@ export function LandingHero() {
     >
       <Badge variant="beta">Private beta</Badge>
       <h1 id="landing-title" className="max-w-190 text-hero">
-        Apply with an agent in your corner.
+        Apply with an <span className="text-highlight">agent</span> in your corner.
       </h1>
       <div className="flex flex-col gap-6 md:flex-row md:flex-wrap md:items-end md:justify-between md:gap-12">
         <p className="max-w-125 text-lede text-muted-foreground">

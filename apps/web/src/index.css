@@ -127,6 +127,9 @@
   --beta-foreground: var(--on-moss);
   --beta-tint: var(--matcha);
 
+  /* The one coloured word in the landing headline. */
+  --highlight: var(--ochre-dark);
+
   --status-ready: var(--moss);
   --status-ready-foreground: var(--on-moss);
   --status-interview: var(--lilac-deep);
@@ -236,6 +239,7 @@
   --color-beta: var(--beta);
   --color-beta-foreground: var(--beta-foreground);
   --color-beta-tint: var(--beta-tint);
+  --color-highlight: var(--highlight);
   --color-status-ready: var(--status-ready);
   --color-status-ready-foreground: var(--status-ready-foreground);
   --color-status-interview: var(--status-interview);

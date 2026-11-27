@@ -63,6 +63,7 @@ const semanticTokens = [
   { name: 'fit-tint', swatch: 'bg-fit-tint text-foreground' },
   { name: 'beta', swatch: 'bg-beta text-beta-foreground' },
   { name: 'beta-tint', swatch: 'bg-beta-tint text-beta' },
+  { name: 'highlight', swatch: 'bg-highlight text-primary-foreground' },
   { name: 'status-ready', swatch: 'bg-status-ready text-status-ready-foreground' },
   { name: 'status-interview', swatch: 'bg-status-interview text-status-interview-foreground' },
   { name: 'status-drafting', swatch: 'bg-status-drafting text-status-drafting-foreground' },
