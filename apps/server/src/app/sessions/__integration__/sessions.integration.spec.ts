@@ -1112,11 +1112,11 @@ describe('Sessions (integration)', () => {
           expect(messages[1].parts).toContainEqual(
             expect.objectContaining({ type: 'text', text: 'After the drop.' }),
           );
+
+          expect((await findSession(id))?.turnStartedAt).toBeNull();
         },
         { timeout: 5_000, interval: 20 },
       );
-
-      expect((await findSession(id))?.turnStartedAt).toBeNull();
     });
 
     describe('stopping a turn', () => {
