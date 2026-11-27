@@ -70,7 +70,7 @@ describe('Onboarding (integration)', () => {
   it('sends a signed-in user without a profile from Home to onboarding', async () => {
     signInAs({ profile: false })
 
-    const router = renderRoute('/')
+    const router = renderRoute('/home')
 
     expect(await screen.findByRole('heading', { name: 'Set up your profile' })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/onboarding')
@@ -82,7 +82,7 @@ describe('Onboarding (integration)', () => {
     const router = renderRoute('/onboarding')
 
     expect(await screen.findByText('Ada Obi')).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe('/')
+    expect(router.state.location.pathname).toBe('/home')
   })
 
   it('sends a signed-out visitor to sign-in', async () => {
@@ -223,7 +223,7 @@ describe('Onboarding (integration)', () => {
     await act(() => vi.advanceTimersByTimeAsync(2500))
 
     expect(await screen.findByText('Ada Obi')).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe('/')
+    expect(router.state.location.pathname).toBe('/home')
   })
 
   it('sets the salary currency from the chosen country', async () => {
@@ -302,6 +302,6 @@ describe('Onboarding (integration)', () => {
     await user.click(screen.getByRole('button', { name: 'Save and continue' }))
 
     expect(await screen.findByText('Ada Obi')).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe('/')
+    expect(router.state.location.pathname).toBe('/home')
   })
 })

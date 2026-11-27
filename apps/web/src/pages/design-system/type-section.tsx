@@ -1,6 +1,9 @@
 import { Section, Specimen } from './section.tsx'
 
 const roles = [
+  { role: 'text-hero', spec: '42 / 44 → 60 from md → 76 from xl · 600 · -4% · landing page only', sample: 'Apply with an agent in your corner.' },
+  { role: 'text-lede', spec: '16 / 24 → 18 / 28 from md · landing page', sample: 'Wren manages and tailors your job applications.' },
+  { role: 'text-section', spec: '22 / 28 → 24 / 30 from md · 600 · -2% · landing page', sample: 'Quarry is in private beta.' },
   { role: 'text-title', spec: '26 / 32 · 600 · -2% · single-action screens', sample: 'New application' },
   { role: 'text-question', spec: '16 / 23 · 500', sample: 'Tell me about a system you designed end to end.' },
   { role: 'text-reading', spec: '15 / 24', sample: 'You line up well. Go is the main gap.' },

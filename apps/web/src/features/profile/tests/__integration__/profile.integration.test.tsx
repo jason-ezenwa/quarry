@@ -75,7 +75,7 @@ describe('Profile (integration)', () => {
 
   it('is reachable from the sidebar', async () => {
     signInAs()
-    const router = renderRoute('/')
+    const router = renderRoute('/home')
 
     await userEvent.click(await screen.findByRole('link', { name: 'Profile' }))
 
